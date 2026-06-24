@@ -1,0 +1,19 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Register</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Spectral:wght@400;500&display=swap">
+<link rel="stylesheet" href="/static/style.css"></head>
+<body><main>
+<p class="kicker">New Adventurer</p>
+<h1>Create Account</h1>
+<div class="rule"><span></span></div>
+{{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+<form method="post" action="/register">
+  <label>Account Name<input name="username" maxlength="16" required autofocus autocomplete="username"></label>
+  <label>Password<input name="password" type="password" maxlength="16" required autocomplete="new-password"></label>
+  <button type="submit">Forge Account</button>
+</form>
+<p class="back"><a href="/">Back to the gate</a></p>
+</main></body></html>

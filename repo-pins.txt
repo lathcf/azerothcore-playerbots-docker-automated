@@ -1,0 +1,14 @@
+# repo-pins.txt — pin upstream repos to known-good commits.
+#
+# Each non-comment line "<repo-dir> <commit>" freezes that repo at <commit> instead of tracking
+# its branch tip. Both setup.sh and update.sh read this file (via pin_for/apply_pin), so a
+# pinned repo stays put across updates. Use this to hold a stable upstream when the latest HEAD
+# is broken; delete a line (or comment it with #) to resume normal branch-tip updates.
+#
+# Blank lines and lines starting with # are ignored. <repo-dir> is the directory basename:
+#     azerothcore-wotlk   = the core playerbots fork (AC_DIR)
+#     mod-playerbots      = the bot engine (azerothcore-wotlk/modules/mod-playerbots)
+#     mod-aoe-loot, ...   = any other module under azerothcore-wotlk/modules/
+#
+# --- NO ACTIVE PINS ---
+# All repos track their branch tips. Add a "<repo-dir> <commit>" line to pin one back.

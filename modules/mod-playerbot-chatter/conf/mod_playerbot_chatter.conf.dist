@@ -1,0 +1,114 @@
+[worldserver]
+
+########################################
+# mod-playerbot-chatter configuration
+########################################
+
+# PlayerbotChatter.Enable
+#   Master switch. Default 0. setup.sh sets this from .env CHATTER_ENABLE.
+PlayerbotChatter.Enable = 0
+
+# PlayerbotChatter.Debug
+#   Extra logging of classification + Ollama requests. Default 0.
+PlayerbotChatter.Debug = 0
+
+# PlayerbotChatter.Url
+#   Full Ollama /api/generate URL. Default http://localhost:11434/api/generate
+PlayerbotChatter.Url = http://localhost:11434/api/generate
+
+# PlayerbotChatter.Model    Default gemma4:e4b
+PlayerbotChatter.Model = gemma4:e4b
+
+# PlayerbotChatter.Think
+#   0 -> send "think": false (gemma4:e4b is a reasoning model; keep OFF). Default 0.
+PlayerbotChatter.Think = 0
+
+# PlayerbotChatter.SystemPrompt   The character charter sent as the Ollama "system" field.
+PlayerbotChatter.SystemPrompt = "You're a real person playing WoW: Wrath of the Lich King (3.3.5a, level cap 80), chatting in-game with other players. Type like a normal friendly gamer: short, relaxed, light slang (lol, gg, lfg, lfm, ding, brb, gz, ty, wtb, wts, pst). CRITICAL: every message tells you your current level — only talk about content you would actually have reached by THAT level. If you're low or mid level you're still leveling: talk about your current zones, quests, dungeons your level, your class and spec, professions, gold, and saving for your first mounts — you have NOT been to Northrend, run heroics, or raided (Naxxramas/Ulduar/ToC/ICC) and you never talk as if you have. Only level-80 characters talk about heroics, raids, dailies, rep grinds, or endgame PvP. Only talk about real WoW things; never invent activities. You're the person behind the keyboard, not the in-game character or an NPC — no fantasy roleplay voice. Vary how you start; never begin with 'anyone'. Friendly and chill, never rude. Never say you're an AI, bot, or game master. No markdown, emojis, asterisk-actions, or quotation marks."
+
+# PlayerbotChatter.ReplyMaxLen       Max reply length in characters. Default 200.
+PlayerbotChatter.ReplyMaxLen = 200
+# PlayerbotChatter.MaxConcurrent     Max simultaneous Ollama requests (GPU gate). Default 4.
+PlayerbotChatter.MaxConcurrent = 4
+
+# Fan-out
+PlayerbotChatter.SayRange = 40
+PlayerbotChatter.SayMaxBots = 2
+PlayerbotChatter.SayChance = 35
+PlayerbotChatter.GroupMaxBots = 2
+PlayerbotChatter.GroupChance = 50
+# PlayerbotChatter.GroupGuaranteeOne
+#   1 -> in party/raid chat, if the per-bot GroupChance roll picks nobody (and you didn't
+#   name a bot), force one random party bot to reply. Stops a small party from going silent
+#   when you talk to it without using a name. Named bots still always answer. Default 1.
+PlayerbotChatter.GroupGuaranteeOne = 1
+PlayerbotChatter.WhisperChance = 100
+PlayerbotChatter.HistoryLen = 10
+
+# PlayerbotChatter.CommandKeywords
+#   Comma-separated. A message whose first word/phrase matches is treated as a playerbot
+#   command and left for playerbots to handle (no AI reply). Seeded from playerbots'
+#   ChatCommandHandlerStrategy trigger names. Lowercased on load.
+PlayerbotChatter.CommandKeywords = "follow,stay,flee,grind,attack,tank attack,do attack,accept,talk,reset,runaway,summon,q,c,u,e,ue,t,nt,s,b,r,rep,items,inv,pvp stats,add all loot,move from group,enter vehicle,leave vehicle,buy,sell,trade,cast,co,nc,rti,los,ll"
+
+########################################
+# Ambient (self-initiated) chatter — Phase 2
+########################################
+
+# PlayerbotChatter.AmbientEnable
+#   Master switch for self-initiated chatter. Default 0. setup.sh ties this to
+#   .env CHATTER_AMBIENT_ENABLE (which defaults to CHATTER_ENABLE).
+PlayerbotChatter.AmbientEnable = 0
+
+# Per-surface toggles. Only contexts with a real player present ever speak.
+PlayerbotChatter.AmbientGeneral = 1
+PlayerbotChatter.AmbientGroup = 1
+PlayerbotChatter.AmbientGuild = 1
+
+# Two-speed cadence (seconds). Seed = cold-channel opening line; Follow = fast
+# in-thread reply while a context is active.
+PlayerbotChatter.AmbientSeedMin = 60
+PlayerbotChatter.AmbientSeedMax = 90
+PlayerbotChatter.AmbientFollowMin = 4
+PlayerbotChatter.AmbientFollowMax = 9
+PlayerbotChatter.AmbientActiveWindow = 75
+
+# Loop brakes. Bots may chat with each other, bounded by these.
+PlayerbotChatter.AmbientBotStreakMax = 4
+PlayerbotChatter.AmbientCooldown = 75
+PlayerbotChatter.AmbientPerBotCooldown = 120
+
+# Global safety ceiling (server-wide ambient messages per minute). Raise for livelier
+# channels, lower if the Ollama GPU is the bottleneck.
+PlayerbotChatter.AmbientMaxPerMin = 25
+
+# Per-context rolling buffer depth (recent lines fed to react mode).
+PlayerbotChatter.AmbientBufferLen = 8
+
+# Content-mode weights (relative; react needs buffer, event needs a fresh event,
+# both fall back to generic when unavailable). React is weighted high so bots actually
+# answer each other once a channel is active, instead of trading cold openers.
+PlayerbotChatter.AmbientWeightGeneric = 35
+PlayerbotChatter.AmbientWeightReact = 45
+PlayerbotChatter.AmbientWeightFlavor = 12
+PlayerbotChatter.AmbientWeightEvent = 8
+
+########################################
+# Lore sidecar — factual Q&A (Tier-2)
+########################################
+
+# PlayerbotChatter.LoreEnable
+#   When 1, a whispered message that looks like a factual question is sent to the
+#   lore sidecar (ac-lore), which answers from real game data. On any miss/timeout
+#   the bot falls back to a normal reactive reply. Default 0. setup.sh ties this to
+#   .env LORE_ENABLE.
+PlayerbotChatter.LoreEnable = 0
+
+# PlayerbotChatter.LoreUrl   Full /ask URL of the sidecar. Default http://ac-lore:8091/ask
+PlayerbotChatter.LoreUrl = http://ac-lore:8091/ask
+
+# PlayerbotChatter.LoreTimeout
+#   Seconds to wait for the sidecar before falling back to a normal reply. The sidecar
+#   makes TWO sequential model calls (classify + phrase), so keep this comfortably above
+#   2x a single generation on your hardware. Default 60.
+PlayerbotChatter.LoreTimeout = 60

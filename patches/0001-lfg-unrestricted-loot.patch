@@ -1,0 +1,18 @@
+diff --git a/src/server/game/DungeonFinding/LFGMgr.cpp b/src/server/game/DungeonFinding/LFGMgr.cpp
+index a948c6b..b65aa46 100644
+--- a/src/server/game/DungeonFinding/LFGMgr.cpp
++++ b/src/server/game/DungeonFinding/LFGMgr.cpp
+@@ -1793,8 +1793,12 @@ namespace lfg
+             if (!grp)
+             {
+                 grp = new Group();
+-                grp->ConvertToLFG();
++                // LAN-server patch (tracked in ../patches): Create() first so the loot method
++                // defaults to Group Loot, then convert to a NON-restricted LFG group. This stops
++                // the Dungeon Finder forcing Need-Before-Greed and keeps the loot-rule dropdown
++                // unlocked, so the leader can pick Master Loot (etc.) like in a normal party.
+                 grp->Create(player);
++                grp->ConvertToLFG(false);
+                 ObjectGuid gguid = grp->GetGUID();
+                 SetState(gguid, LFG_STATE_PROPOSAL);
+                 sGroupMgr->AddGroup(grp);

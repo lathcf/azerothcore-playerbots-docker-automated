@@ -1,0 +1,58 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Keeper's Tools</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Spectral:wght@400;500&display=swap">
+<link rel="stylesheet" href="/static/style.css"></head>
+<body><main class="wide">
+<p class="kicker">Keeper's Tools</p>
+<h1>Accounts</h1>
+<div class="rule"><span></span></div>
+{{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+{{if .Notice}}<p class="notice">{{.Notice}}</p>{{end}}
+
+<form class="search" method="get" action="/admin">
+  <input name="q" value="{{.Query}}" placeholder="Search accounts…" autocomplete="off" autofocus>
+  <button type="submit">Search</button>
+</form>
+
+{{if .Accounts}}
+<table class="accounts">
+  <thead><tr><th>Account</th><th>Created</th><th>Last Login</th><th>Status</th><th>Actions</th></tr></thead>
+  <tbody>
+  {{range .Accounts}}
+    <tr>
+      <td class="name">{{.Username}}</td>
+      <td class="dim">{{.Created.Format "2006-01-02"}}</td>
+      <td class="dim">{{if .LastLogin}}{{.LastLogin.Format "2006-01-02"}}{{else}}never{{end}}</td>
+      <td>{{if .Banned}}<span class="badge banned">Banned</span>{{else}}<span class="badge active">Active</span>{{end}}</td>
+      <td class="row-actions">
+        <form method="post" action="/admin/reset" onsubmit="return confirm('Reset password for {{.Username}}?')">
+          <input type="hidden" name="username" value="{{.Username}}">
+          <input type="hidden" name="q" value="{{$.Query}}">
+          <input name="password" maxlength="16" placeholder="new password" required autocomplete="off">
+          <button type="submit">Reset</button>
+        </form>
+        {{if .Banned}}
+        <form method="post" action="/admin/unban" onsubmit="return confirm('Unban {{.Username}}?')">
+          <input type="hidden" name="username" value="{{.Username}}">
+          <input type="hidden" name="q" value="{{$.Query}}">
+          <button type="submit" class="ghost">Unban</button>
+        </form>
+        {{else}}
+        <form method="post" action="/admin/ban" onsubmit="return confirm('Ban {{.Username}}? They will not be able to log in.')">
+          <input type="hidden" name="username" value="{{.Username}}">
+          <input type="hidden" name="q" value="{{$.Query}}">
+          <button type="submit" class="danger">Ban</button>
+        </form>
+        {{end}}
+      </td>
+    </tr>
+  {{end}}
+  </tbody>
+</table>
+{{else}}
+<p class="lede">No accounts found{{if .Query}} for “{{.Query}}”{{end}}.</p>
+{{end}}
+</main></body></html>

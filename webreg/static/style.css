@@ -1,0 +1,491 @@
+/* ===========================================================================
+   AzerothCore — webreg
+   Aesthetic: "Frozen Arcane" — Wrath of the Lich King login portal.
+   Abyssal navy + glacial cyan glow, lit by WoW parchment-gold. Engraved Cinzel
+   caps over Spectral body serif, runic ornaments, frosted-glass tablets.
+   Fonts load from Google Fonts; fall back to Georgia/serif when offline (LAN).
+   =========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  /* Frozen depths */
+  --abyss:      #070a11;
+  --ice-deep:   #0d141f;
+  --ice-panel:  #111a27;
+  --ice-line:   #233247;
+
+  /* Glacial light */
+  --frost:      #6fd0ff;
+  --frost-soft: #9fe0ff;
+  --frost-glow: rgba(111, 208, 255, 0.45);
+
+  /* Arcane gold (WoW UI) */
+  --gold:        #d8b878;
+  --gold-bright: #f2dca6;
+  --gold-deep:   #8c6c3a;
+  --gold-glow:   rgba(216, 184, 120, 0.35);
+
+  /* Text */
+  --text:    #cdd7e6;
+  --muted:   #7f8da3;
+  --heading: #f2dca6;
+
+  /* Status */
+  --danger: #ff9b9b;
+  --danger-bg: rgba(255, 90, 90, 0.10);
+  --ok: #93e6ac;
+  --ok-bg: rgba(120, 230, 150, 0.10);
+
+  --radius: 14px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+* { box-sizing: border-box; }
+
+html, body { min-height: 100%; }
+
+body {
+  margin: 0;
+  padding: clamp(1.5rem, 5vh, 4rem) 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 400 17px/1.65 "Spectral", Georgia, "Times New Roman", serif;
+  color: var(--text);
+  background: var(--abyss);
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* --- Atmosphere: layered glacial light + vignette ------------------------ */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -20%;
+  z-index: -2;
+  background:
+    radial-gradient(60% 50% at 50% -8%, rgba(111, 208, 255, 0.18), transparent 70%),
+    radial-gradient(45% 40% at 88% 8%, rgba(120, 90, 200, 0.14), transparent 70%),
+    radial-gradient(55% 45% at 8% 92%, rgba(40, 120, 170, 0.12), transparent 70%),
+    radial-gradient(120% 120% at 50% 40%, var(--ice-deep), var(--abyss) 70%);
+  animation: aurora 22s var(--ease) infinite alternate;
+}
+
+/* Faint film-grain / frost texture */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+@keyframes aurora {
+  0%   { transform: translate3d(0, 0, 0) scale(1);     filter: hue-rotate(0deg); }
+  100% { transform: translate3d(0, -2%, 0) scale(1.05); filter: hue-rotate(-12deg); }
+}
+
+/* --- The tablet ---------------------------------------------------------- */
+main {
+  width: 100%;
+  max-width: 27rem;
+  position: relative;
+  padding: clamp(2rem, 5vw, 2.75rem) clamp(1.5rem, 5vw, 2.5rem) clamp(1.75rem, 4vw, 2.25rem);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(180deg, rgba(28, 40, 58, 0.78), rgba(13, 20, 31, 0.92));
+  border: 1px solid var(--ice-line);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 0 0 1px rgba(216, 184, 120, 0.10),
+    0 40px 80px -30px rgba(0, 0, 0, 0.85),
+    0 0 90px -40px var(--frost-glow);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: rise 0.7s var(--ease) both;
+}
+
+/* Glowing gold seam across the top of the tablet */
+main::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 12%;
+  right: 12%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-bright), transparent);
+  box-shadow: 0 0 12px 1px var(--gold-glow);
+}
+
+/* Inner hairline frame */
+main::after {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border-radius: calc(var(--radius) - 6px);
+  border: 1px solid rgba(216, 184, 120, 0.12);
+  pointer-events: none;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(18px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+/* Stagger the children of the tablet on load */
+main > * {
+  animation: fade-up 0.6s var(--ease) both;
+}
+main > :nth-child(1) { animation-delay: 0.10s; }
+main > :nth-child(2) { animation-delay: 0.16s; }
+main > :nth-child(3) { animation-delay: 0.22s; }
+main > :nth-child(4) { animation-delay: 0.28s; }
+main > :nth-child(5) { animation-delay: 0.34s; }
+main > :nth-child(6) { animation-delay: 0.40s; }
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Typography ---------------------------------------------------------- */
+.kicker {
+  margin: 0 0 0.5rem;
+  font-family: "Cinzel", Georgia, serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  text-indent: 0.42em;
+  color: var(--frost);
+  text-shadow: 0 0 16px var(--frost-glow);
+}
+
+h1 {
+  margin: 0 0 0.35rem;
+  font-family: "Cinzel", Georgia, serif;
+  font-weight: 700;
+  font-size: clamp(1.85rem, 6vw, 2.5rem);
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  background: linear-gradient(180deg, var(--gold-bright) 10%, var(--gold) 55%, var(--gold-deep) 110%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 2px 18px rgba(216, 184, 120, 0.18);
+}
+
+h2 {
+  margin: 2rem 0 0.25rem;
+  font-family: "Cinzel", Georgia, serif;
+  font-weight: 600;
+  font-size: 1.05rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--frost-soft);
+}
+
+.lede {
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+  font-size: 1.02rem;
+}
+
+/* Runic divider ornament */
+.rule {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin: 1.4rem 0 1.6rem;
+  color: var(--gold-deep);
+}
+.rule::before, .rule::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-deep));
+}
+.rule::after { background: linear-gradient(90deg, var(--gold-deep), transparent); }
+.rule span {
+  width: 9px; height: 9px;
+  transform: rotate(45deg);
+  background: var(--gold);
+  box-shadow: 0 0 12px var(--gold-glow);
+}
+
+/* --- Forms --------------------------------------------------------------- */
+form { margin: 0; }
+
+label {
+  display: block;
+  margin: 1.1rem 0;
+  font-family: "Cinzel", Georgia, serif;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+input {
+  display: block;
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.7rem 0.85rem;
+  font: 400 1.05rem/1.4 "Spectral", Georgia, serif;
+  letter-spacing: 0.01em;
+  color: #f3f7fd;
+  background: rgba(7, 11, 18, 0.7);
+  border: 1px solid var(--ice-line);
+  border-radius: 9px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  transition: border-color 0.25s var(--ease), box-shadow 0.25s var(--ease), background 0.25s var(--ease);
+}
+input::placeholder { color: #4f5d72; }
+input:hover { border-color: #34516c; }
+input:focus {
+  outline: none;
+  border-color: var(--frost);
+  background: rgba(10, 18, 28, 0.85);
+  box-shadow:
+    0 0 0 3px rgba(111, 208, 255, 0.16),
+    0 0 22px -4px var(--frost-glow);
+}
+
+/* --- Buttons ------------------------------------------------------------- */
+button,
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  padding: 0.72rem 1.4rem;
+  font-family: "Cinzel", Georgia, serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--frost-soft);
+  background: linear-gradient(180deg, rgba(40, 58, 80, 0.85), rgba(20, 30, 44, 0.9));
+  border: 1px solid var(--ice-line);
+  border-radius: 9px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s var(--ease), border-color 0.25s var(--ease),
+              box-shadow 0.25s var(--ease), color 0.25s var(--ease);
+}
+button:hover,
+.btn:hover {
+  transform: translateY(-2px);
+  border-color: var(--frost);
+  color: #eaf7ff;
+  box-shadow: 0 10px 26px -12px var(--frost-glow), 0 0 0 1px rgba(111, 208, 255, 0.2);
+}
+button:active,
+.btn:active { transform: translateY(0); }
+button:focus-visible,
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(111, 208, 255, 0.35);
+}
+
+/* Primary = forged gold */
+button[type="submit"],
+.btn.primary {
+  color: #2a1f0c;
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold) 55%, var(--gold-deep));
+  border-color: rgba(242, 220, 166, 0.6);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+button[type="submit"]:hover,
+.btn.primary:hover {
+  color: #1f1707;
+  border-color: var(--gold-bright);
+  box-shadow: 0 12px 30px -12px var(--gold-glow), 0 0 0 1px rgba(242, 220, 166, 0.5);
+}
+
+/* Sheen sweep on hover */
+button::after,
+.btn::after {
+  content: "";
+  position: absolute;
+  top: 0; left: -130%;
+  width: 60%; height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+  transform: skewX(-18deg);
+  transition: left 0.6s var(--ease);
+}
+button:hover::after,
+.btn:hover::after { left: 140%; }
+
+/* Wide buttons for primary form actions */
+form > button { width: 100%; margin-top: 0.75rem; padding-block: 0.85rem; }
+
+/* --- Action clusters ----------------------------------------------------- */
+.actions {
+  display: grid;
+  gap: 0.7rem;
+  margin: 0;
+}
+.actions .btn { width: 100%; }
+
+/* Logout sits quiet beneath the main action */
+.account-actions {
+  margin-top: 1.6rem;
+  padding-top: 1.3rem;
+  border-top: 1px solid rgba(35, 50, 71, 0.7);
+}
+.account-actions button {
+  width: 100%;
+  background: transparent;
+  border-color: rgba(255, 120, 120, 0.25);
+  color: #e9b6b6;
+}
+.account-actions button:hover {
+  border-color: var(--danger);
+  color: #ffd6d6;
+  box-shadow: 0 8px 22px -14px rgba(255, 90, 90, 0.6);
+}
+
+/* --- Status banners ------------------------------------------------------ */
+.error, .notice {
+  margin: 0 0 1.25rem;
+  padding: 0.75rem 0.95rem 0.75rem 2.5rem;
+  border-radius: 9px;
+  font-size: 0.96rem;
+  position: relative;
+}
+.error {
+  color: var(--danger);
+  background: var(--danger-bg);
+  border: 1px solid rgba(255, 90, 90, 0.3);
+}
+.notice {
+  color: var(--ok);
+  background: var(--ok-bg);
+  border: 1px solid rgba(120, 230, 150, 0.3);
+}
+.error::before, .notice::before {
+  position: absolute;
+  left: 0.9rem; top: 50%;
+  transform: translateY(-50%);
+  font-family: "Cinzel", Georgia, serif;
+  font-weight: 700;
+}
+.error::before  { content: "\26A0"; }  /* warning */
+.notice::before { content: "\2713"; }  /* check */
+
+/* --- Back link ----------------------------------------------------------- */
+.back {
+  margin: 1.5rem 0 0;
+  font-size: 0.95rem;
+}
+.back a {
+  color: var(--muted);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+}
+.back a::before { content: "\2039\00A0\00A0"; color: var(--gold-deep); }
+.back a:hover { color: var(--frost-soft); border-color: rgba(111, 208, 255, 0.4); }
+
+/* --- Admin: wide tablet + account table ---------------------------------- */
+main.wide { max-width: 52rem; }
+
+.search { display: flex; gap: 0.6rem; margin: 0 0 1.5rem; }
+.search input { margin-top: 0; }
+.search button { margin-top: 0; white-space: nowrap; padding-inline: 1.1rem; }
+
+table.accounts {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+table.accounts th {
+  text-align: left;
+  font-family: "Cinzel", Georgia, serif;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 0.6rem 0.65rem;
+  border-bottom: 1px solid var(--ice-line);
+}
+table.accounts td {
+  padding: 0.7rem 0.6rem;
+  border-bottom: 1px solid rgba(35, 50, 71, 0.5);
+  vertical-align: middle;
+}
+table.accounts td.name {
+  font-family: "Cinzel", Georgia, serif;
+  letter-spacing: 0.04em;
+  color: var(--frost-soft);
+  white-space: nowrap;
+}
+table.accounts td.dim { color: var(--muted); font-size: 0.88rem; white-space: nowrap; }
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.62rem;
+  border-radius: 999px;
+  font-family: "Cinzel", Georgia, serif;
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.badge.active { color: var(--ok); background: var(--ok-bg); border: 1px solid rgba(120, 230, 150, 0.3); }
+.badge.banned { color: var(--danger); background: var(--danger-bg); border: 1px solid rgba(255, 90, 90, 0.3); }
+
+.row-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.row-actions form { display: flex; gap: 0.4rem; align-items: center; margin: 0; }
+.row-actions input[name="password"] {
+  margin-top: 0;
+  width: 9.5rem;
+  padding: 0.42rem 0.6rem;
+  font-size: 0.9rem;
+}
+.row-actions button {
+  margin-top: 0;
+  padding: 0.44rem 0.85rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+}
+.row-actions button.ghost { color: var(--frost-soft); background: transparent; }
+.row-actions button.danger {
+  color: #2a0c0c;
+  background: linear-gradient(180deg, #f0a6a6, #d87878 55%, #8c3a3a);
+  border-color: rgba(242, 166, 166, 0.55);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.row-actions button.danger:hover {
+  border-color: #f0a6a6;
+  box-shadow: 0 10px 26px -12px rgba(255, 90, 90, 0.5);
+}
+
+/* Stack the table into cards on narrow screens */
+@media (max-width: 680px) {
+  table.accounts, table.accounts tbody, table.accounts tr, table.accounts td { display: block; width: 100%; }
+  table.accounts thead { display: none; }
+  table.accounts tr { border-bottom: 1px solid var(--ice-line); padding: 0.7rem 0; }
+  table.accounts td { border: none; padding: 0.2rem 0; }
+  table.accounts td.name { font-size: 1.05rem; }
+  .row-actions { margin-top: 0.4rem; }
+  .row-actions input[name="password"] { width: 100%; }
+}
+
+/* --- Accessibility ------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

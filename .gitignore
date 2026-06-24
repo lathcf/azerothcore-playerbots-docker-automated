@@ -1,0 +1,20 @@
+# The AzerothCore fork + modules are cloned by setup.sh on the server.
+azerothcore-wotlk/
+
+# Client addons are fetched by fetch-client-addons.sh.
+client-addons/
+
+# Database backups produced by backup.sh.
+backups/
+
+# Local env / secrets
+.env
+*.local
+
+# Compiled ac-webreg binary (built into a container by setup.sh on the server)
+webreg/acore-webreg
+
+# Python sidecar: local virtualenv and bytecode cache
+lore-sidecar/.venv/
+**/__pycache__/
+*.pyc

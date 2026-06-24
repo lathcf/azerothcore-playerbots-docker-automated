@@ -1,0 +1,9 @@
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+PyMySQL==1.1.1
+# Required by PyMySQL to authenticate against MySQL 8's default caching_sha2_password
+# plugin (ac-database). Range, not a pin, so pip resolves a wheel for the image's Python.
+cryptography>=42.0.0
+requests==2.32.3
+pytest==8.2.2
+httpx==0.27.0
