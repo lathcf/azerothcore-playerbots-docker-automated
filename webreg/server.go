@@ -125,7 +125,7 @@ func (a *App) handleIndex(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	a.render(w, "index.html", http.StatusOK, page{Title: "Thrashernet WoW", ZipLabel: a.cfg.ClientZipLabel})
+	a.render(w, "index.html", http.StatusOK, page{Title: a.cfg.SiteName, ZipLabel: a.cfg.ClientZipLabel})
 }
 
 func (a *App) handleRegister(w http.ResponseWriter, r *http.Request) {

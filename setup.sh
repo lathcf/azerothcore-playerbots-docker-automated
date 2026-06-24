@@ -613,6 +613,7 @@ SQL
       - ac-database
     environment:
       WEBREG_LISTEN: "0.0.0.0:8090"
+      WEBREG_SITE_NAME: "\${WEBREG_SITE_NAME:-WoW Server}"
       WEBREG_ADMIN_USER: "\${WEBREG_ADMIN_USER:-admin}"
       WEBREG_ADMIN_PASS: "\${WEBREG_ADMIN_PASS}"
       WEBREG_SESSION_SECRET: "\${WEBREG_SESSION_SECRET}"

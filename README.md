@@ -531,7 +531,7 @@ and recovers cleanly on the next boot.
 The remaining risks are disk failure and accidental `docker compose down -v`. Guard against
 both with backups:
 ```bash
-./backup.sh        # dumps all DBs to ./backups/acore-<timestamp>.sql.gz, keeps last 14
+./backup.sh        # bundles all DBs + .env into ./backups/acore-<timestamp>.tar, keeps last 14
 ```
 **`setup.sh` installs a nightly cron job for this automatically** (4 AM by default). It's
 idempotent — re-running `setup.sh` won't duplicate it. To change or remove it:
@@ -545,14 +545,20 @@ Options:
 
 The dump uses `--single-transaction`, so it won't lock the live server.
 
-**Restore** a backup (overwrites current data — stop the server first):
+Each bundle holds both the databases **and** `.env` (which carries the DB root
+password and the secrets `setup.sh` autogenerates), so one file is a complete
+snapshot.
+
+**Restore** a backup with one command (overwrites current data — it stops the
+server, reloads the databases, restores `.env`, and brings everything back up):
 ```bash
-cd azerothcore-wotlk
-docker compose stop ac-worldserver ac-authserver
-gunzip -c ../backups/acore-<timestamp>.sql.gz | \
-  docker compose exec -T ac-database mysql -uroot -p"$DOCKER_DB_ROOT_PASSWORD"
-docker compose start ac-worldserver ac-authserver
+./restore.sh backups/acore-<timestamp>.tar       # add --yes to skip the prompt
 ```
+This works on a brand-new machine too: `git clone` the repo, run `./setup.sh`
+once to build the server, then `./restore.sh <bundle>`. It re-aligns the live
+MySQL root password to the one in your backed-up `.env`, so future backups keep
+working. (Restore targets same-version recovery — restoring an older dump onto
+newer binaries can mismatch schema, since migrations don't auto-revert.)
 
 ## Security note
 This is built for a **trusted LAN**. By default the realm only advertises your private IP and

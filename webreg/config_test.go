@@ -21,6 +21,9 @@ func TestLoadConfigDefaults(t *testing.T) {
 	if cfg.AdminUser != "admin" {
 		t.Errorf("AdminUser = %q, want default admin", cfg.AdminUser)
 	}
+	if cfg.SiteName != "WoW Server" {
+		t.Errorf("SiteName = %q, want default \"WoW Server\"", cfg.SiteName)
+	}
 	if cfg.BotPrefix != "rndbot" {
 		t.Errorf("BotPrefix = %q, want default rndbot", cfg.BotPrefix)
 	}

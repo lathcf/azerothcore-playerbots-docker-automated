@@ -7,6 +7,7 @@ import (
 
 type Config struct {
 	Listen         string
+	SiteName       string
 	AdminUser      string
 	AdminPass      string
 	SessionSecret  []byte
@@ -27,6 +28,7 @@ func or(v, def string) string {
 func LoadConfig(getenv func(string) string) (Config, error) {
 	cfg := Config{
 		Listen:         or(getenv("WEBREG_LISTEN"), "0.0.0.0:8090"),
+		SiteName:       or(getenv("WEBREG_SITE_NAME"), "WoW Server"),
 		AdminUser:      or(getenv("WEBREG_ADMIN_USER"), "admin"),
 		AdminPass:      getenv("WEBREG_ADMIN_PASS"),
 		SessionSecret:  []byte(getenv("WEBREG_SESSION_SECRET")),
