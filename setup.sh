@@ -267,21 +267,26 @@ set_conf () {
 }
 
 echo "==> 6/10 Applying boosted rates + bot population"
-# Boosted rates (XP-focused; loot balance left mostly intact). Tune freely.
-set_conf "Rate.XP.Kill"         "3" "$WS_CONF"
-set_conf "Rate.XP.Quest"        "3" "$WS_CONF"
-set_conf "Rate.XP.Explore"      "3" "$WS_CONF"
-set_conf "Rate.XP.Pet"          "3" "$WS_CONF"
-set_conf "Rate.Drop.Money"      "2" "$WS_CONF"
-set_conf "Rate.Reputation.Gain" "5" "$WS_CONF"
+# Boosted rates (XP-focused; loot balance left mostly intact). All .env-tunable — see the
+# "Gameplay rates" block in .env.example; the defaults below match the values this server
+# shipped with, so an .env that omits a knob keeps the old behavior.
+set_conf "Rate.XP.Kill"         "${XP_KILL_RATE:-3}"    "$WS_CONF"
+set_conf "Rate.XP.Quest"        "${XP_QUEST_RATE:-3}"   "$WS_CONF"
+set_conf "Rate.XP.Explore"      "${XP_EXPLORE_RATE:-3}" "$WS_CONF"
+set_conf "Rate.XP.Pet"          "${XP_PET_RATE:-3}"     "$WS_CONF"
+set_conf "Rate.Drop.Money"      "${MONEY_DROP_RATE:-2}" "$WS_CONF"
+set_conf "Rate.Reputation.Gain" "${REPUTATION_RATE:-5}" "$WS_CONF"
+# Honor gain multiplier (PvP/BG honor points). 5x by default so BG/world-PvP grinding fills
+# out PvP gear fast on a LAN/bot server.
+set_conf "Rate.Honor"           "${HONOR_RATE:-5}"      "$WS_CONF"
 # Rested-XP pool fill rate (the blue "rested" bonus that doubles kill XP until spent).
 # InGame = while logged in resting in an inn/city; Offline = while logged off (tavern/city
 # vs wilderness). 3x so the pool refills fast and more of your killing is doubled. MaxBonus
 # (default 1.5) is the *cap* on banked rested XP, not a speed — raise it if you want a bigger
 # buffer to store while away.
-set_conf "Rate.Rest.InGame"                 "3" "$WS_CONF"
-set_conf "Rate.Rest.Offline.InTavernOrCity" "3" "$WS_CONF"
-set_conf "Rate.Rest.Offline.InWilderness"   "3" "$WS_CONF"
+set_conf "Rate.Rest.InGame"                 "${REST_INGAME_RATE:-3}"             "$WS_CONF"
+set_conf "Rate.Rest.Offline.InTavernOrCity" "${REST_OFFLINE_TAVERN_RATE:-3}"     "$WS_CONF"
+set_conf "Rate.Rest.Offline.InWilderness"   "${REST_OFFLINE_WILDERNESS_RATE:-3}" "$WS_CONF"
 # Respawn timers: stock dynamic-respawn defaults. The dynamic system already scales respawn
 # time down as a zone's player+bot count rises (bots count as players), which with 1500 bots
 # is plenty fast on its own — making it more aggressive (rate < 1 / lower minimum) caused
