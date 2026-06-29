@@ -51,3 +51,19 @@ def test_mailboxes_query_uses_type_19():
     sql, params = db.calls[0]
     assert "gameobject_template" in sql and "type" in sql
     assert params["map"] == 0
+
+
+def test_place_by_name_joins_area_and_creature():
+    db = RecordingDb([{"area_name": "Falconwing Square", "zone_name": "Eversong Woods",
+                       "map": 530, "x": 1.0, "y": 2.0}])
+    row = db.place_by_name("Falconwing Square")
+    assert row["zone_name"] == "Eversong Woods" and row["map"] == 530
+    sql, params = db.calls[0]
+    assert "mod_chatter_npc_area" in sql and "JOIN creature" in sql
+    assert "c.id = a.creature_entry" in sql
+    assert "a.area_name LIKE" in sql and "a.zone_name LIKE" in sql
+    assert params["name"] == "%Falconwing Square%" and params["exact"] == "Falconwing Square"
+
+
+def test_place_by_name_miss_returns_none():
+    assert RecordingDb([]).place_by_name("nowhere") is None

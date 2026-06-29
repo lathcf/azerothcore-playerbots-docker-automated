@@ -1,4 +1,4 @@
-from curated import continent_for, dungeon_lookup, leveling_zones
+from curated import continent_for, dungeon_lookup, leveling_zones, region_for
 
 
 def test_dungeon_lookup_known():
@@ -27,3 +27,16 @@ def test_continent_for_known_and_unknown():
     assert continent_for(571) == "Northrend"
     assert continent_for(530) == "Outland"
     assert continent_for(99999) == ""
+
+
+def test_region_for_overrides_discontiguous_map530_zones():
+    # Eversong/Ghostlands/Silvermoon and the Draenei isles sit on map 530 but are NOT Outland.
+    assert region_for("Eversong Woods", 530) == "the far north of the Eastern Kingdoms (Quel'Thalas)"
+    assert region_for("Isle of Quel'Danas", 530) == "the far north of the Eastern Kingdoms (Quel'Thalas)"
+    assert region_for("The Exodar", 530) == "the islands off the coast of Kalimdor"
+
+
+def test_region_for_falls_back_to_continent():
+    assert region_for("Elwynn Forest", 0) == "Eastern Kingdoms"
+    assert region_for("Hellfire Peninsula", 530) == "Outland"
+    assert region_for("", 571) == "Northrend"

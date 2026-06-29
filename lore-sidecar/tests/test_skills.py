@@ -26,6 +26,9 @@ class FakeDb:
     def quest_turnin(self, qid):
         return self.rows.get("turnin")
 
+    def place_by_name(self, name):
+        return self.rows.get("place")
+
 
 BOT = {"name": "Wizard", "level": 34, "class": "mage", "faction": "Alliance",
        "map": 0, "x": 0.0, "y": 0.0, "z": 0.0, "zone": "Elwynn",
@@ -60,6 +63,37 @@ def test_find_profession_trainer_passes_subname():
 
 def test_find_service_none_when_empty():
     assert skills.dispatch("find_service_npc", {"service": "vendor"}, BOT, FakeDb()) is None
+
+
+def test_find_service_flags_cross_region_result_as_not_nearby():
+    # Map 530 holds Outland AND the far-flung Blood Elf zones (Eversong/Silvermoon) on one
+    # map id, so raw 2D "nearest" can land ~17000y away in another region. That precise
+    # distance/direction is meaningless across the gap — report not-nearby, keep the name.
+    db = FakeDb(service=[
+        {"name": "Quaedl", "subname": "Paladin Trainer", "x": 15000.0, "y": 8000.0},
+    ])
+    bot = {**BOT, "map": 530, "x": 0.0, "y": 0.0, "class": "paladin"}
+    facts = skills.dispatch("find_service_npc",
+                            {"service": "class_trainer", "class": "paladin"}, bot, db)
+    assert facts is not None
+    assert facts.get("not_nearby") is True
+    assert "distance_yards" not in facts
+    assert "direction" not in facts
+    assert facts["name"] == "Quaedl"
+
+
+def test_find_service_prefers_in_region_over_cross_region():
+    # A genuinely-close NPC must still win normally even when a cross-region one exists.
+    db = FakeDb(service=[
+        {"name": "Far Eversong Trainer", "subname": "Paladin Trainer", "x": 15000.0, "y": 8000.0},
+        {"name": "Honor Hold Trainer", "subname": "Paladin Trainer", "x": 120.0, "y": 0.0},
+    ])
+    bot = {**BOT, "map": 530, "x": 0.0, "y": 0.0, "class": "paladin"}
+    facts = skills.dispatch("find_service_npc",
+                            {"service": "class_trainer", "class": "paladin"}, bot, db)
+    assert facts["name"] == "Honor Hold Trainer"
+    assert facts.get("not_nearby") is not True
+    assert facts["distance_yards"] == 120
 
 
 def test_find_mailbox_uses_mailboxes():
@@ -210,3 +244,58 @@ def test_where_is_npc_cross_map_gives_continent():
 
 def test_where_is_npc_not_found_returns_none():
     assert skills.dispatch("where_is_npc", {"npc": "nobody"}, BOT, NpcFakeDb()) is None
+
+
+def test_where_is_place_area_resolves_zone_and_region():
+    # Falconwing Square is a town in Eversong Woods; on map 530 it's across the gulf from
+    # Outland, so no heading — just zone + correct region (NOT "Outland").
+    db = NpcFakeDb(place={"area_name": "Falconwing Square", "zone_name": "Eversong Woods",
+                          "map": 530, "x": 9000.0, "y": 9000.0})
+    bot = {**BOT, "map": 530, "x": 0.0, "y": 0.0}
+    facts = skills.dispatch("where_is_npc", {"npc": "Falconwing Square"}, bot, db)
+    assert facts["place"] == "Falconwing Square"
+    assert facts["zone"] == "Eversong Woods"
+    assert facts["region"] == "the far north of the Eastern Kingdoms (Quel'Thalas)"
+    assert facts["same_map"] is True
+    assert "direction" not in facts
+    assert facts["not_nearby"] is True   # same map, across the gulf -> far off, no heading
+
+
+def test_where_is_place_cross_map_gives_region_no_heading():
+    # Place on a different map entirely: region answers it; no heading, not flagged not_nearby.
+    db = NpcFakeDb(place={"area_name": "Falconwing Square", "zone_name": "Eversong Woods",
+                          "map": 530, "x": 0.0, "y": 0.0})
+    bot = {**BOT, "map": 0, "x": 0.0, "y": 0.0}
+    facts = skills.dispatch("where_is_npc", {"npc": "Falconwing Square"}, bot, db)
+    assert facts["region"] == "the far north of the Eastern Kingdoms (Quel'Thalas)"
+    assert facts["same_map"] is False
+    assert "direction" not in facts and "not_nearby" not in facts
+
+
+def test_where_is_place_zone_omits_zone_field_and_gives_heading_when_close():
+    # Asking for the zone itself: place IS the zone, no redundant zone field; same map and
+    # within range -> include a heading.
+    db = NpcFakeDb(place={"area_name": "Sunstrider Isle", "zone_name": "Eversong Woods",
+                          "map": 530, "x": 50.0, "y": 0.0})
+    bot = {**BOT, "map": 530, "x": 0.0, "y": 0.0}
+    facts = skills.dispatch("where_is_npc", {"npc": "Eversong Woods"}, bot, db)
+    assert facts["place"] == "Eversong Woods"
+    assert "zone" not in facts
+    assert facts["region"] == "the far north of the Eastern Kingdoms (Quel'Thalas)"
+    assert facts["same_map"] is True
+    assert facts["direction"] == "north"
+
+
+def test_where_is_creature_wins_over_place():
+    db = NpcFakeDb(creature={"entry": 222, "name": "Brock Stoneseeker"},
+                   spawn={"map": 0, "x": 100.0, "y": 0.0},
+                   area={"area_name": "Lakeshire", "zone_name": "Redridge Mountains"},
+                   place={"area_name": "Should Not Use", "zone_name": "Nope",
+                          "map": 530, "x": 0.0, "y": 0.0})
+    facts = skills.dispatch("where_is_npc", {"npc": "brock"}, BOT, db)
+    assert facts["npc"] == "Brock Stoneseeker"
+    assert "place" not in facts
+
+
+def test_where_is_neither_creature_nor_place_returns_none():
+    assert skills.dispatch("where_is_npc", {"npc": "nonexistent"}, BOT, NpcFakeDb()) is None

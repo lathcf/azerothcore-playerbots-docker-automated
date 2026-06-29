@@ -122,6 +122,21 @@ class Db:
         rows = self._query(sql, {"name": f"%{name}%", "exact": name})
         return rows[0] if rows else None
 
+    def place_by_name(self, name: str) -> Optional[dict]:
+        # Area/zone NAMES live only in the backfilled mod_chatter_npc_area table (not in the
+        # MySQL world DB), so resolve a place there and JOIN creature for its map + a
+        # representative spawn coord. creature is keyed by `id` on this server.
+        sql = (
+            "SELECT a.area_name AS area_name, a.zone_name AS zone_name, "
+            "c.map AS map, c.position_x AS x, c.position_y AS y "
+            "FROM mod_chatter_npc_area a JOIN creature c ON c.id = a.creature_entry "
+            "WHERE a.area_name LIKE %(name)s OR a.zone_name LIKE %(name)s "
+            "ORDER BY (a.area_name = %(exact)s) DESC, (a.zone_name = %(exact)s) DESC, "
+            "CHAR_LENGTH(a.area_name) ASC LIMIT 1"
+        )
+        rows = self._query(sql, {"name": f"%{name}%", "exact": name})
+        return rows[0] if rows else None
+
     def spawn_for_entry(self, entry: int) -> Optional[dict]:
         sql = ("SELECT map, position_x AS x, position_y AS y FROM creature "
                "WHERE id = %(entry)s LIMIT 1")

@@ -4,6 +4,16 @@ from __future__ import annotations
 import math
 from typing import Optional
 
+# Several WotLK map ids are geographically DISCONTIGUOUS — one map holds regions separated
+# by an empty coordinate gulf. The worst offender is map 530 ("Outland"), which also carries
+# the Blood Elf zones (Eversong/Ghostlands/Silvermoon) and the Draenei isles (Azuremyst/
+# Bloodmyst/Exodar) at far-flung coordinates. Raw 2D "nearest" within a map can therefore
+# return an NPC ~17000y away in another region (observed: a paladin trainer in Eversong while
+# the bot stood in Hellfire). A real same-region service NPC is essentially never this far, so
+# we treat anything past this cap as cross-region and refuse to give bogus distance/direction.
+# Comfortably above any useful intra-region distance, well below the observed ~17000y gap.
+SAME_REGION_MAX_YARDS = 8000.0
+
 
 def distance2d(x1: float, y1: float, x2: float, y2: float) -> float:
     return math.hypot(x2 - x1, y2 - y1)

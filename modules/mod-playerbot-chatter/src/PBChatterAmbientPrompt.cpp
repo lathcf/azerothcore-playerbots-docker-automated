@@ -65,26 +65,26 @@ namespace
     // that bracket actually plays.
     char const* const kTopics_1_19[] = {
         "a low-level dungeon like the Deadmines, Wailing Caverns, or Shadowfang Keep",
-        "saving up for your first mount at level 40",
+        "looking forward to your first mount at level 20",   // WotLK: Apprentice Riding @20, cheap
         "where to quest next as you level up",
         "a tough elite or group quest you could use a hand with",
     };
     char const* const kTopics_20_39[] = {
         "a dungeon like Scarlet Monastery, Razorfen Kraul, or Uldaman",
-        "getting close to your mount at level 40",
+        "a profession you're skilling up as you level",
         "which zone to level in next",
         "a nasty elite or escort quest",
     };
     char const* const kTopics_40_59[] = {
         "a dungeon like Zul'Farrak, Maraudon, or the Sunken Temple",
-        "grinding toward your epic mount at 60",
+        "gear or gold you're picking up while questing",
         "the high-level dungeons (Blackrock Depths, Stratholme, Scholomance)",
         "thinking about heading to Outland soon",
     };
     char const* const kTopics_60_69[] = {
         "leveling through Outland — Hellfire Peninsula or Zangarmarsh",
         "an Outland dungeon like Hellfire Ramparts or the Blood Furnace",
-        "getting your flying mount at 70",
+        "pushing through Outland toward Northrend",
     };
     char const* const kTopics_70_79[] = {
         "leveling through Northrend and which zone is next",

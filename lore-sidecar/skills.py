@@ -40,6 +40,16 @@ def _nearest_facts(rows: list[dict], bot: dict) -> Optional[dict]:
     row, dist = geo.nearest(rows, float(bot["x"]), float(bot["y"]))
     if row is None:
         return None
+    # Cross-region artifact (see geo.SAME_REGION_MAX_YARDS): the closest match on this map is
+    # actually in another region. Drop the meaningless 2D distance/direction but keep the name
+    # (and the area, attached by the caller) so the bot can honestly say it's not close by.
+    if dist > geo.SAME_REGION_MAX_YARDS:
+        return {
+            "name": row["name"],
+            "subname": row.get("subname") or "",
+            "not_nearby": True,
+            "_entry": row.get("entry"),
+        }
     return {
         "name": row["name"],
         "subname": row.get("subname") or "",
@@ -48,6 +58,18 @@ def _nearest_facts(rows: list[dict], bot: dict) -> Optional[dict]:
                                    float(row["x"]), float(row["y"])),
         "_entry": row.get("entry"),
     }
+
+
+def _turnin_facts(t: dict, bot: dict) -> dict:
+    """Turn-in NPC facts: real distance/direction only when it's genuinely in this region;
+    otherwise just the name (+ area, attached by the caller) — see geo.SAME_REGION_MAX_YARDS."""
+    if int(t["map"]) == int(bot["map"]):
+        d = geo.distance2d(float(bot["x"]), float(bot["y"]), float(t["x"]), float(t["y"]))
+        if d <= geo.SAME_REGION_MAX_YARDS:
+            return {"name": t["name"], "distance_yards": int(round(d)),
+                    "direction": geo.direction(float(bot["x"]), float(bot["y"]),
+                                               float(t["x"]), float(t["y"]))}
+    return {"name": t["name"], "distance_yards": None, "direction": "another zone"}
 
 
 def find_service_npc(entities: dict, bot: dict, db, player_quests=None) -> Optional[dict]:
@@ -134,14 +156,7 @@ def quest_info(entities: dict, bot: dict, db, player_quests=None) -> Optional[di
         t = db.quest_turnin(int(pq["id"]))  # all objectives done -> turn-in
         if not t:
             return {"title": pq.get("title", ""), "ready_to_turn_in": True}
-        if int(t["map"]) == int(bot["map"]):
-            turnin = {"name": t["name"],
-                      "distance_yards": int(round(geo.distance2d(
-                          float(bot["x"]), float(bot["y"]), float(t["x"]), float(t["y"])))),
-                      "direction": geo.direction(float(bot["x"]), float(bot["y"]),
-                                                 float(t["x"]), float(t["y"]))}
-        else:
-            turnin = {"name": t["name"], "distance_yards": None, "direction": "another zone"}
+        turnin = _turnin_facts(t, bot)
         _attach_area(turnin, t.get("entry"), db)
         return {"title": pq.get("title", ""), "turnin": turnin}
 
@@ -153,18 +168,9 @@ def quest_info(entities: dict, bot: dict, db, player_quests=None) -> Optional[di
            "aspect": entities.get("aspect", "objective")}
     if out["aspect"] == "turnin":
         t = db.quest_turnin(int(quest["id"]))
-        if t and int(t["map"]) == int(bot["map"]):
-            out["turnin"] = {
-                "name": t["name"],
-                "distance_yards": int(round(geo.distance2d(
-                    float(bot["x"]), float(bot["y"]), float(t["x"]), float(t["y"])))),
-                "direction": geo.direction(float(bot["x"]), float(bot["y"]),
-                                           float(t["x"]), float(t["y"])),
-            }
-        elif t:
-            out["turnin"] = {"name": t["name"], "distance_yards": None, "direction": "another zone"}
-        else:
+        if not t:
             return None
+        out["turnin"] = _turnin_facts(t, bot)
         _attach_area(out["turnin"], t.get("entry"), db)
     return out
 
@@ -181,30 +187,64 @@ def where_to_level(entities: dict, bot: dict, db, player_quests=None) -> Optiona
     return {"level": int(bot["level"]), "zones": zones} if zones else None
 
 
+def _place_facts(row: dict, asked: str, bot: dict) -> dict:
+    """Location facts for a place (area/zone) from db.place_by_name. A heading is included only
+    when the place is on the bot's map AND within range (geo.SAME_REGION_MAX_YARDS), so we never
+    point across a discontiguous-map gulf."""
+    area = row.get("area_name") or ""
+    zone = row.get("zone_name") or ""
+    # If the question named the zone itself, the place IS the zone; else it's the sub-area.
+    # (area can be empty if the backfill row had a NULL area_name — degrade to zone-only.)
+    if zone and asked.strip().lower() == zone.lower():
+        place, show_zone = zone, ""
+    else:
+        place, show_zone = (area or zone), zone
+    facts = {"place": place, "region": curated.region_for(zone or place, int(row["map"]))}
+    if show_zone and show_zone != place:
+        facts["zone"] = show_zone
+    facts["same_map"] = int(row["map"]) == int(bot["map"])
+    if facts["same_map"]:
+        d = geo.distance2d(float(bot["x"]), float(bot["y"]), float(row["x"]), float(row["y"]))
+        if d <= geo.SAME_REGION_MAX_YARDS:
+            facts["direction"] = geo.direction(float(bot["x"]), float(bot["y"]),
+                                               float(row["x"]), float(row["y"]))
+        else:
+            # Same map id but across the discontiguity gulf — symmetric with the creature path:
+            # signal "far off" so the phrasing doesn't imply it's close.
+            facts["not_nearby"] = True
+    return facts
+
+
 def where_is_npc(entities: dict, bot: dict, db, player_quests=None) -> Optional[dict]:
     name = (entities.get("npc") or "").strip()
     if not name:
         return None
     c = db.creature_by_name(name)
-    if not c:
-        return None
-    spawn = db.spawn_for_entry(c["entry"])
-    if not spawn:
-        return None
-    area = db.area_for_entry(c["entry"]) or {}
-    facts = {"npc": c["name"],
-             "town": area.get("area_name") or "",
-             "zone": area.get("zone_name") or ""}
-    if int(spawn["map"]) == int(bot["map"]):
-        facts["same_map"] = True
-        facts["direction"] = geo.direction(float(bot["x"]), float(bot["y"]),
-                                           float(spawn["x"]), float(spawn["y"]))
-        facts["distance_yards"] = int(round(geo.distance2d(
-            float(bot["x"]), float(bot["y"]), float(spawn["x"]), float(spawn["y"]))))
-    else:
-        facts["same_map"] = False
-        facts["continent"] = curated.continent_for(int(spawn["map"]))
-    return facts
+    spawn = db.spawn_for_entry(c["entry"]) if c else None
+    if c and spawn:
+        area = db.area_for_entry(c["entry"]) or {}
+        facts = {"npc": c["name"],
+                 "town": area.get("area_name") or "",
+                 "zone": area.get("zone_name") or ""}
+        d = (geo.distance2d(float(bot["x"]), float(bot["y"]), float(spawn["x"]), float(spawn["y"]))
+             if int(spawn["map"]) == int(bot["map"]) else None)
+        if d is not None and d <= geo.SAME_REGION_MAX_YARDS:
+            facts["same_map"] = True
+            facts["direction"] = geo.direction(float(bot["x"]), float(bot["y"]),
+                                               float(spawn["x"]), float(spawn["y"]))
+            facts["distance_yards"] = int(round(d))
+        elif d is not None:
+            # Same map id but another region (see geo.SAME_REGION_MAX_YARDS): the town/zone name
+            # is the useful answer; a 2D direction across the gulf would just be wrong.
+            facts["same_map"] = True
+            facts["not_nearby"] = True
+        else:
+            facts["same_map"] = False
+            facts["continent"] = curated.continent_for(int(spawn["map"]))
+        return facts
+    # Not a creature (or no spawn) — maybe the name is a place (zone/town).
+    place = db.place_by_name(name)
+    return _place_facts(place, name, bot) if place else None
 
 
 _REGISTRY = {

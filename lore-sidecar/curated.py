@@ -75,3 +75,27 @@ _CONTINENTS = {0: "Eastern Kingdoms", 1: "Kalimdor", 530: "Outland", 571: "North
 
 def continent_for(map_id: int) -> str:
     return _CONTINENTS.get(int(map_id), "")
+
+
+# Zones on a discontiguous map id that continent_for would mislabel. Map 530 ("Outland")
+# also carries Quel'Thalas (Blood Elf) and the Draenei isles; name their true lore region.
+# Keys are the DB zone_name (from mod_chatter_npc_area), lowercased via _norm — match that
+# exact string when adding entries, not a DBC display variant.
+_REGION_OVERRIDES = {
+    "eversong woods": "the far north of the Eastern Kingdoms (Quel'Thalas)",
+    "ghostlands": "the far north of the Eastern Kingdoms (Quel'Thalas)",
+    "silvermoon city": "the far north of the Eastern Kingdoms (Quel'Thalas)",
+    "isle of quel'danas": "the far north of the Eastern Kingdoms (Quel'Thalas)",
+    "sunstrider isle": "the far north of the Eastern Kingdoms (Quel'Thalas)",
+    "azuremyst isle": "the islands off the coast of Kalimdor",
+    "bloodmyst isle": "the islands off the coast of Kalimdor",
+    "the exodar": "the islands off the coast of Kalimdor",
+    "ammen vale": "the islands off the coast of Kalimdor",
+}
+
+
+def region_for(zone_name: str, map_id: int) -> str:
+    """Broad lore region for a zone. Overrides the discontiguous map-530 zones (Quel'Thalas,
+    Draenei isles) that continent_for would mislabel; otherwise falls back to the continent."""
+    override = _REGION_OVERRIDES.get(_norm(zone_name or ""))
+    return override if override else continent_for(map_id)
