@@ -1,0 +1,9 @@
+[worldserver]
+
+########################################
+# mod-raid-roster configuration
+########################################
+
+# RaidRoster.Enable
+#   Master switch. Default 0. setup.sh sets this from .env RAIDROSTER_ENABLE.
+RaidRoster.Enable = 0

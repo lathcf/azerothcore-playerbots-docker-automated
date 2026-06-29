@@ -39,6 +39,10 @@ this repo.
 - Optional **lore sidecar**: on top of the chat module, bots can answer *whispered factual
   questions* ("where's the nearest trainer?", "what drops X?") from your server's real game data.
   Off by default (`LORE_ENABLE`). See [Lore sidecar](#lore-sidecar--factual-qa-optional).
+- Optional **raid roster** (`mod-raid-roster`): pin a personal 40-bot roster (same bots, same
+  roles, every time), then bulk-log a 5/10/25/40-man subset that auto-forms a raid — geared to
+  match you, with a one-click **minimap addon** to drive it. Off by default (`RAIDROSTER_ENABLE`).
+  See [Raid roster](#raid-roster-mod-raid-roster).
 
 ## Requirements
 - **A host to run the server on**, with Docker + Docker Compose. Either:
@@ -490,10 +494,6 @@ list. The two you'll reach for: `CHATTER_AMBIENT_MAX_PER_MIN` (overall volume; l
 is the bottleneck) and `CHATTER_AMBIENT_W_REACT` vs `CHATTER_AMBIENT_W_GENERIC` (bots answering
 each other vs opening new topics).
 
-**Spec and design:** reactive — `docs/superpowers/specs/2026-06-19-playerbot-chatter-design.md`;
-ambient — `docs/superpowers/specs/2026-06-20-playerbot-ambient-chatter-design.md` (implementation
-plans under `docs/superpowers/plans/`).
-
 ## Lore sidecar — factual Q&A (optional)
 
 An optional companion to the chatter module: a separate Python container (`ac-lore`) that answers
@@ -519,7 +519,74 @@ Ordinary chatter is grounded in the bot's real active quest the same way.
 `llama3.1:8b`), `LORE_TIMEOUT` / `LORE_GEN_TIMEOUT` (raise these if your GPU is slow under chatter
 load), and `LORE_DEBUG=1` for verbose request/reply logs.
 
-**Spec and design:** `docs/superpowers/specs/2026-06-22-playerbot-lore-sidecar-design.md`.
+## Raid roster (mod-raid-roster)
+
+A small local module (authored in this repo) that gives you a **personal, persistent raid team
+you fully control** — the same named bots, in the same roles, every time you log in.
+
+**Why it exists.** The roaming random bots are great for populating the world and filling a quick
+group, but they're a shared, shifting pool: you don't get the *same* bots twice, and running
+maintenance on them tends to leave them wildly over-geared. This module instead pins a fixed
+roster to *your character* and keeps the bots geared to *you*, so you can sit down and instantly
+run a 5/10/25/40 with a stable, level-appropriate group.
+
+**How it works.** It's a thin layer over mod-playerbots' built-in **addclass** bots (pre-made,
+fully controllable class bots) — no core patches. `.raidroster create` reserves 40 of them as
+your roster (4 tanks / 9 healers / 27 DPS), each pinned to a fixed talent spec, and records them
+in the DB so they survive restarts. `.raidroster login <size>` brings a role-balanced subset
+online and lets the bot engine auto-form the raid. `.raidroster sync` levels and gears every
+online bot to match your character **and** re-applies each one's tank/heal/dps spec — so the same
+bots tank and heal every time, and never out-gear you. Each player's roster is independent (keyed
+to their character) and no two players ever share a bot, so a few friends can each keep their own
+team from the same pool.
+
+Off by default; enable with `RAIDROSTER_ENABLE=1` in `.env` and re-run `./setup.sh` (a worldserver
+restart also generates the addclass pool the first time).
+
+**Typical session:** `.raidroster create` once (ever), then each play session
+`.raidroster login 25` → `.raidroster sync` → raid. Re-run `sync` after you level or upgrade gear.
+
+**Commands** (in-game as a player, or from the worldserver console):
+
+| Command | What it does |
+|---|---|
+| `.raidroster create` | Pin 40 addclass-pool bots as your roster (4 tank / 9 heal / 27 dps). Errors if a roster already exists. |
+| `.raidroster login [5\|10\|25\|40] [tank\|heal\|dps]` | Log in that many bots (role-balanced subset, you + N bots = raid size). Omit size for 40. Picks a **random assortment** of your reserved bots for each role — keeping any already online, so re-running `login` doesn't reshuffle your current group, while a fresh session brings different faces. **Fills your own slot from your spec** — if you're tank/heal-specced it drops a bot of that role so you're not redundant; add an explicit `tank`/`heal`/`dps` to override. Auto-forms the raid; trims extras already online. |
+| `.raidroster sync` | Level + gear every online roster bot to match you, then force each slot's pinned tank/heal/dps spec. Fixes any overgear. |
+| `.raidroster logout` | Log out all online roster bots (roster stays pinned). |
+| `.raidroster reset` | Clear all saved instance lockouts (raids + heroic dungeons) for you and every roster bot at once — online **or** offline. A multi-character, non-GM stand-in for `.instance unbind all` (skips whatever instance you're standing in). |
+| `.raidroster remove confirm` | Delete your roster (characters return to the shared addclass pool). |
+| `.raidroster status` | Show roster size, role counts, and how many bots are currently online. |
+
+**Notes:**
+- No GM rank required — the commands run on any normal character (they use `SEC_PLAYER`,
+  like mod-playerbots' own `.playerbot` command), so your regular main can manage the roster.
+- "40-man" means you + 39 bots (the WoW cap is 40, one slot is you). Smaller sizes are
+  proportionally role-balanced: 5-man = 1 tank / 1 heal / 2 dps + you; 10-man = 2/2/5 + you.
+- **You count as a role, not just a slot.** `login` reads your spec: a tank fills the tank slot
+  (so a 5-man fields 0 tank / 1 heal / 3 dps bots), a healer fills a heal slot, anyone else is
+  DPS. Override with `login <size> tank|heal|dps` (e.g. a Prot warrior who wants to DPS a run).
+  At 40-man the bot pool is DPS-maxed, so taking tank/heal just shifts the freed slot to a spare
+  healer — you always get a full group.
+- Bots are drawn from mod-playerbots' *addclass pool* (`AiPlayerbot.AddClassAccountPoolSize`,
+  default 50 via `ADDCLASS_POOL_SIZE`). The pool must exist (needs a worldserver restart after
+  first setup before `create` will find characters).
+- `.raidroster sync` caps bot gear to `AiPlayerbot.AutoInitEquipLevelLimitRatio` × your gear
+  score (tunable via `GEAR_MATCH_RATIO`, default 1.0). Run it after leveling or a gear upgrade.
+- `MAX_ADDED_BOTS=60` (default; overrides the core's 40-bot limit) gives headroom for a full
+  40-man plus any manually-added bots.
+
+**Minimap addon (optional).** So you don't have to type the commands, a small companion **client**
+addon (`RaidRoster`) puts a draggable button on the minimap; clicking it opens a dropdown that
+fires each command for you — **Create**, **Login 5 / 10 / 25 / 40** (auto-detects your role), a
+**Login as ▸ Tank / Healer / DPS ▸ size** submenu for the override, **Sync**, **Logoff**,
+**Reset locks**, and **Status**. It's self-contained (no libraries), remembers its position per character, and just
+sends the same `.raidroster` commands (so the server stays the single source of truth — there's no
+auto-sync; click **Sync** yourself once the bots are in).
+
+It's authored in `client-addons-src/RaidRoster/` (version-controlled); `./fetch-client-addons.sh`
+stages it into `client-addons/RaidRoster/` alongside the downloaded addons. Like every client
+addon here, copy that folder into each player's `World of Warcraft/Interface/AddOns/`.
 
 ## Backups & data safety
 Everything (characters, gear, gold, guilds, AH) lives in MySQL in a persistent Docker volume,
@@ -645,6 +712,9 @@ star and support the original projects; they did the hard part.
 
 **Custom to this repo** (authored here and version-controlled with this overlay — *not* upstream)
 - **`modules/mod-playerbot-chatter/`** — AI bot chat (reactive + ambient) routed through Ollama.
+- **`modules/mod-raid-roster/`** — persistent 40-bot raid roster over the addclass pool, with
+  role-balanced subset login and gear-to-master sync. Paired with the **`RaidRoster`** client
+  addon (`client-addons-src/RaidRoster/`) — a minimap menu that runs its commands.
 - **`lore-sidecar/`** — a Python sidecar that answers whispered factual questions from real game
   data.
 - **`webreg/`** — a Go self-service account-registration and client-download site.

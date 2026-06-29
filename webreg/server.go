@@ -35,8 +35,8 @@ func NewApp(svc *Service, sm *SessionManager, rl *RateLimiter, cfg Config) *App 
 }
 
 type page struct {
-	Title, ZipLabel, User, Error, Notice, Query string
-	Accounts                                     []AccountInfo
+	Title, ZipLabel, AddonsLabel, User, Error, Notice, Query string
+	Accounts                                                  []AccountInfo
 }
 
 func (a *App) render(w http.ResponseWriter, name string, status int, p page) {
@@ -113,6 +113,7 @@ func (a *App) Routes() http.Handler {
 	mux.HandleFunc("/account", a.handleAccount)
 	mux.HandleFunc("/account/password", a.handleChangePassword)
 	mux.HandleFunc("/download", a.handleDownload)
+	mux.HandleFunc("/download/addons", a.handleDownloadAddons)
 	mux.HandleFunc("/admin", a.basicAuth(a.handleAdmin))
 	mux.HandleFunc("/admin/reset", a.basicAuth(a.handleAdminReset))
 	mux.HandleFunc("/admin/ban", a.basicAuth(a.handleBan))
@@ -125,7 +126,7 @@ func (a *App) handleIndex(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	a.render(w, "index.html", http.StatusOK, page{Title: a.cfg.SiteName, ZipLabel: a.cfg.ClientZipLabel})
+	a.render(w, "index.html", http.StatusOK, page{Title: a.cfg.SiteName, ZipLabel: a.cfg.ClientZipLabel, AddonsLabel: a.cfg.AddonsZipLabel})
 }
 
 func (a *App) handleRegister(w http.ResponseWriter, r *http.Request) {
@@ -194,30 +195,41 @@ func (a *App) handleChangePassword(w http.ResponseWriter, r *http.Request) {
 	a.render(w, "account.html", http.StatusOK, page{User: user, Notice: "Password updated."})
 }
 
-func (a *App) handleDownload(w http.ResponseWriter, r *http.Request) {
-	if a.cfg.ClientZipPath == "" {
-		http.Error(w, "No client download is configured.", http.StatusNotFound)
+// serveFile streams a single regular file as an attachment, supporting Range/resume.
+// An unset path or any open/stat problem becomes a 404 (missingMsg), matching the
+// public, optional nature of these downloads.
+func (a *App) serveFile(w http.ResponseWriter, r *http.Request, path, missingMsg string) {
+	if path == "" {
+		http.Error(w, missingMsg, http.StatusNotFound)
 		return
 	}
-	f, err := os.Open(a.cfg.ClientZipPath)
+	f, err := os.Open(path)
 	if err != nil {
-		http.Error(w, "Client download is unavailable.", http.StatusNotFound)
+		http.Error(w, missingMsg, http.StatusNotFound)
 		return
 	}
 	defer f.Close()
 	info, err := f.Stat()
 	if err != nil {
-		http.Error(w, "Client download is unavailable.", http.StatusInternalServerError)
+		http.Error(w, missingMsg, http.StatusInternalServerError)
 		return
 	}
 	if info.IsDir() || !info.Mode().IsRegular() {
-		http.Error(w, "No client download is available.", http.StatusNotFound)
+		http.Error(w, missingMsg, http.StatusNotFound)
 		return
 	}
 	name := info.Name()
 	w.Header().Set("Content-Disposition", "attachment; filename=\""+name+"\"")
 	// ServeContent handles Range/resume and conditional requests.
 	http.ServeContent(w, r, name, info.ModTime(), f)
+}
+
+func (a *App) handleDownload(w http.ResponseWriter, r *http.Request) {
+	a.serveFile(w, r, a.cfg.ClientZipPath, "No client download is configured.")
+}
+
+func (a *App) handleDownloadAddons(w http.ResponseWriter, r *http.Request) {
+	a.serveFile(w, r, a.cfg.AddonsZipPath, "No addons download is configured.")
 }
 
 func (a *App) basicAuth(next http.HandlerFunc) http.HandlerFunc {

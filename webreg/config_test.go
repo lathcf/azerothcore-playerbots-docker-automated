@@ -52,3 +52,20 @@ func TestLoadConfigRequiresSessionSecret(t *testing.T) {
 		t.Error("missing/short WEBREG_SESSION_SECRET must be an error")
 	}
 }
+
+func TestLoadConfigAddonsDefaults(t *testing.T) {
+	cfg, err := LoadConfig(env(map[string]string{
+		"WEBREG_ADMIN_PASS":     "secret",
+		"WEBREG_SESSION_SECRET": "abcdefghijklmnopqrstuvwxyz012345",
+		"WEBREG_DB_PASS":        "dbpw",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.AddonsZipLabel != "Download bot addons" {
+		t.Errorf("AddonsZipLabel = %q, want default \"Download bot addons\"", cfg.AddonsZipLabel)
+	}
+	if cfg.AddonsZipPath != "" {
+		t.Errorf("AddonsZipPath = %q, want empty when unset", cfg.AddonsZipPath)
+	}
+}

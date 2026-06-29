@@ -13,6 +13,8 @@ type Config struct {
 	SessionSecret  []byte
 	ClientZipPath  string
 	ClientZipLabel string
+	AddonsZipPath  string
+	AddonsZipLabel string
 	BotPrefix      string
 	DBDSN          string
 }
@@ -34,6 +36,8 @@ func LoadConfig(getenv func(string) string) (Config, error) {
 		SessionSecret:  []byte(getenv("WEBREG_SESSION_SECRET")),
 		ClientZipPath:  getenv("WEBREG_CLIENT_ZIP_PATH"),
 		ClientZipLabel: or(getenv("WEBREG_CLIENT_ZIP_LABEL"), "Download client"),
+		AddonsZipPath:  getenv("WEBREG_ADDONS_ZIP_PATH"),
+		AddonsZipLabel: or(getenv("WEBREG_ADDONS_ZIP_LABEL"), "Download bot addons"),
 		BotPrefix:      or(getenv("WEBREG_BOT_PREFIX"), "rndbot"),
 	}
 	if cfg.AdminPass == "" {

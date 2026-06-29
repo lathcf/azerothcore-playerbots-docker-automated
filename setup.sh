@@ -28,7 +28,7 @@ MODULES=(
 )
 
 # Modules we author and ship from THIS repo (copied in, not git-cloned). Kept by the reconcile.
-LOCAL_MODULES=( "mod-playerbot-chatter" )
+LOCAL_MODULES=( "mod-playerbot-chatter" "mod-raid-roster" )
 
 # Optional commit pins (repo-pins.txt): freeze the fork and/or a module at a known-good commit
 # instead of its branch tip — used to hold a stable upstream when the latest HEAD is broken.
@@ -508,6 +508,36 @@ if [[ -f "$PBCHAT_CONF" ]]; then
   fi
 fi
 
+# ── Raid roster prerequisites (mod-raid-roster) ──────────────────────────────
+# These addclass / gear-ceiling / max-bots knobs live in playerbots.conf ($PB_CONF)
+# but are prerequisites for mod-raid-roster's .raidroster commands.
+#   AddClassCommand=1          — enables the addclass pool that .raidroster create draws from.
+#   AddClassAccountPoolSize    — characters per faction per class in that pool; must hold at
+#                                least 5 chars per class for a 40-man (2×Warrior, 2×Druid, …).
+#                                Default 50 gives comfortable headroom.
+#   AutoInitEquipLevelLimitRatio — the gear-ceiling multiplier used by .raidroster sync and
+#                                init=auto: 1.0 = match your gear score exactly (prevents bots
+#                                ever being overgeared relative to you).
+#   MaxAddedBots               — hard cap on bots you can have online at once; must be ≥ 39
+#                                (the bots in a 40-man), 60 leaves headroom for manual adds.
+# NOTE: RandomBotAccountCount is NOT explicitly set by this setup.sh (left to the core default
+# = automatic). The playerbots.conf.dist caveat requires it to be >=  MaxRandomBots/10 +
+# AddClassAccountPoolSize. With the core auto-calc this should hold for typical bot counts,
+# but if you pin RandomBotAccountCount manually in .env, verify it satisfies that formula.
+# Gated: only touch playerbots pool/bot-count config when the module is enabled, so a
+# disabled mod-raid-roster never mutates an existing install's playerbots settings.
+if [[ "${RAIDROSTER_ENABLE:-0}" == "1" ]]; then
+  set_conf "AiPlayerbot.AddClassCommand"              "1"                          "$PB_CONF"
+  set_conf "AiPlayerbot.AddClassAccountPoolSize"      "${ADDCLASS_POOL_SIZE:-50}"  "$PB_CONF"
+  set_conf "AiPlayerbot.AutoInitEquipLevelLimitRatio" "${GEAR_MATCH_RATIO:-1.0}"   "$PB_CONF"
+  set_conf "AiPlayerbot.MaxAddedBots"                 "${MAX_ADDED_BOTS:-60}"      "$PB_CONF"
+fi
+
+RAID_CONF="$MODETC/mod_raid_roster.conf"
+if [[ -f "$RAID_CONF" ]]; then
+  set_conf "RaidRoster.Enable" "${RAIDROSTER_ENABLE:-0}" "$RAID_CONF"
+fi
+
 echo "==> 7/10 Hardening auth/world for external exposure"
 # Authserver brute-force lockout. The shipped default is WrongPass.MaxCount=0 — i.e. UNLIMITED
 # password guesses, which is fine on a trusted LAN but unacceptable once 3724 faces the internet.
@@ -626,15 +656,24 @@ SQL
       WEBREG_DB_PASS: "\${WEBREG_DB_PASS}"
       WEBREG_CLIENT_ZIP_PATH: "/data/client.zip"
       WEBREG_CLIENT_ZIP_LABEL: "\${CLIENT_ZIP_LABEL:-Download client}"
+      WEBREG_ADDONS_ZIP_PATH: "/data/addons.zip"
+      WEBREG_ADDONS_ZIP_LABEL: "\${ADDONS_ZIP_LABEL:-Download bot addons}"
       WEBREG_BOT_PREFIX: "\${WEBREG_BOT_PREFIX:-rndbot}"
     ports:
       - "\${WEBREG_LAN_PORT:-8090}:8090"
     volumes:
       - "\${CLIENT_ZIP_PATH:-/dev/null}:/data/client.zip:ro"
+      - "\${ADDONS_ZIP_PATH:-/dev/null}:/data/addons.zip:ro"
 YAML
   # The main `docker compose up` (above) ran before this service was appended and
   # before its secrets existed, so it must be built + started now. Idempotent:
   # re-running reconciles the container with the regenerated override.
+  # If fetch-client-addons.sh has produced the bundle, mount it by default so the
+  # "Download bot addons" button works without editing .env. An explicit
+  # ADDONS_ZIP_PATH still wins; absent, the compose default (/dev/null) applies.
+  if [[ -z "${ADDONS_ZIP_PATH:-}" && -f "$ROOT/client-addons.zip" ]]; then
+    export ADDONS_ZIP_PATH="$ROOT/client-addons.zip"
+  fi
   echo "    Building and starting ac-webreg..."
   docker compose up -d --build ac-webreg
   echo "    ac-webreg up (LAN port ${WEBREG_LAN_PORT:-8090}); point your Cloudflare tunnel here."

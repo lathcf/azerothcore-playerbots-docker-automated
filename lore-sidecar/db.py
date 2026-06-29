@@ -51,7 +51,7 @@ class Db:
         sql = (
             "SELECT ct.entry AS entry, ct.name AS name, ct.subname AS subname, "
             "c.position_x AS x, c.position_y AS y "
-            "FROM creature c JOIN creature_template ct ON c.id1 = ct.entry "
+            "FROM creature c JOIN creature_template ct ON c.id = ct.entry "
             "WHERE c.map = %(map)s AND (ct.npcflag & %(flag)s) <> 0"
         )
         params = {"map": map_id, "flag": flag}
@@ -110,7 +110,7 @@ class Db:
             "c.position_x AS x, c.position_y AS y "
             "FROM creature_questender qe "
             "JOIN creature_template ct ON qe.id = ct.entry "
-            "JOIN creature c ON c.id1 = ct.entry "
+            "JOIN creature c ON c.id = ct.entry "
             "WHERE qe.quest = %(quest)s LIMIT 1"
         )
         rows = self._query(sql, {"quest": quest_id})
@@ -124,7 +124,7 @@ class Db:
 
     def spawn_for_entry(self, entry: int) -> Optional[dict]:
         sql = ("SELECT map, position_x AS x, position_y AS y FROM creature "
-               "WHERE id1 = %(entry)s LIMIT 1")
+               "WHERE id = %(entry)s LIMIT 1")
         rows = self._query(sql, {"entry": entry})
         return rows[0] if rows else None
 

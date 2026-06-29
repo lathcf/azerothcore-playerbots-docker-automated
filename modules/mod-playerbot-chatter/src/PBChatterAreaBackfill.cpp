@@ -53,7 +53,7 @@ std::string PBChatterAreaBackfill::Start()
         do { seen.insert((*done)[0].Get<uint32>()); } while (done->NextRow());
 
     QueryResult res = WorldDatabase.Query(
-        "SELECT id1, map, position_x, position_y, position_z FROM creature ORDER BY id1");
+        "SELECT id, map, position_x, position_y, position_z FROM creature ORDER BY id");
     if (res)
     {
         do

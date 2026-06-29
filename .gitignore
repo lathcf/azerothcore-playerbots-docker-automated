@@ -3,6 +3,7 @@ azerothcore-wotlk/
 
 # Client addons are fetched by fetch-client-addons.sh.
 client-addons/
+client-addons.zip
 
 # Database backups produced by backup.sh.
 backups/

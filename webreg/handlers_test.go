@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -177,5 +178,53 @@ func TestAdminBanRoutesRequireAuth(t *testing.T) {
 		if rec.Code != http.StatusUnauthorized {
 			t.Errorf("%s without auth = %d, want 401", path, rec.Code)
 		}
+	}
+}
+
+func TestDownloadAddonsNotConfigured(t *testing.T) {
+	rec := httptest.NewRecorder()
+	testApp().Routes().ServeHTTP(rec, httptest.NewRequest("GET", "/download/addons", nil))
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("/download/addons with no zip = %d, want 404", rec.Code)
+	}
+}
+
+func TestDownloadAddonsServesMountedFile(t *testing.T) {
+	f, err := os.CreateTemp(t.TempDir(), "addons-*.zip")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.WriteString("PK\x03\x04 fake zip"); err != nil {
+		t.Fatal(err)
+	}
+	f.Close()
+
+	cfg := Config{AdminUser: "admin", AdminPass: "adminpw", AddonsZipPath: f.Name()}
+	app := NewApp(newSvc(newFakeStore()),
+		NewSessionManager([]byte("0123456789abcdef"), time.Hour),
+		NewRateLimiter(100, time.Minute), cfg)
+
+	rec := httptest.NewRecorder()
+	app.Routes().ServeHTTP(rec, httptest.NewRequest("GET", "/download/addons", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("/download/addons = %d, want 200", rec.Code)
+	}
+	if cd := rec.Header().Get("Content-Disposition"); !strings.Contains(cd, "attachment") {
+		t.Errorf("Content-Disposition = %q, want an attachment", cd)
+	}
+}
+
+func TestIndexShowsAddonsButton(t *testing.T) {
+	cfg := Config{AdminUser: "admin", AdminPass: "adminpw", AddonsZipLabel: "Download bot addons"}
+	app := NewApp(newSvc(newFakeStore()),
+		NewSessionManager([]byte("0123456789abcdef"), time.Hour),
+		NewRateLimiter(100, time.Minute), cfg)
+	rec := httptest.NewRecorder()
+	app.Routes().ServeHTTP(rec, httptest.NewRequest("GET", "/", nil))
+	if !strings.Contains(rec.Body.String(), "/download/addons") {
+		t.Error("index page should link to /download/addons")
+	}
+	if !strings.Contains(rec.Body.String(), "Download bot addons") {
+		t.Error("index page should show the addons label")
 	}
 }

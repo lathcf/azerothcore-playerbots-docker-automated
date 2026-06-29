@@ -1,0 +1,7 @@
+## Interface: 30300
+## Title: RaidRoster
+## Notes: One-click minimap menu for the .raidroster commands.
+## Author: thrashernet
+## Version: 1.0
+## SavedVariablesPerCharacter: RaidRosterMinimapDB
+RaidRoster.lua
