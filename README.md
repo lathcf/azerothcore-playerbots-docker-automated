@@ -63,19 +63,22 @@ this repo.
 # On the server, clone the repo, then:
 git clone https://github.com/lathcf/azerothcore-playerbots-docker-automated.git AzerothCore
 cd AzerothCore
-# Set your options (DB password, bot count, optional features) in .env.example FIRST:
-nano .env.example
+# Copy the template to your own .env, then set your options (DB password, bot count, features):
+cp .env.example .env
+nano .env
 ./setup.sh
 ```
-On the **first run**, `setup.sh` copies `.env.example` to `azerothcore-wotlk/.env` (the file the
-stack actually reads) — so put your settings in `.env.example` *before* that first run. It then
-clones the fork + modules, compiles the core, imports the database, downloads client data (several
-GB, incl. the **mmaps** bots need to navigate), tunes config, and starts everything. Subsequent
-runs are fast and idempotent.
+`.env.example` is a tracked template — copy it to `.env` (gitignored) and edit that, so a later
+`git pull` never conflicts. On **every** run, `setup.sh` copies your repo-root `.env` to
+`azerothcore-wotlk/.env` (the file the stack actually reads). The first run also clones the fork +
+modules, compiles the core, imports the database, downloads client data (several GB, incl. the
+**mmaps** bots need to navigate), tunes config, and starts everything. Subsequent runs are fast and
+idempotent.
 
-> **Changing settings later:** once installed, edit `azerothcore-wotlk/.env` directly and re-run
-> `./setup.sh` — it does **not** re-copy `.env.example` over an existing `azerothcore-wotlk/.env`,
-> so further edits to `.env.example` are ignored.
+> **Changing settings later:** edit repo-root `.env` and re-run `./setup.sh` — it re-copies `.env`
+> to the live env every run, so your change takes effect. (Existing installs from before this
+> change are migrated automatically: the first run promotes your old `azerothcore-wotlk/.env` to
+> repo-root `.env`, preserving your password and secrets.)
 
 `setup.sh` prints the server's LAN IP at the end. Note it.
 
@@ -126,14 +129,15 @@ window as PowerShell; keep both handy, since the install uses each for different
    ```
    This creates `~/AzerothCore` (i.e. `/home/<you>/AzerothCore`). *(Forked it? Swap in your
    fork's HTTPS URL instead.)*
-2. **Set your options.** Still in the Ubuntu terminal, open the settings file in the simple `nano`
-   editor:
+2. **Set your options.** Still in the Ubuntu terminal, copy the template to your own `.env` and
+   open it in the simple `nano` editor:
    ```bash
-   nano ~/AzerothCore/.env.example
+   cp ~/AzerothCore/.env.example ~/AzerothCore/.env
+   nano ~/AzerothCore/.env
    ```
    Set a strong `DOCKER_DB_ROOT_PASSWORD`, and tweak bot count / optional features to taste (same
-   keys as the Linux flow). **Leave `LAN_IP` blank** — the installer fills it in. Save and quit
-   nano with **Ctrl-O**, **Enter**, then **Ctrl-X**.
+   keys as the Linux flow). **Leave `LAN_IP` blank** — the installer fills it into `.env`. Save and
+   quit nano with **Ctrl-O**, **Enter**, then **Ctrl-X**.
 3. **Run the Windows installer from an *elevated* PowerShell.** Adding the firewall rule needs
    Admin, so this part runs in **PowerShell**, *not* the Ubuntu terminal. Right-click **Start** →
    **Terminal (Admin)** (or **Windows PowerShell (Admin)**) → **Yes**, then change into the repo's

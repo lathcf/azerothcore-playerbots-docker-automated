@@ -83,7 +83,7 @@ Write-Host "Windows host LAN IP: $LanIp" -ForegroundColor Green
 
 # --- Read auth/world ports from the WSL-side env (defaults 3724 / 8085) ---
 $portScript = @'
-f=azerothcore-wotlk/.env; [ -f "$f" ] || f=.env.example
+f=.env; [ -f "$f" ] || f=.env.example
 awk -F= '/^DOCKER_AUTH_EXTERNAL_PORT=/{a=$2} /^DOCKER_WORLD_EXTERNAL_PORT=/{w=$2} END{printf "%s %s",(a?a:"3724"),(w?w:"8085")}' "$f"
 '@
 $portsRaw = & wsl.exe @(Get-WslPrefix $Distro) '--' 'bash' '-lc' "cd `"$abs`" && $portScript"
@@ -107,7 +107,10 @@ foreach ($r in @(
 
 # --- Persist LAN_IP into the WSL-side env so the realm advertises the Windows host IP ---
 $ipScript = @'
-f=azerothcore-wotlk/.env; [ -f "$f" ] || f=.env.example
+# Repo-root .env is the source of truth; create it from the template if the operator has not
+# yet, so LAN_IP lands where setup.sh will copy it to the live env.
+[ -f .env ] || cp .env.example .env
+f=.env
 if grep -q '^LAN_IP=' "$f"; then
   sed -i "s|^LAN_IP=.*|LAN_IP=__IP__|" "$f"
 else

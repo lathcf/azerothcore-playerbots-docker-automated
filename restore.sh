@@ -58,7 +58,7 @@ CURRENT_PW="${DOCKER_DB_ROOT_PASSWORD}"
 
 # ---- confirm (destructive) ----
 if [[ "$ASSUME_YES" != "1" ]]; then
-  echo "This will OVERWRITE $AC_DIR/.env and DROP + RELOAD the four acore_* databases"
+  echo "This will OVERWRITE $ROOT/.env (propagated to $AC_DIR/.env by setup.sh) and DROP + RELOAD the four acore_* databases"
   echo "from: $BUNDLE"
   read -r -p "Proceed? [y/N] " ans || ans=""   # don't let EOF (no stdin) skip the Aborted message
   [[ "$ans" == "y" || "$ans" == "Y" ]] || { echo "Aborted."; exit 1; }
@@ -109,11 +109,15 @@ if [[ "$RESTORE_PW" != "$CURRENT_PW" ]]; then
   db -e "ALTER USER 'root'@'%' IDENTIFIED BY '${RESTORE_PW}'; FLUSH PRIVILEGES;" 2>/dev/null || true
 fi
 
-# ---- overlay .env (keep a pre-restore copy as an undo) ----
-cp "$AC_DIR/.env" "$AC_DIR/.env.pre-restore"
-chmod 600 "$AC_DIR/.env.pre-restore"   # same plaintext secrets as .env
-cp "$STAGE/env" "$AC_DIR/.env"
-echo "[$(date)] Restored .env (previous saved to .env.pre-restore)."
+# ---- overlay repo-root .env (the source of truth; setup.sh copies it to the live env) ----
+# Snapshot the previous source-of-truth as an undo, then drop the backed-up env in its place.
+# The setup.sh re-run below propagates it to azerothcore-wotlk/.env.
+if [[ -f "$ROOT/.env" ]]; then
+  cp "$ROOT/.env" "$ROOT/.env.pre-restore"
+  chmod 600 "$ROOT/.env.pre-restore"   # same plaintext secrets as .env
+fi
+cp "$STAGE/env" "$ROOT/.env"
+echo "[$(date)] Restored ./.env (previous saved to ./.env.pre-restore)."
 
 # ---- regenerate confs from the restored .env and bring the stack up ----
 echo "[$(date)] Re-running setup.sh to regenerate confs and start the server…"

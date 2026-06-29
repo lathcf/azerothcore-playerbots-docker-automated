@@ -10,6 +10,7 @@ backups/
 
 # Local env / secrets
 .env
+.env.pre-restore
 *.local
 
 # Compiled ac-webreg binary (built into a container by setup.sh on the server)
