@@ -90,6 +90,13 @@ apply_pin "$AC_DIR" "azerothcore-wotlk"
 echo "==> 2/10 Cloning modules (if missing)"
 for entry in "${MODULES[@]}"; do
   name="${entry%%|*}"; url="${entry#*|}"
+  # A module dir WITHOUT .git is a stale copy from when it was a LOCAL_MODULE (cp -a'd in), e.g.
+  # mod-era-talents before it moved to its own repo (2026-09-07). `git clone` refuses a non-empty
+  # dir, so replace it — module dirs are regenerable; any DB data lives in the DB volume.
+  if [[ -d "$AC_DIR/modules/$name" && ! -d "$AC_DIR/modules/$name/.git" ]]; then
+    echo "    Replacing non-git copy of $name with a clone"
+    rm -rf "$AC_DIR/modules/$name"
+  fi
   [[ -d "$AC_DIR/modules/$name/.git" ]] || git clone "$url" "$AC_DIR/modules/$name"
   apply_pin "$AC_DIR/modules/$name" "$name"
 done
