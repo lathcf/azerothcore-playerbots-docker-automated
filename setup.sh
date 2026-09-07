@@ -25,10 +25,13 @@ MODULES=(
   "mod-multibot-bridge|https://github.com/Wishmaster117/mod-multibot-bridge.git"
   "mod-ah-bot-plus|https://github.com/NathanHandley/mod-ah-bot-plus.git"
   "mod-individual-progression|https://github.com/ZhengPeiRu21/mod-individual-progression.git"
+  # Era talents (own repo since 2026-09-07): requires IP above; its playerbots/bridge patches and bot
+  # layer switch on automatically because those modules are present. Pinned in repo-pins.txt.
+  "mod-era-talents|https://github.com/lathcf/mod-era-talents.git"
 )
 
 # Modules we author and ship from THIS repo (copied in, not git-cloned). Kept by the reconcile.
-LOCAL_MODULES=( "mod-playerbot-chatter" "mod-raid-roster" "mod-ahbot-price" "mod-wintergrasp-bots" "mod-arena-roster" "mod-era-talents" )
+LOCAL_MODULES=( "mod-playerbot-chatter" "mod-raid-roster" "mod-ahbot-price" "mod-wintergrasp-bots" "mod-arena-roster" )
 
 # Optional commit pins (repo-pins.txt): freeze the fork and/or a module at a known-good commit
 # instead of its branch tip — used to hold a stable upstream when the latest HEAD is broken.
@@ -72,6 +75,12 @@ apply_patches () {
       exit 1
     fi
   done
+  # mod-era-talents ships its own patch tree (core + IP always; playerbots/bridge when present).
+  # Runs AFTER ours so 0012's Unit.cpp hunk lands before its Shatter/Wand/Molten Fury hunks —
+  # the order every one of its Unit.cpp patches was cut against.
+  if [[ -x "$AC_DIR/modules/mod-era-talents/apply-patches.sh" ]]; then
+    "$AC_DIR/modules/mod-era-talents/apply-patches.sh" "$AC_DIR"
+  fi
 }
 
 echo "==> 1/10 Cloning AzerothCore playerbots fork (if missing)"

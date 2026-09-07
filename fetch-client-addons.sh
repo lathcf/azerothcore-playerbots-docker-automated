@@ -77,6 +77,17 @@ if [[ -d "$ROOT/client-addons-src" ]]; then
   done
 fi
 
+# EraTalents addon ships inside the mod-era-talents module clone (own repo since 2026-09-07).
+ERA_MOD="$ROOT/azerothcore-wotlk/modules/mod-era-talents"
+if [[ -d "$ERA_MOD/client-addon/EraTalents" ]]; then
+  echo "==> Staging EraTalents addon (from modules/mod-era-talents)"
+  rm -rf "${DEST:?}/EraTalents"
+  cp -a "$ERA_MOD/client-addon/EraTalents" "$DEST/EraTalents"
+  rm -f "$DEST/EraTalents/build-addon.sh" "$DEST"/EraTalents/test_*.lua
+else
+  echo "NOTE: modules/mod-era-talents not cloned yet (run setup.sh) — EraTalents addon not staged"
+fi
+
 # --- Client DATA patch (NOT an addon): World Dungeon Maps --------------------
 # WDM injects real Classic/TBC dungeon maps into the 3.3.5a client so the
 # default map (M) renders the dungeon layout WITH the player-position arrow,
@@ -114,19 +125,21 @@ if [[ "${IP_CLIENT_PATCH_V:-1}" == "1" ]]; then
     # debuff, etc.) the stock client can't render. Merge those rows INTO this same patch-V.mpq —
     # patch-V loads after our own patch-4 slot and its Spell.dbc would otherwise override ours, so
     # coexisting inside one file is the only reliable option. Needs client-patch/mpqpack+mpqread
-    # (prebuilt, or client-patch/build-mpqpack.sh + StormLib); degrade gracefully if absent.
-    if [[ -x "$ROOT/client-patch/mpqpack" && -x "$ROOT/client-patch/mpqread" ]]; then
+    # (prebuilt, or its client-patch/build-mpqpack.sh + StormLib); degrade gracefully if absent.
+    # The toolchain lives in the mod-era-talents module clone.
+    if [[ -x "$ERA_MOD/client-patch/mpqpack" && -x "$ERA_MOD/client-patch/mpqread" ]]; then
       echo "==> Merging era-talent client spells into patch-V.mpq"
       MERGED="$(mktemp -u).mpq"
-      if bash "$ROOT/client-patch/merge-into-patch.sh" "$DATADIR/patch-V.mpq" "$MERGED" >/dev/null 2>&1; then
+      if bash "$ERA_MOD/client-patch/merge-into-patch.sh" "$DATADIR/patch-V.mpq" "$MERGED" >/dev/null 2>&1; then
         mv -f "$MERGED" "$DATADIR/patch-V.mpq"
       else
         rm -f "$MERGED"
         echo "NOTE: era-talent client-spell merge failed; patch-V.mpq staged without custom icons"
       fi
     else
-      echo "NOTE: client-patch/mpqpack+mpqread not built — patch-V.mpq staged WITHOUT era-talent"
-      echo "      custom debuff icons. Run client-patch/build-mpqpack.sh then re-run this script."
+      echo "NOTE: mod-era-talents' client-patch/mpqpack+mpqread not built — patch-V.mpq staged WITHOUT"
+      echo "      era-talent custom debuff icons. Run azerothcore-wotlk/modules/mod-era-talents/client-patch/build-mpqpack.sh"
+      echo "      then re-run this script."
     fi
   else
     echo "NOTE: '7z' (p7zip) needed to stage IP patch-V.mpq; skipping"

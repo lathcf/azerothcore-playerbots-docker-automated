@@ -11,7 +11,7 @@
 #     mod-aoe-loot, ...   = any other module under azerothcore-wotlk/modules/
 #
 # --- ACTIVE PINS ---
-# Every repo our tracked patches (patches/0001-0027) modify is pinned so an upstream push can
+# Every repo our tracked patches (patches/0001-0017, plus mod-era-talents' own) modify is pinned so an upstream push can
 # never break an update. Bumped 2026-09-07 (from core 190184a0 / mpb ba46fcd / IP df10164 /
 # bridge 5e5ff75 — 416 / 65 / 2 / 36 commits behind): all patches re-verified applying cleanly
 # in setup.sh order at these tips. 0002 (Heigan dance) was RETIRED — upstream re-enabled the
@@ -31,3 +31,7 @@ mod-individual-progression 977e2005bacf97f35e506eb27b8af6b2ea1136af
 # tip. Upstream REWROTE the bridge's main as an orphan history (no shared ancestry with 5e5ff75) —
 # patch 0022 was re-verified against it. Pinned like the others so an update can't outrun 0022.
 mod-multibot-bridge 759c100d5e508b9af28531a2642ded70619828ba
+# era talents module (own repo: https://github.com/lathcf/mod-era-talents). The sha is a commit on the PUBLIC
+# GitHub history (an orphan branch; the private Gitea history has different shas) — production clones from
+# GitHub, so a private sha would never fetch. Bump after each public sync, after verifying a build.
+mod-era-talents f68d8c76a36222a985f19c491f79dc9a5c7d044b

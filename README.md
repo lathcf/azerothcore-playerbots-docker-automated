@@ -796,54 +796,24 @@ automatically by `setup.sh`/`update.sh`.
 
 ## Era talents (mod-era-talents)
 
-A custom local module (in `modules/mod-era-talents/`, compiled into the build by `setup.sh`) that
-gives **era-authentic talent trees** to characters progressing through the expansions: while a
-character is in the Vanilla or TBC era, the stock WotLK talent window is fenced off and replaced by
-that era's real trees for its class — and the talents actually do what their tooltips say.
+**Era-authentic talent trees** for characters progressing through the expansions: while a character
+is in the Vanilla or TBC era (per mod-individual-progression), the stock WotLK talent window is
+replaced by that era's real trees for its class — and the talents do what their tooltips say (about
+3,600 custom spell rows in a reserved band; stock spells are never modified, so WotLK-era characters
+are unaffected). Expansion advances are a player choice at Anduin/Thrall. Bots can use era builds too.
 
-**The mod it extends.** This server runs
-[mod-individual-progression](https://github.com/ZhengPeiRu21/mod-individual-progression) (IP),
-which gives every character its **own expansion timeline on a single WotLK realm**: a new character
-starts in Vanilla (level cap 60, Vanilla dungeons and raids, era-scaled gear and difficulty),
-unlocks TBC after clearing Naxxramas and WotLK after Sunwell, and sees the world phased to its era.
-It's on by default (`IP_ENABLE=1`; the `IP_*` block in `.env` mirrors its options). What IP does
-**not** touch is the talent system: a "Vanilla" character still gets WotLK's 71-point trees, WotLK
-talents, and glyphs. Era talents is an enhancement that closes that gap — it depends on IP for a
-character's era (`setup.sh` forces it off if IP is disabled) and never edits IP itself.
-
-**What you get:**
-- **Era trees for all nine original classes, in both Vanilla (51 points) and TBC (61 points)**,
-  authored from each era's own data. WotLK-era characters and Death Knights keep the stock trees.
-- **Correct talents, not cosmetic ones.** Where WotLK kept a talent's behaviour and numbers, the
-  stock passive is reused; where WotLK retuned or removed it, the mod ships its own server-side
-  version — restored abilities (the Vanilla seal/judgement system, Bloodthirst, Conflagrate, the
-  Vanilla Vampiric Embrace, TBC Mangle, the full Vanilla/TBC totem set, …), procs, and per-rank
-  passives: about 3,600 custom spell rows in a reserved id band. Stock spells are never modified,
-  so WotLK-era characters on the same realm are unaffected. **See
-  [Era talents — class by class](docs/era-talents-classes.md)** for what each class gets.
-- **Era-correct spellbooks and glyphs.** WotLK-only talents and their spells are stripped in
-  earlier eras, and glyphs are WotLK-only (`ERATALENTS_GLYPHGATE`; Death Knights exempt).
-- **Real expansion transitions.** Crossing into TBC or WotLK wipes talents for a full respec into
-  the new trees. Because of that, advancing is a **player choice**: when eligible, Anduin Wrynn
-  (Alliance) / Thrall (Horde) offer "Progress to the next expansion" with a confirm popup
-  (`IP_MANUAL_ERA_ADVANCE=1`, default). Respecs go through the class trainer as usual (gold charged).
-- **Bots too (optional).** With `ERATALENTS_BOTS=1`, bots in the Vanilla (1–60) and TBC (61–70)
-  level bands spend authored era builds for their spec, the bot AI uses the era versions of its
-  spells, and their consumables/glyphs are era-gated. Default 0 (bots keep stock WotLK talents).
-
-**Client side (each player's PC)** — two pieces, both staged into `client-addons/` by
-`./fetch-client-addons.sh`:
-- the **EraTalents addon** (required — it *is* the talent window in Vanilla/TBC; the normal talent
-  button/key opens it), installed like any addon;
-- **`patch-V.mpq`** (IP's own client data patch with this mod's custom buff/debuff rows merged in) —
-  copy it to `World of Warcraft/Data/`. Without it, custom debuffs still work but show no icon; the
-  addon warns in chat if a player's copy is from a stale generation.
+It lives in its own repo — **[lathcf/mod-era-talents](https://github.com/lathcf/mod-era-talents)** —
+and `setup.sh` installs it here automatically (clone, patches, build). What each class gets:
+[Era talents — class by class](https://github.com/lathcf/mod-era-talents/blob/main/docs/era-talents-classes.md).
 
 **Enable / tune** (`.env`, then re-run `./setup.sh`): `ERATALENTS_ENABLE` (default 1, requires
-`IP_ENABLE=1`), `ERATALENTS_BOTS`, `ERATALENTS_GLYPHGATE`, `ERATALENTS_DEBUG`,
-`IP_MANUAL_ERA_ADVANCE`. GM/console commands: `.eratalents status|doctor|reset|learn <char>` —
-`doctor` is the first stop for any "this talent doesn't work" report. Authoring or changing a
-talent: read [`docs/era-talents-framework.md`](docs/era-talents-framework.md) first.
+`IP_ENABLE=1`), `ERATALENTS_BOTS` (default 0), `ERATALENTS_GLYPHGATE`, `ERATALENTS_DEBUG`,
+`IP_MANUAL_ERA_ADVANCE`. GM/console: `.eratalents status|doctor|reset|learn <char>` — `doctor` first
+for any "this talent doesn't work" report.
+
+**Client side (each player's PC)**, both staged into `client-addons/` by `./fetch-client-addons.sh`:
+the **EraTalents addon** (required — it *is* the talent window in Vanilla/TBC) and **`patch-V.mpq`**
+(IP's client patch with this mod's custom buff/debuff rows merged in) → `World of Warcraft/Data/`.
 
 ## Backups & data safety
 Everything (characters, gear, gold, guilds, AH) lives in MySQL in a persistent Docker volume,
@@ -983,10 +953,10 @@ star and support the original projects; they did the hard part.
   jobs); the battle-invite and siege-vehicle AI ship as fork patches `patches/0003`/`0004`.
 - **`modules/mod-ahbot-price/`** — read-only `.ahprice` AH price lookup, paired with the
   **`AHPrice`** client addon (`client-addons-src/AHPrice/`).
-- **`modules/mod-era-talents/`** — era-authentic Vanilla/TBC talent trees for Individual
-  Progression characters (and optionally bots), paired with the **`EraTalents`** client addon
-  (`client-addons-src/EraTalents/`) and a `patch-V.mpq` merge; the pieces that live in core code
-  ship as fork patches (`patches/0018`–`0027`). See [Era talents](#era-talents-mod-era-talents).
+- **[mod-era-talents](https://github.com/lathcf/mod-era-talents)** (own repo, installed by
+  `setup.sh`) — era-authentic Vanilla/TBC talent trees for Individual Progression characters (and
+  optionally bots), with the **`EraTalents`** client addon, a `patch-V.mpq` merge and its own core /
+  IP / playerbots patches. See [Era talents](#era-talents-mod-era-talents).
 - **Scripted raid strategies** (`patches/0006`, `0007`, `0014`, `0016`, …) — authored bot
   AI for hard raid encounters (Heigan, Kologarn, Lich King p3, Sunwell, AQ40 Twins), plus core
   performance and correctness patches, applied onto the fork by `setup.sh`/`update.sh`.

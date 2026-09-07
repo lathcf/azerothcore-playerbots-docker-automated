@@ -70,6 +70,12 @@ apply_patches () {
       exit 1
     fi
   done
+  # mod-era-talents ships its own patch tree (core + IP always; playerbots/bridge when present).
+  # Runs AFTER ours so 0012's Unit.cpp hunk lands before its Shatter/Wand/Molten Fury hunks —
+  # the order every one of its Unit.cpp patches was cut against.
+  if [[ -x "$AC_DIR/modules/mod-era-talents/apply-patches.sh" ]]; then
+    "$AC_DIR/modules/mod-era-talents/apply-patches.sh" "$AC_DIR"
+  fi
 }
 
 update_repo "$AC_DIR" "AzerothCore (playerbots fork)"
@@ -84,7 +90,7 @@ apply_patches
 
 # Re-sync in-repo modules so source edits land before rebuild (same list as setup.sh's
 # LOCAL_MODULES — a module missing here rebuilds from a stale copy after every update).
-for lm in mod-playerbot-chatter mod-raid-roster mod-ahbot-price mod-wintergrasp-bots mod-arena-roster mod-era-talents; do
+for lm in mod-playerbot-chatter mod-raid-roster mod-ahbot-price mod-wintergrasp-bots mod-arena-roster; do
   if [[ -d "$ROOT/modules/$lm" ]]; then
     echo "==> Syncing local module: $lm"
     rm -rf "$AC_DIR/modules/$lm"
