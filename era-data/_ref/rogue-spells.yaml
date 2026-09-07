@@ -1,0 +1,270 @@
+# Stock Rogue spell reference — live-verified from Spell.dbc (SpellClassSet=8, SPELLFAMILY_ROGUE) +
+# `lookup spell` on the dev-box worldserver console (2026-08-17). DO NOT guess ids/flags; see
+# hunter-spells.yaml / warlock-spells.yaml / priest-spells.yaml / mage-spells.yaml for the shape
+# this mirrors and the general verification method.
+#
+# Verification method (Phase 6 Task 3):
+#   - Spell.dbc pulled live out of the running container:
+#       docker exec ac-worldserver cat /azerothcore/env/dist/data/dbc/Spell.dbc > /tmp/.../Spell.dbc
+#   - spells: flagsA/flagsB/flagsC = SpellClassMask_1/_2/_3 (the spell's OWN identity mask — what a
+#     SPELLMOD's EffectSpellClassMask must intersect to bind it) read straight from that DBC via
+#       python3 tools/dump_spell_family.py <Spell.dbc> tools/spell_dbc_columns.txt --names "..." (comma-separated, exact Name_Lang_enUS)
+#     Every rank of every multi-rank line below was dumped; the recorded mask is the SHARED mask
+#     across the player-cast ranks, and every NPC/decoy id sharing the same NAME but a different
+#     family/mask is called out explicitly (this family has an unusual number of them — Rogue is
+#     an old class and many ability names were reused for boss/mob spells and for other classes'
+#     unrelated talents of the same name).
+#   - Effect-level detail (Effect_N / EffectAura_N / EffectSpellClassMaskA/B_N / EffectMiscValue_N /
+#     ProcChance / ProcTypeMask) came from
+#       python3 tools/dump_spell_effects.py <Spell.dbc> tools/spell_dbc_columns.txt --ids ... --cols ...
+#     Aura numbers and effect numbers were resolved against the fork's OWN
+#     azerothcore-wotlk/src/server/shared/SharedDefines.h (SPELL_EFFECT_*) and
+#     azerothcore-wotlk/src/server/game/Spells/Auras/SpellAuraDefines.h (SPELL_AURA_*), and the
+#     SpellMod op table against azerothcore-wotlk/src/server/game/Spells/SpellDefines.h
+#     (SPELLMOD_*) — never from memory. CORRECTION to the task prompt: in THIS fork's enum,
+#     SPELL_EFFECT_ADD_EXTRA_ATTACKS = 19 and SPELL_EFFECT_ADD_COMBO_POINTS = 80 (NOT 3 / 40 as the
+#     prompt guessed). Both have live dispatch-table entries in SpellEffects.cpp
+#     (`&Spell::EffectAddExtraAttacks` / `&Spell::EffectAddComboPoints`, confirmed by grep) and BOTH
+#     are proven to fire from a plain TRIGGERED spell by stock precedent — see triggers: below
+#     (Sword Specialization -> 16459, Seal Fate -> 14189, Ruthlessness -> 14157).
+#   - grants: stock ids resolved on the LIVE dev-box worldserver via
+#       python3 tools/wgconsole.py <out> "lookup spell <name>" "wait:2" ...
+#     taking the rank-1 [talent] entry. Raw output kept at /tmp/claude-1000/rids.out + rids2.out
+#     during the task. All 8 expected ids came back exactly as predicted — no correction needed.
+#   - weaponSubclassMasks: ITEM_SUBCLASS_WEAPON_* bit positions read from the fork's OWN
+#     azerothcore-wotlk/src/server/game/Entities/Item/ItemTemplate.h — see that section below,
+#     the task prompt's assumed sword/dagger bit positions were WRONG and are corrected there.
+#
+# HELPER-ID CHECK (Task 3 Step 1) — run 2026-08-17, result ALL FREE:
+#   grep -rn "93298[3-9]|93299[2-8]" era-data/ modules/mod-era-talents/data/sql/
+#     client-addons-src/EraTalents/data/  -> no hits (rogue reserves 932983-932989 + 932992-932998).
+#
+# HELPER ALLOCATION as actually shipped (keep this current — it is the claim ledger):
+#   932983  Preparation Vanilla clone (node 18447; bound to era_rog_preparation, resets Blind)
+#   932984  Premeditation Vanilla clone — CLAIMED 2026-09-06 by the final-review fix round
+#           (node 18451; template 14183 at durationIndex 1 = Vanilla's 10 s retain window,
+#           mirroring the TBC clone 947787; closes accepted gap G-39)
+#   932985  Hemorrhage rank 1 Vanilla clone (node 18449)
+#   932986  Hemorrhage rank 2 Vanilla clone (trainer-taught off 932985)
+#   932987  Hemorrhage rank 3 Vanilla clone (trainer-taught off 932986)
+#   932988  Mace Specialization authored 3-sec stun (node 18428 proc trigger)
+#   932989  Riposte Vanilla clone — CLAIMED 2026-09-03 by the fix round (node 18423; see
+#           grants.riposte below and the helper comment in era-data/vanilla/rogue.yaml)
+#   932992-932998  FREE
+# Adrenaline Rush's Vanilla clone is 932770 — outside this reserved slice (an earlier free-gap pick,
+# recorded here so a reader does not go hunting for it in 932983-932998).
+
+familyName: 8            # ROGUE (confirmed: every player-cast spell below dumped SpellClassSet=8)
+
+spells:                  # SpellClassMask_1..3 of each stock base spell an `affects:` targets (rank-1 id)
+  # --- Combo-point builders --------------------------------------------------------------------
+  "Sinister Strike":     { id: 1752,  flagsA: 8388610,  flagsB: 0, flagsC: 0 }  # bits 1,23; ranks 1752/1757-1760/8621/11293/11294/14873/15581/15667/19472/26861/26862/48637/48638/57640/59409/60195 all identical. (46558/69920/71145 family=0 decoys — NOT this spell.)
+  "Backstab":            { id: 53,    flagsA: 8388612,  flagsB: 0, flagsC: 0 }  # bits 2,23; ranks 53/2589-2591/8721/11279-11281/25300/26863/48656/48657 all identical. Many same-named family=0 decoys exist (7159/15582/15657/22416/30992/34614/37685/52540/58471/63754/71410/72427) — do not bind them.
+  "Ambush":              { id: 8676,  flagsA: 8389120,  flagsB: 0, flagsC: 0 }  # bits 9,23; ranks 8676/8724/8725/11267-11269/24337/27441/39669/41390/48689-48691 all identical. (39668/56239 family=0 decoys.)
+  "Hemorrhage":          { id: 16511, flagsA: 41943040, flagsB: 0, flagsC: 0 }  # bits 23,25; ranks 16511/17347/17348/26864/48660 (5 ranks — see grants.hemorrhage). (30478/37331/45897/65954 family=0 decoys — same name, no family bit.)
+  "Gouge":               { id: 1776,  flagsA: 8,         flagsB: 0, flagsC: 0 } # bit 3; ranks 1776/1777/8629/11285/11286/38764 all identical. (12540/13579/24698/28456/29425/34940/36862/38863 family=0 decoys.)
+  # --- Finishers --------------------------------------------------------------------------------
+  "Eviscerate":          { id: 2098,  flagsA: 8519680,  flagsB: 0, flagsC: 0 }  # bits 17,23; ranks 2098/6760-6762/8623/8624/11299/11300/15691/15692/26865/27611/31016/41177/46189/48667/48668/57641/60008/71933 all identical. (65957/67709/68094-68096/68317 family=0 decoys.)
+  "Rupture":             { id: 1943,  flagsA: 1048576,  flagsB: 0, flagsC: 0 }  # bit 20; ranks 1943/8639/8640/11273-11275/14874/14903/15583/26867/48671/48672 all identical.
+  "Slice and Dice":      { id: 5171,  flagsA: 262144,   flagsB: 0, flagsC: 0 }  # bit 18; ranks 5171/6774 both identical. (6434 family=8 mask 0 is a DIFFERENT ability — dump: Effect_1=6 aura138 MOD_MELEE_HASTE, SpellLevel 6, NOT a rogue player finisher; 30470/43547/60847 family=0 decoys.)
+  "Kidney Shot":         { id: 408,   flagsA: 2097152,  flagsB: 0, flagsC: 0 }  # bit 21; ranks 408/8643/27615/30621/30832 identical. (32864/41389/49616 family=8 mask 0 — empty-mask NPC copies; 72335 family=0.)
+  "Expose Armor":        { id: 8647,  flagsA: 524288,   flagsB: 0, flagsC: 0 }  # bit 19; ranks 8647/8649/8650/11197/11198/26866/48669 identical. (60842 family=0 decoy.)
+  # --- Openers / CC ---------------------------------------------------------------------------
+  "Garrote":             { id: 703,   flagsA: 256,      flagsB: 0, flagsC: 0 }  # bit 8; ranks 703/8631-8633/11289/11290/26839/26884/48675/48676 identical. (8818 family=0; 37066 family=8 mask 0 empty-mask decoy.)
+  "Cheap Shot":          { id: 1833,  flagsA: 1024,     flagsB: 0, flagsC: 0 }  # bit 10; ranks 1833/14902/30986 identical. (6409/31819/31843/34243 family=0 decoys.)
+  "Sap":                 { id: 2070,  flagsA: 128,      flagsB: 0, flagsC: 0 }  # bit 7; ranks 2070/6770/11297/51724 identical. (30980 family=8 mask 0 is a DIFFERENT ability — dump: Effect_1=6 aura12 MOD_STUN, SpellLevel 10, a mob "Sap"-named stun, NOT the player CC.)
+  "Kick":                { id: 1766,  flagsA: 16,       flagsB: 0, flagsC: 0 }  # bit 4; ranks 1766-1769/38768 identical. Every OTHER "Kick"-named id (1770/3466/11978/15610/15614/27613/27814/29560/29586/30460/31402/32105/33424/34802/36033/38625/41395/43518/45356) is family=0 — unrelated NPC/other-class interrupts sharing the name.
+  "Blind":               { id: 2094,  flagsA: 16777216, flagsB: 0, flagsC: 0 } # bit 24; single player rank. (21060/34654/34694/42972 family=8 mask=(-2130706432,0,0) is a DIFFERENT ability entirely — dump on 21060: Effect_1=6 aura33 MOD_DECREASE_SPEED, SpellLevel 1 — an unrelated slow effect that happens to share the name; 43433/65960 family=0.)
+  # --- Defensive / utility ----------------------------------------------------------------------
+  "Feint":               { id: 1966,  flagsA: 134217728, flagsB: 0, flagsC: 0 } # bit 27; ranks 1966/6768/8637/11303/25302/27448/48658/48659 identical.
+  "Vanish":              { id: 1856,  flagsA: 2048,     flagsB: 0, flagsC: 0 }  # bit 11; ranks 1856/1857/11327/11329/26888/26889/27617/44290 identical. Many family=0 decoys (24223/24228-24233/24699/29448/31619/35205/39667/41476/41479/55964); 71400 is family=3 (SPELLFAMILY_MAGE!) — a total name collision, not rogue at all.
+  "Stealth":             { id: 1784,  flagsA: 4194304,  flagsB: 0, flagsC: 0 }  # bit 22; ranks 1784-1787 identical (4 level-scaling ranks, not talent-granted). Many family=0 decoys (8822/30831/30991/31526/31621/32199/32615/34189/42347/42866/42943/52188/58506).
+  "Sprint":              { id: 2983,  flagsA: 64,       flagsB: 0, flagsC: 0 }  # bit 6; ranks 2983/8696/11305/61922 identical. (32720/48594/56354 family=0 — other classes' "Sprint".)
+  "Evasion":             { id: 5277,  flagsA: 32,       flagsB: 0, flagsC: 0 }  # bit 5; ranks 5277/15087/26669/37683/38541 identical (single-rank in practice — no rank progression via talent). (4086/31379/67354/67378/67380/70190 family=0 decoys.)
+  # --- Talent-granted actives that are ALSO `affects:` targets ----------------------------------
+  # (id is identical to grants: below — recorded here too because Lethality/other spellmods bind
+  #  Ghostly Strike/Hemorrhage/Gouge by family mask, not by id.)
+  "Cold Blood":          { id: 14177, flagsA: 0, flagsB: 64,  flagsC: 0 }        # word2 bit 6; single rank.
+  "Riposte":             { id: 14251, flagsA: 0, flagsB: 256, flagsC: 0 }        # word2 bit 8; single rank. WARNING: 34097/34099/41392/41393 are ALSO family=8 "Riposte" but mask=(-2147483648,0,0) (word1 bit 31) — dump on 34097: Effect_1=31 SCRIPT_EFFECT, SpellLevel 0 — an NPC/boss riposte-punish effect, NOT the rogue talent. Do not bind that bit.
+  "Blade Flurry":        { id: 13877, flagsA: 1073741824, flagsB: 2048, flagsC: 0 } # word1 bit 30 + word2 bit 11; single rank. (22482/44181/51211/65956 family=0; 33735 family=8 mask 0 is a DIFFERENT ability — dump: Effect_1=6 aura138 MOD_MELEE_HASTE, SpellLevel 1, unrelated.)
+  "Adrenaline Rush":     { id: 13750, flagsA: 0, flagsB: 128, flagsC: 0 }        # word2 bit 7; single rank. (28752 is family=9 SPELLFAMILY_HUNTER — total name collision, not rogue; 28753/71258 family=0.)
+  "Ghostly Strike":      { id: 14278, flagsA: 1140850688, flagsB: 0, flagsC: 0 } # word1 bits 26,30; single rank. (31022 family=0 decoy.)
+  "Preparation":         { id: 14185, flagsA: 0, flagsB: 4096, flagsC: 0 }       # word2 bit 12; single rank. (44521 is family=4 SPELLFAMILY_WARRIOR — name collision, not rogue; 26222/32727/32728/36850/40941/48267 family=0.)
+  "Premeditation":       { id: 14183, flagsA: 0, flagsB: 32,   flagsC: 0 }       # word2 bit 5; single rank.
+  # --- Poison identity bits (for `affects:` on Vile Poisons / Improved Poisons) --------------------
+  # Each poison's SHARED flagsA identity bit (carried by BOTH its apply/weapon and on-hit proc id —
+  # see the `poisons:` section below for the id pairs). flagsB deliberately 0: the DoT-poison PROC
+  # ids additionally carry word2 bit 19 (524288), but a SPELLMOD binds by the flagsA identity, and
+  # zeroing flagsB keeps the mask to the poison identity alone. OR of all five flagsA = 268558336,
+  # which is EXACTLY stock Improved Poisons 21881's EffectSpellClassMaskA_1 (verified) — proof these
+  # five bits are the complete Vanilla poison set (21881's extra word2 bit 4 = a post-Vanilla poison).
+  "Deadly Poison":       { id: 2823,  flagsA: 65536,     flagsB: 0, flagsC: 0 }   # bit 16
+  "Instant Poison":      { id: 8679,  flagsA: 8192,      flagsB: 0, flagsC: 0 }   # bit 13
+  "Wound Poison":        { id: 13219, flagsA: 268435456, flagsB: 0, flagsC: 0 }   # bit 28
+  "Mind-numbing Poison": { id: 5761,  flagsA: 32768,     flagsB: 0, flagsC: 0 }   # bit 15
+  "Crippling Poison":    { id: 3408,  flagsA: 16384,     flagsB: 0, flagsC: 0 }   # bit 14
+
+poisons:                 # each poison is a PAIR of stock ids: the item-applied WEAPON spell
+                         # (Effect_1 = 54 SPELL_EFFECT_WEAPON, ImplicitTarget none, used to coat the
+                         # weapon) and the ON-HIT proc spell that actually lands on the target
+                         # (Effect_1 = 6 APPLY_AURA for the 4 DoT poisons, or Effect_1 = 2
+                         # SCHOOL_DAMAGE for Instant Poison — it isn't a DoT). BOTH carry the SAME
+                         # flagsA identity bit; only the DoT-poison PROC id additionally carries
+                         # word-2 bit 524288 (19) — Instant Poison's proc does NOT (verified: both
+                         # 8679 and 8680 dump flagsB=0). ids below are the SpellLevel 20-32 base
+                         # rank; each poison also has 1-2 further same-mask ids at SpellLevel 50-70
+                         # that are NPC-cast copies (Attributes 262144) or a level-gated reissue —
+                         # not relevant to a Vanilla-era rogue.
+  "Deadly Poison":
+    apply: { id: 2823, flagsA: 65536, flagsB: 0, flagsC: 0 }        # Effect_1=54 SPELL_EFFECT_WEAPON
+    proc:  { id: 2818, flagsA: 65536, flagsB: 524288, flagsC: 0 }   # Effect_1=6 APPLY_AURA / EffectAura_1=3 PERIODIC_DAMAGE
+  "Instant Poison":
+    apply: { id: 8679, flagsA: 8192, flagsB: 0, flagsC: 0 }         # Effect_1=54
+    proc:  { id: 8680, flagsA: 8192, flagsB: 0, flagsC: 0 }         # Effect_1=2 SCHOOL_DAMAGE (direct hit, NOT an aura — no flagsB bit)
+  "Wound Poison":
+    apply: { id: 13219, flagsA: 268435456, flagsB: 0, flagsC: 0 }   # Effect_1=54
+    proc:  { id: 13218, flagsA: 268435456, flagsB: 524288, flagsC: 0 } # Effect_1=6 / EffectAura_1=118 MOD_HEALING_PCT (heal-reduction debuff)
+  "Mind-numbing Poison":
+    apply: { id: 5761, flagsA: 32768, flagsB: 0, flagsC: 0 }        # Effect_1=54
+    proc:  { id: 5760, flagsA: 32768, flagsB: 524288, flagsC: 0 }   # Effect_1=6 / EffectAura_1=216 HASTE_SPELLS (cast-speed debuff)
+  "Crippling Poison":
+    apply: { id: 3408, flagsA: 16384, flagsB: 0, flagsC: 0 }        # Effect_1=54 (NOTE: apply is the LOWER id here — order reverses vs the other 4 poisons)
+    proc:  { id: 3409, flagsA: 16384, flagsB: 524288, flagsC: 0 }   # Effect_1=6 / EffectAura_1=33 MOD_DECREASE_SPEED
+  # STOCK Improved Poisons EVIDENCE (bonus precedent for the poison-family SPELLMOD Task 7 needs):
+  # id 21881 (highest-value rank found; 14113-14117/21881 all exist, ranks unconfirmed) is
+  # EffectAura_1=107 ADD_FLAT_MODIFIER, EffectMiscValue_1=18=SPELLMOD_CHANCE_OF_SUCCESS,
+  # EffectSpellClassMaskA_1=268558336 -> bits [13,14,15,16,28] = Instant+Crippling+Mind-numbing+
+  # Deadly+Wound identity bits ALL AT ONCE (word2 bit 4 unaccounted-for here, likely a later-era
+  # poison outside Vanilla scope). THIS is the reference encoding for a "boost all 5 poisons"
+  # SPELLMOD — mask (268558336, 16, 0) hits every apply/proc id's flagsA above in one shot.
+  # Earlier ranks 14113-14117 are narrower (Effect_1 mask 65536 = Deadly only, Effect_2 mask 8192
+  # = Instant only via SPELLMOD_PROC_PER_MINUTE) — record both shapes; Task 7 picks which to clone.
+
+spellmodPrecedents:      # stock rogue SPELLMOD talents that bind MULTIPLE spells: below by family
+                         # mask — the reference encoding Task 7's Lethality/Aggression/Opportunity/
+                         # Improved-Slice-and-Dice analogs must follow. All EffectAura=107/108
+                         # (ADD_FLAT/PCT_MODIFIER), all ranks share one mask (only EffectBasePoints
+                         # scales) — dumped on every rank listed, not just rank 1.
+  Lethality:             # ids 14128/14132/14135/14136/14137 (ranks 1-5, +5/11/17/23/29% crit dmg bonus)
+    misc: 15             # SPELLMOD_CRIT_DAMAGE_BONUS
+    maskA: [637534222, 262, 0]   # word1 bits [1,2,3,25,26,29] + word2 bits [1,2,8]
+    hits: "Sinister Strike(1) + Backstab(2) + Gouge(3) + Hemorrhage(25) + Ghostly Strike(26); word1 bit29 + word2 bits[1,2,8] are post-Vanilla ids outside this scope"
+    # CORRECTION 2026-09-03 (fix round): this line used to gloss word2 bits[1,2,8] as "Mutilate etc.".
+    # Bit 8 of word 2 is RIPOSTE — this same file's `spells:` table says so ("Riposte": flagsB 256).
+    # The CONCLUSION was right (Vanilla Lethality did not list Riposte, so the bit is out of scope
+    # and the node correctly authors its mask from `affects:` names) but the label was wrong, and a
+    # wrong label is what stops the next reader checking. No shipped value changes: measured on the
+    # live world DB 2026-09-03, no Vanilla-band family-8 spell binds word2 bit 8 at all.
+  "Improved Eviscerate":  # ids 14162/14163/14164 (ranks 1-3)
+    misc: 0               # SPELLMOD_DAMAGE
+    maskA: [131072, 0, 0]  # bit 17 = Eviscerate only
+    hits: "Eviscerate"
+  Aggression:             # ids 18427/18428/18429/61330/61331 (ranks 1-3 + 2 more)
+    misc: 0                # SPELLMOD_DAMAGE
+    maskA: [131078, 0, 0]  # bits [1,2,17] = Sinister Strike + Backstab + Eviscerate
+    hits: "Sinister Strike + Backstab + Eviscerate — CORRECTION: the task prompt's guess omitted Backstab; the real dump includes it"
+  Opportunity:             # ids 14057/14072 (ranks 1-2)
+    misc: [0, 22]          # Effect1=SPELLMOD_DAMAGE, Effect2=SPELLMOD_DOT
+    maskA: [516, 6, 0]      # Effect1: word1 bits[2,9]=Backstab+Ambush, word2 bits[1,2]=post-Vanilla ids
+    maskB: [256, 0, 0]      # Effect2: bit8 = Garrote only
+    hits: "Backstab + Ambush (damage) and Garrote (DoT) — CORRECTION: the task prompt's guess included Cheap Shot, but neither effect's mask contains bit 10 (Cheap Shot's identity bit); the real dump does NOT cover Cheap Shot"
+  "Improved Slice and Dice": # ids 14165/14166 (ranks 1-2)
+    misc: 1                 # SPELLMOD_DURATION
+    maskA: [262144, 0, 0]   # bit 18 = Slice and Dice only
+    hits: "Slice and Dice — matches the task prompt's guess exactly"
+
+grants:                  # stock WotLK ids reused by Bound nodes (live-verified via `lookup spell`,
+                         # /tmp/claude-1000/rids.out) — ALL 8 confirmed exactly as the task predicted,
+                         # no corrections needed here.
+                         # NB these are the correct stock IDS; they are NOT a verdict that each stock
+                         # spell's BEHAVIOUR survived Vanilla->WotLK. Two of them have since been
+                         # replaced by era clones after their behaviour was re-checked (preparation
+                         # -> 932983, adrenaline_rush -> 932770), and riposte is the third (see
+                         # below) — resolving an id is step one, not the survival verdict.
+  cold_blood:      { 1: 14177 }   # "14177 - Cold Blood, rank 1 [talent]"
+  riposte:         { 1: 14251 }   # "14251 - Riposte, rank 1 [talent]"
+  # ^ NOT GRANTED ANY MORE (fix round 2026-09-03). Node 18423 grants the Vanilla clone 932989. The
+  #   original Task-8 verdict claimed stock 14251 was "unchanged Vanilla->WotLK (150% weapon damage,
+  #   6s disarm)"; the 2026-09-03 re-dump of ip-dbc/Spell.dbc shows live 14251 is WotLK 3.0.2's
+  #   retune with NO disarm: Effect_1 = 31 WEAPON_PERCENT_DAMAGE 150% (correct), Effect_2 = aura 138
+  #   MOD_MELEE_HASTE bp -21 -> -20% attack speed at EffectMechanic 8 SLOW_ATTACK / DurationIndex 9
+  #   = 30 sec (Vanilla: aura 67 MOD_DISARM, MECHANIC_DISARM, 6 sec), and Effect_3 = 80
+  #   ADD_COMBO_POINTS +1 (Vanilla: nothing). Vanilla 1.12.1 values come from the Daribon skeleton's
+  #   own node-18423 tooltip (era-data/_skeletons/vanilla-rogue.skeleton.yaml: "10 Energy 5 yd range
+  #   Instant 6 sec cooldown ... deals 150% weapon damage and disarms the target for 6 sec"), whose
+  #   header numbers all match stock 14251 — so the clone inherits everything but Effect_2/_3 and
+  #   the DurationIndex. TBC diverges the same way and ships its own clone 947777
+  #   (era-data/_ref/tbc/rogue-spells.yaml node_findings[20428], which is where this defect was
+  #   found and reported cross-era).
+  blade_flurry:    { 1: 13877 }   # "13877 - Blade Flurry, rank 1 [talent]"
+  adrenaline_rush: { 1: 13750 }   # "13750 - Adrenaline Rush, rank 1 [talent]"
+  ghostly_strike:  { 1: 14278 }   # "14278 - Ghostly Strike, rank 1 [talent]"
+  preparation:     { 1: 14185 }   # "14185 - Preparation, rank 1 [talent]"
+  premeditation:   { 1: 14183 }   # "14183 - Premeditation, rank 1 [talent]"
+  hemorrhage:      { 1: 16511, 2: 17347, 3: 17348, 4: 26864, 5: 48660 }  # "16511 - Hemorrhage, rank 1 [talent]"; ranks 2-5 tagged plainly "rank N" by lookup (no [talent] tag on ranks >1, normal for rank-taught spells)
+
+triggers:                # stock ids a data-proc/trigger node casts (live-verified against the DBC)
+  # ---- Weapon-spec extra-attack chain (Task-3 Step 3 ask) --------------------------------------
+  sword_specialization_talent: { 1: 12281, 2: 12812, 3: 12813, 4: 12814, 5: 12815 }
+  # ^ family=0 (no SPELLFAMILY_ROGUE restriction — shared spell definition, same ids a Warrior Arms
+  #   talent tree entry would also point at). Effect_1=6 APPLY_AURA, EffectAura_1=42
+  #   PROC_TRIGGER_SPELL, EffectTriggerSpell_1=16459, ProcChance=2 (rank1; scales 2/4/6/8/10%),
+  #   ProcTypeMask=20 (melee hit). Confirms the "chance of extra attack on melee hit" mechanic.
+  sword_spec_extra_attack: 16459
+  # ^ "16459 - Sword Specialization, rank 1" (no tag; the TRIGGERED payload, not a talent itself).
+  #   Effect_1 = 19 = SPELL_EFFECT_ADD_EXTRA_ATTACKS (fork's real enum value — NOT 3), EffectBasePoints_1=0
+  #   -> 1 extra attack. PROVES effect 19 fires correctly from a plain triggered spell (SpellEffects.cpp
+  #   dispatch table confirmed: `&Spell::EffectAddExtraAttacks` at index 19).
+  # ---- Combo-point-on-proc chain (corroborates effect 80 firing from a trigger) ----------------
+  seal_fate_talent:   { 1: 14186, 2: 14190, 3: 14193, 4: 14194, 5: 14195 }
+  seal_fate_combo:    14189   # family=0; Effect_1=80=SPELL_EFFECT_ADD_COMBO_POINTS, EffectBasePoints_1=0 -> +1 combo point. Triggered via aura42 PROC_TRIGGER_SPELL, ProcChance 20, ProcTypeMask 87376 (crit).
+  ruthlessness_talent: { 1: 14156, 2: 14160, 3: 14161 }
+  ruthlessness_combo: 14157   # family=0; identical Effect_1=80 shape, EffectBasePoints_1=0. Triggered from 14156 the same way.
+  # ^ Both confirm: SPELL_EFFECT_ADD_COMBO_POINTS (fork enum value 80, NOT 40 as guessed) has a live
+  #   dispatch entry (`&Spell::EffectAddComboPoints`, SpellEffects.cpp) and fires cleanly from a
+  #   plain triggered spell with no owning-caster special-case — the exact mechanic any authored
+  #   "Delta 1/2" combo-point helper needs.
+  # ---- Mace weapon-spec: NOT an extra-attack/stun chain in THIS DBC ----------------------------
+  mace_specialization_talent_a: { 1: 12284, 2: 12701, 3: 12702, 4: 12703, 5: 12704 }
+  mace_specialization_talent_b: { 1: 13709, 2: 13800, 3: 13801, 4: 13802, 5: 13803 }
+  mace_specialization_passive:  { 1: 20864 }   # non-talent learned passive
+  mace_specialization_passive2: { 1: 59224 }   # non-talent learned passive, higher tier
+  # ^ RESOLVED: `lookup spell Mace Stun` returns "No spells found!" — there is no separately named
+  #   trigger spell. The task prompt's premise ("canonical Mace Stun Effect is 5530") is WRONG for
+  #   this DBC: id 5530 is itself "Mace Specialization, rank 1" (untalented base), Effect_1=30
+  #   (SPELL_EFFECT_PROFICIENCY-class weapon-skill effect, EffectBasePoints_1=99), NOT a stun and
+  #   NOT a trigger spell. The actual TALENT ranks (12284/13709 chains) are Effect_1=6 APPLY_AURA,
+  #   EffectAura_1=280=SPELL_AURA_MOD_ARMOR_PENETRATION_PCT, EffectBasePoints scaling 2/4/6/8/10% —
+  #   WotLK reworked Mace Specialization from Classic's "chance to stun" into a flat Armor
+  #   Penetration passive with NO proc/trigger component at all. (The non-talent passives 20864/
+  #   59224 are EffectAura_1=240=SPELL_AURA_MOD_EXPERTISE, a further TBC/WotLK-era revision, also
+  #   stun-free.) A Vanilla-flavored "Mace Specialization: chance to stun" analog CANNOT be Bound —
+  #   it has zero stock support in 3.3.5a and must be AUTHORED as a custom proc (Task 4/7's call).
+
+weaponSubclassMasks:     # equipSubclass bitmasks for weapon-gated proc/multi rows (Task 7 consumer).
+                         # SOURCE: azerothcore-wotlk/src/server/game/Entities/Item/ItemTemplate.h,
+                         # enum ItemSubclassWeapon (verified directly, not from memory).
+  equipClass: 2          # ITEM_CLASS_WEAPON (ItemTemplate.h:293) — matches the task prompt.
+  # CORRECTIONS to the task prompt's assumed bit positions — the real enum order is
+  # AXE=0, AXE2=1, BOW=2, GUN=3, MACE=4, MACE2=5, POLEARM=6, SWORD=7, SWORD2=8, obsolete=9,
+  # STAFF=10, EXOTIC=11, EXOTIC2=12, FIST=13, MISC=14, DAGGER=15, THROWN=16, SPEAR=17,
+  # CROSSBOW=18, WAND=19, FISHING_POLE=20 (ItemTemplate.h:344-364):
+  sword1h: 128    # 1 << 7  (ITEM_SUBCLASS_WEAPON_SWORD)  — prompt said "1<<2 = 4"; WRONG, corrected
+  sword2h: 256    # 1 << 8  (ITEM_SUBCLASS_WEAPON_SWORD2) — prompt said "1<<7 = 128"; WRONG, corrected
+  swordSpecMask: 384   # sword1h | sword2h — prompt's claimed "Sword Spec mask 132" is WRONG; real value is 384 (128+256)
+  mace1h: 16      # 1 << 4  (ITEM_SUBCLASS_WEAPON_MACE)   — matches the prompt exactly
+  mace2h: 32      # 1 << 5  (ITEM_SUBCLASS_WEAPON_MACE2)  — matches the prompt exactly
+  maceSpecMask: 48     # mace1h | mace2h — matches the prompt's claimed "Mace Spec mask 48" exactly
+  dagger: 32768   # 1 << 15 (ITEM_SUBCLASS_WEAPON_DAGGER) — prompt said "1<<11 = 2048"; WRONG, corrected
+  fist: 8192      # 1 << 13 (ITEM_SUBCLASS_WEAPON_FIST)   — matches the prompt exactly
+
+coreScriptSupport:       # what the fork's C++ actually implements for these ids (grepped src/server,
+                         # 2026-08-17) — recorded for Task 4/6's Bound-vs-Authored calls.
+  # SPELL_EFFECT_ADD_EXTRA_ATTACKS = 19 and SPELL_EFFECT_ADD_COMBO_POINTS = 80 both dispatch
+  # (SpellEffects.cpp, grep confirmed):
+  #   &Spell::EffectAddExtraAttacks   // 19 SPELL_EFFECT_ADD_EXTRA_ATTACKS
+  #   &Spell::EffectAddComboPoints    // 80 SPELL_EFFECT_ADD_COMBO_POINTS
+  # No spell_hun_*-style rogue-specific script handlers were searched in this task (out of scope —
+  # Task 3 is DBC + live-id resolution only); a Task 6-equivalent Bound-vs-Authored pass for any
+  # rogue pet/proc talent should grep src/server/scripts/Spells/spell_rogue.cpp directly, the same
+  # way hunter-spells.yaml's coreScriptSupport did for spell_hunter.cpp.

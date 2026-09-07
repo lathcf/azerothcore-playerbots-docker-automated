@@ -1,5 +1,5 @@
 diff --git a/modules/mod-playerbots/src/Ai/Base/ActionContext.h b/modules/mod-playerbots/src/Ai/Base/ActionContext.h
-index f0123c8..bc389c0 100644
+index df65d18..fa3c93b 100644
 --- a/modules/mod-playerbots/src/Ai/Base/ActionContext.h
 +++ b/modules/mod-playerbots/src/Ai/Base/ActionContext.h
 @@ -8,6 +8,7 @@
@@ -8,8 +8,8 @@ index f0123c8..bc389c0 100644
  #include "AddLootAction.h"
 +#include "ArenaCoordActions.h"
  #include "AttackAction.h"
- #include "ShareQuestAction.h"
- #include "BattleGroundTactics.h"
+ #include "AutoMaintenanceOnLevelupAction.h"
+ #include "BattleGroundJoinAction.h"
 @@ -180,6 +181,7 @@ public:
          creators["stoneform"] = &ActionContext::stoneform;
          creators["escape artist"] = &ActionContext::escape_artist;
@@ -18,7 +18,7 @@ index f0123c8..bc389c0 100644
          creators["auto talents"] = &ActionContext::auto_talents;
          creators["auto share quest"] = &ActionContext::auto_share_quest;
          creators["auto maintenance on levelup"] = &ActionContext::auto_maintenance_on_levelup;
-@@ -388,6 +390,7 @@ private:
+@@ -387,6 +389,7 @@ private:
      static Action* stoneform(PlayerbotAI* botAI) { return new CastStoneformAction(botAI); }
      static Action* escape_artist(PlayerbotAI* botAI) { return new CastEscapeArtistAction(botAI); }
      static Action* use_trinket(PlayerbotAI* botAI) { return new UseTrinketAction(botAI); }
@@ -198,18 +198,18 @@ index 0000000..b28c84d
 +
 +#endif
 diff --git a/modules/mod-playerbots/src/Ai/Base/Actions/BattleGroundTactics.cpp b/modules/mod-playerbots/src/Ai/Base/Actions/BattleGroundTactics.cpp
-index dd34abb..926a17f 100644
+index d83ab66..fe0982a 100644
 --- a/modules/mod-playerbots/src/Ai/Base/Actions/BattleGroundTactics.cpp
 +++ b/modules/mod-playerbots/src/Ai/Base/Actions/BattleGroundTactics.cpp
-@@ -8,6 +8,7 @@
+@@ -5,6 +5,7 @@
+  */
  
- #include <algorithm>
- 
+ #include "BattleGroundTactics.h"
 +#include "ArenaCoordValues.h"
  #include "ArenaTeam.h"
  #include "ArenaTeamMgr.h"
  #include "BattleGroundJoinAction.h"
-@@ -4285,30 +4286,77 @@ bool ArenaTactics::Execute(Event /*event*/)
+@@ -4272,28 +4273,77 @@ bool ArenaTactics::Execute(Event /*event*/)
      if (botAI->HasStrategy("buff", BOT_STATE_NON_COMBAT))
          botAI->ChangeStrategy("-buff", BOT_STATE_NON_COMBAT);
  
@@ -244,8 +244,12 @@ index dd34abb..926a17f 100644
 +    if (kill && !ArenaKillTargetValue::IsHealerSpec(bot))  // healer bots keep healing, don't retarget
      {
 -        bool losBlocked = !bot->IsWithinLOSInMap(target) || fabs(bot->GetPositionZ() - target->GetPositionZ()) > 5.0f;
+-
+-        if (losBlocked)
 +        if (bot->GetVictim() != kill)
-+        {
+         {
+-            PathGenerator path(bot);
+-            path.CalculatePath(target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), false);
 +            // Mirror AttackAction::Attack's essentials: select, share via "current target",
 +            // switch to the combat engine and open the auto-attack.
 +            bot->SetSelection(kill->GetGUID());
@@ -256,24 +260,18 @@ index dd34abb..926a17f 100644
 +                      kill->GetName(), kill->GetGUID().ToString(), sharp, tunnelPct);
 +        }
  
--        if (losBlocked)
+-            if (path.GetPathType() != PATHFIND_NOPATH)
+-            {
+-                bot->CastStop();
 +        // Anti-tunnel leash: don't chase further than 30y from the team centroid.
 +        float cx = 0.f, cy = 0.f, cz = 0.f;
 +        uint32 mates = 0;
 +        for (auto const& itr : bg->GetPlayers())
-         {
--            PathGenerator path(bot);
--            path.CalculatePath(target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), false);
++        {
 +            Player* mate = itr.second;
 +            if (!mate || !mate->IsAlive() || mate->GetBgTeamId() != bot->GetBgTeamId())
 +                continue;
  
--            if (path.GetPathType() != PATHFIND_NOPATH)
--            {
--                // If you are casting a spell and lost your target due to LoS, interrupt the cast and move
--                if (bot->IsNonMeleeSpellCast(false, true, true, false, true))
--                    bot->InterruptNonMeleeSpells(true);
--
 -                float x, y, z;
 -                target->GetPosition(x, y, z);
 -                botAI->TellMasterNoFacing("Repositioning to exit the LoS target!");
@@ -305,10 +303,10 @@ index dd34abb..926a17f 100644
          return moveToCenter(bg);
  
 diff --git a/modules/mod-playerbots/src/Ai/Base/Strategy/BattlegroundStrategy.cpp b/modules/mod-playerbots/src/Ai/Base/Strategy/BattlegroundStrategy.cpp
-index 241aeef..4554f28 100644
+index 40ad1c6..cf2a4be 100644
 --- a/modules/mod-playerbots/src/Ai/Base/Strategy/BattlegroundStrategy.cpp
 +++ b/modules/mod-playerbots/src/Ai/Base/Strategy/BattlegroundStrategy.cpp
-@@ -85,4 +85,17 @@ void ArenaStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+@@ -84,4 +84,17 @@ void ArenaStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
  {
      triggers.push_back(
          new TriggerNode("no possible targets", { NextAction("arena tactics", ACTION_BG)}));
@@ -328,10 +326,10 @@ index 241aeef..4554f28 100644
  }
 diff --git a/modules/mod-playerbots/src/Ai/Base/Value/ArenaCoordValues.cpp b/modules/mod-playerbots/src/Ai/Base/Value/ArenaCoordValues.cpp
 new file mode 100644
-index 0000000..2a92ecb
+index 0000000..ae994b8
 --- /dev/null
 +++ b/modules/mod-playerbots/src/Ai/Base/Value/ArenaCoordValues.cpp
-@@ -0,0 +1,200 @@
+@@ -0,0 +1,202 @@
 +/*
 + * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
 + * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
@@ -453,7 +451,9 @@ index 0000000..2a92ecb
 +    if (!botAI)
 +        return 4;  // a real player plays at full sharpness
 +
-+    if (botAI->HasRealPlayerMaster())
++    // upstream 17214b3 renamed HasRealPlayerMaster() -> HasGameClientMaster() (same meaning:
++    // the master is a human at a client, i.e. a real player or a selfbot).
++    if (botAI->HasGameClientMaster())
 +        return 4;
 +
 +    // Grouped with any real player (no playerbot AI attached) => full sharpness.
@@ -586,7 +586,7 @@ index 0000000..ad10a02
 +
 +#endif
 diff --git a/modules/mod-playerbots/src/Ai/Base/ValueContext.h b/modules/mod-playerbots/src/Ai/Base/ValueContext.h
-index 12a7c6f..a5c9b33 100644
+index 269c87a..264478c 100644
 --- a/modules/mod-playerbots/src/Ai/Base/ValueContext.h
 +++ b/modules/mod-playerbots/src/Ai/Base/ValueContext.h
 @@ -12,6 +12,7 @@
@@ -597,7 +597,7 @@ index 12a7c6f..a5c9b33 100644
  #include "AttackerCountValues.h"
  #include "AttackerWithoutAuraTargetValue.h"
  #include "AttackersValue.h"
-@@ -257,6 +258,7 @@ public:
+@@ -259,6 +260,7 @@ public:
          creators["bg type"] = &ValueContext::bg_type;
          creators["rpg bg type"] = &ValueContext::rpg_bg_type;
          creators["arena type"] = &ValueContext::arena_type;
@@ -605,7 +605,7 @@ index 12a7c6f..a5c9b33 100644
          creators["bg role"] = &ValueContext::bg_role;
          creators["bg master"] = &ValueContext::bg_master;
          creators["enemy flag carrier"] = &ValueContext::enemy_fc;
-@@ -510,6 +512,7 @@ private:
+@@ -512,6 +514,7 @@ private:
      static UntypedValue* bg_master(PlayerbotAI* botAI) { return new BgMasterValue(botAI); }
      static UntypedValue* bg_role(PlayerbotAI* botAI) { return new BgRoleValue(botAI); }
      static UntypedValue* arena_type(PlayerbotAI* botAI) { return new ArenaTypeValue(botAI); }

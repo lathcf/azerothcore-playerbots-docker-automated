@@ -114,8 +114,9 @@ struct SetInfo
 // caller in this module — no locking).
 //   byInvType: invType -> (ItemLevel, entry) sorted by ItemLevel, for ilvl-window range
 //     scans. Sourced from mod-playerbots' curated equipCacheNew (its IsValidItem pass
-//     drops test/deprecated/unobtainable items and everything above epic), flattened
-//     across all of that cache's level keys.
+//     drops name-matched test/deprecated/unobtainable items and everything above epic —
+//     but has NO quality floor, so we additionally drop below-uncommon at the build loop
+//     below), flattened across all of that cache's level keys.
 //   reqLevel: entry -> the equipCacheNew KEY it was cached under, i.e. its EFFECTIVE
 //     required level: max(RequiredLevel, questLevel) for quest rewards, RequiredLevel
 //     otherwise. Flattening byInvType destroys that key, and it is the only place the
@@ -150,15 +151,28 @@ GearIndex const& GetIndex()
         for (uint32 lvl = 0; lvl <= kMaxLevel; ++lvl)
             for (InventoryType invType : kInvTypes)
                 for (uint32 itemId : sRandomItemMgr.GetEquipmentNew(lvl, invType))
-                    if (ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId))
-                    {
-                        idx.byInvType[invType].push_back(
-                            { uint16(proto->ItemLevel), itemId });
-                        // Each entry is cached under exactly one key (the quest pass
-                        // dedupes, the template pass skips what the quest pass took), so
-                        // this assignment is unambiguous.
-                        idx.reqLevel[itemId] = uint8(lvl);
-                    }
+                {
+                    ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+                    // GetEquipmentNew's IsValidItem pass has NO quality floor: it keeps
+                    // grey/white items, and its name-based test filter (IsInternalItem)
+                    // matches "Test"/"Deprecated"/... but MISSES dev items like the
+                    // 'Twain Random Sword' (entry 6174) — a grey (POOR) ilvl-20 2H with
+                    // absurd damage that outscored real weapons and got equipped by the
+                    // sub-50 best-in-slot path (which, unlike the set stage, applies no
+                    // quality filter of its own). Restrict the whole pool to uncommon..epic
+                    // here, the single chokepoint feeding both RankedCandidates and PickSet,
+                    // matching the set stage's floor and the module's "real gear = uncommon+"
+                    // design. Above-epic is already dropped by GetEquipmentNew; the upper
+                    // bound is belt-and-braces.
+                    if (!proto || proto->Quality < ITEM_QUALITY_UNCOMMON ||
+                        proto->Quality > ITEM_QUALITY_EPIC)
+                        continue;
+                    idx.byInvType[invType].push_back({ uint16(proto->ItemLevel), itemId });
+                    // Each entry is cached under exactly one key (the quest pass
+                    // dedupes, the template pass skips what the quest pass took), so
+                    // this assignment is unambiguous.
+                    idx.reqLevel[itemId] = uint8(lvl);
+                }
         for (auto& [invType, v] : idx.byInvType)
         {
             std::sort(v.begin(), v.end());

@@ -11,11 +11,23 @@
 #     mod-aoe-loot, ...   = any other module under azerothcore-wotlk/modules/
 #
 # --- ACTIVE PINS ---
-# The two repos our tracked patches (patches/0001-0016) modify are pinned so an upstream push
-# can never break an update. Bumped 2026-08-03 (from core 52f58186 / mpb 93aaea3, ~3 weeks/1216+271
-# commits behind): all 14 patches re-verified applying cleanly in setup.sh order at these tips.
-# 0009 (CanEquipNewItem probe leak) was RETIRED — upstream merged the identical RemoveFromUpdateQueueOf
-# fix. 0004/0007/0012/0016 were regenerated for context drift. To take upstream later: comment out
-# the pin(s), run ./update.sh, regenerate any patch that aborts, test, then re-pin at new tips.
-azerothcore-wotlk 190184a04539937a617bf033e39378196c0c63f5
-mod-playerbots ba46fcdecde3d0c6c2f244fcb3ea862430b6ae5b
+# Every repo our tracked patches (patches/0001-0027) modify is pinned so an upstream push can
+# never break an update. Bumped 2026-09-07 (from core 190184a0 / mpb ba46fcd / IP df10164 /
+# bridge 5e5ff75 — 416 / 65 / 2 / 36 commits behind): all patches re-verified applying cleanly
+# in setup.sh order at these tips. 0002 (Heigan dance) was RETIRED — upstream re-enabled the
+# safety dance itself (mod-playerbots a773b8c, a Plague-Cloud-anchored fight clock); our version
+# is recoverable from git history if the upstream dance proves worse in-game. The playerbots-side
+# patches (0003-0006, 0014, 0016, 0017, 0020, 0021) were regenerated for upstream refactors
+# (include order, east-const, raid-helper move to Util/EncounterHelpers, GenericAction removal).
+# mod-player-bot-level-brackets was DROPPED from setup.sh — upstream merged it into mod-playerbots
+# (6cc5e3a, AiPlayerbot.LevelBrackets.*) and the module README says it is no longer needed.
+# To take upstream later: comment out the pin(s), run ./update.sh, regenerate any patch that
+# aborts, test, then re-pin at new tips.
+azerothcore-wotlk 413bea61a85e20d9caef7d66fc601a661fdddd9d
+mod-playerbots b949b50bfcdd4fab937781bac2d7765e39330e4b
+mod-individual-progression 977e2005bacf97f35e506eb27b8af6b2ea1136af
+# mod-multibot-bridge: its old pin (5e5ff75) only existed because the bridge's Self-Bot code needed
+# IsSelfBot(), which mod-playerbots ba46fcd lacked; b949b50 defines it, so the bridge now rides its
+# tip. Upstream REWROTE the bridge's main as an orphan history (no shared ancestry with 5e5ff75) —
+# patch 0022 was re-verified against it. Pinned like the others so an update can't outrun 0022.
+mod-multibot-bridge 759c100d5e508b9af28531a2642ded70619828ba

@@ -1,0 +1,760 @@
+era: 0
+class: 4
+eraName: Vanilla
+className: ROGUE
+tabs:
+- key: 1
+  name: Assassination
+  background: RogueAssassination
+  nodes:
+  - id: 18401
+    slug: improved_eviscerate
+    name: Improved Eviscerate
+    tab: 1
+    tier: 0
+    col: 0
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Increases the damage done by your Eviscerate ability by 5%.
+    - Increases the damage done by your Eviscerate ability by 10%.
+    - Increases the damage done by your Eviscerate ability by 15%.
+  - id: 18402
+    slug: remorseless_attacks
+    name: Remorseless Attacks
+    tab: 1
+    tier: 0
+    col: 1
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - After killing an opponent that yields experience, gives you a 20% increased critical strike chance on your next Sinister
+      Strike, Backstab, Ambush, or Ghostly Strike. Lasts 20 sec.
+    - After killing an opponent that yields experience, gives you a 40% increased critical strike chance on your next Sinister
+      Strike, Backstab, Ambush, or Ghostly Strike. Lasts 20 sec.
+  - id: 18403
+    slug: malice
+    name: Malice
+    tab: 1
+    tier: 0
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Increases your critical strike chance by 1%.
+    - Increases your critical strike chance by 2%.
+    - Increases your critical strike chance by 3%.
+    - Increases your critical strike chance by 4%.
+    - Increases your critical strike chance by 5%.
+  - id: 18404
+    slug: ruthlessness
+    name: Ruthlessness
+    tab: 1
+    tier: 1
+    col: 0
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Gives your finishing moves a 20% chance to add a combo point to your target.
+    - Gives your finishing moves a 40% chance to add a combo point to your target.
+    - Gives your finishing moves a 60% chance to add a combo point to your target.
+  - id: 18405
+    slug: murder
+    name: Murder
+    tab: 1
+    tier: 1
+    col: 1
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases all damage caused against Humanoid, Giant, Beast, and Dragonkin by 1%
+    - Increases all damage caused against Humanoid, Giant, Beast, and Dragonkin by 2%
+  - id: 18406
+    slug: improved_slice_and_dice
+    name: Improved Slice and Dice
+    tab: 1
+    tier: 1
+    col: 3
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases the duration of your Slice and Dice ability by 15%.
+    - Increases the duration of your Slice and Dice ability by 30%.
+    - Increases the duration of your Slice and Dice ability by 45%.
+  - id: 18407
+    slug: relentless_strikes
+    name: Relentless Strikes
+    tab: 1
+    tier: 2
+    col: 0
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Your finishing moves have a 20% chance per combo point to restore 25 energy.
+  - id: 18408
+    slug: improved_expose_armor
+    name: Improved Expose Armor
+    tab: 1
+    tier: 2
+    col: 1
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Increases the armor reduced by your Expose Armor ability by an additional 25%.
+    - Increases the armor reduced by your Expose Armor ability by an additional 50%.
+  - id: 18409
+    slug: lethality
+    name: Lethality
+    tab: 1
+    tier: 2
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 18403
+    prereqPoints: 10
+    tooltip:
+    - Increases the critical strike damage bonus of your Sinister Strike, Gouge, Backstab, Ghostly Strike, and Hemorrhage
+      abilites by 6%.
+    - Increases the critical strike damage bonus of your Sinister Strike, Gouge, Backstab, Ghostly Strike, and Hemorrhage
+      abilites by 12%.
+    - Increases the critical strike damage bonus of your Sinister Strike, Gouge, Backstab, Ghostly Strike, and Hemorrhage
+      abilites by 18%.
+    - Increases the critical strike damage bonus of your Sinister Strike, Gouge, Backstab, Ghostly Strike, and Hemorrhage
+      abilites by 24%.
+    - Increases the critical strike damage bonus of your Sinister Strike, Gouge, Backstab, Ghostly Strike, and Hemorrhage
+      abilites by 30%.
+  - id: 18410
+    slug: vile_poisons
+    name: Vile Poisons
+    tab: 1
+    tier: 3
+    col: 1
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Increases the damage dealt by your poisons by 4% and gives your poisons a 8% chance to resist dispel effects.
+    - Increases the damage dealt by your poisons by 8% and gives your poisons a 16% chance to resist dispel effects.
+    - Increases the damage dealt by your poisons by 12% and gives your poisons a 24% chance to resist dispel effects.
+    - Increases the damage dealt by your poisons by 16% and gives your poisons a 32% chance to resist dispel effects.
+    - Increases the damage dealt by your poisons by 20% and gives your poisons a 40% chance to resist dispel effects.
+  - id: 18411
+    slug: improved_poisons
+    name: Improved Poisons
+    tab: 1
+    tier: 3
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Increases the chance to apply poisons to your target by 2%.
+    - Increases the chance to apply poisons to your target by 4%.
+    - Increases the chance to apply poisons to your target by 6%.
+    - Increases the chance to apply poisons to your target by 8%.
+    - Increases the chance to apply poisons to your target by 10%.
+  - id: 18412
+    slug: cold_blood
+    name: Cold Blood
+    tab: 1
+    tier: 4
+    col: 1
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Instant 3 min cooldown When activated, increases the critical strike chance of your next Sinister Strike, Backstab,
+      Ambush, or Eviscerate by 100%.
+  - id: 18413
+    slug: improved_kidney_shot
+    name: Improved Kidney Shot
+    tab: 1
+    tier: 4
+    col: 2
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - While affected by your Kidney Shot ability, target receives an additional 3% damage from all sources.
+    - While affected by your Kidney Shot ability, target receives an additional 6% damage from all sources.
+    - While affected by your Kidney Shot ability, target receives an additional 9% damage from all sources.
+  - id: 18414
+    slug: seal_fate
+    name: Seal Fate
+    tab: 1
+    tier: 5
+    col: 1
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 18412
+    prereqPoints: 25
+    tooltip:
+    - Your critical strikes from abilities that add combo points have a 20% chance to add an additional combo point.
+    - Your critical strikes from abilities that add combo points have a 40% chance to add an additional combo point.
+    - Your critical strikes from abilities that add combo points have a 60% chance to add an additional combo point.
+    - Your critical strikes from abilities that add combo points have a 80% chance to add an additional combo point.
+    - Your critical strikes from abilities that add combo points have a 100% chance to add an additional combo point.
+  - id: 18415
+    slug: vigor
+    name: Vigor
+    tab: 1
+    tier: 6
+    col: 1
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 30
+    tooltip:
+    - Increases your maximum Energy by 10.
+- key: 2
+  name: Combat
+  background: RogueCombat
+  nodes:
+  - id: 18416
+    slug: improved_gouge
+    name: Improved Gouge
+    tab: 2
+    tier: 0
+    col: 0
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Increases the effect duration of your Gouge ability by 0.5 sec.
+    - Increases the effect duration of your Gouge ability by 1 sec.
+    - Increases the effect duration of your Gouge ability by 1.5 sec.
+  - id: 18417
+    slug: improved_sinister_strike
+    name: Improved Sinister Strike
+    tab: 2
+    tier: 0
+    col: 1
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Reduces the Energy cost of your Sinister Strike ability by 3.
+    - Reduces the Energy cost of your Sinister Strike ability by 5.
+  - id: 18418
+    slug: lightning_reflexes
+    name: Lightning Reflexes
+    tab: 2
+    tier: 0
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Increases your Dodge chance by 1%.
+    - Increases your Dodge chance by 2%.
+    - Increases your Dodge chance by 3%.
+    - Increases your Dodge chance by 4%.
+    - Increases your Dodge chance by 5%.
+  - id: 18419
+    slug: improved_backstab
+    name: Improved Backstab
+    tab: 2
+    tier: 1
+    col: 0
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases the critical strike chance of your Backstab ability by 10%.
+    - Increases the critical strike chance of your Backstab ability by 20%.
+    - Increases the critical strike chance of your Backstab ability by 30%.
+  - id: 18420
+    slug: deflection
+    name: Deflection
+    tab: 2
+    tier: 1
+    col: 1
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases your Parry chance by 1%.
+    - Increases your Parry chance by 2%.
+    - Increases your Parry chance by 3%.
+    - Increases your Parry chance by 4%.
+    - Increases your Parry chance by 5%.
+  - id: 18421
+    slug: precision
+    name: Precision
+    tab: 2
+    tier: 1
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases your chance to hit with melee weapons by 1%.
+    - Increases your chance to hit with melee weapons by 2%.
+    - Increases your chance to hit with melee weapons by 3%.
+    - Increases your chance to hit with melee weapons by 4%.
+    - Increases your chance to hit with melee weapons by 5%.
+  - id: 18422
+    slug: endurance
+    name: Endurance
+    tab: 2
+    tier: 2
+    col: 0
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Reduces the cooldown of your Sprint and Evasion abilities by 45 sec
+    - Reduces the cooldown of your Sprint and Evasion abilities by 1.5 min.
+  - id: 18423
+    slug: riposte
+    name: Riposte
+    tab: 2
+    tier: 2
+    col: 1
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 18420
+    prereqPoints: 10
+    tooltip:
+    - 10 Energy 5 yd range Instant 6 sec cooldown A strike that becomes active after parrying an opponent's attack. This attack
+      deals 150% weapon damage and disarms the target for 6 sec.
+  - id: 18424
+    slug: improved_sprint
+    name: Improved Sprint
+    tab: 2
+    tier: 2
+    col: 3
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Gives a 50% chance to remove all movement imparing effects when you activate your Sprint ability.
+    - Gives a 100% chance to remove all movement imparing effects when you activate your Sprint ability.
+  - id: 18425
+    slug: improved_kick
+    name: Improved Kick
+    tab: 2
+    tier: 3
+    col: 0
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Gives your Kick ability a 50% chance to silence the target for 2 sec.
+    - Gives your Kick ability a 100% chance to silence the target for 2 sec.
+  - id: 18426
+    slug: dagger_specialization
+    name: Dagger Specialization
+    tab: 2
+    tier: 3
+    col: 1
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Increases your chance to get a critical strike with Daggers by 1%.
+    - Increases your chance to get a critical strike with Daggers by 2%.
+    - Increases your chance to get a critical strike with Daggers by 3%.
+    - Increases your chance to get a critical strike with Daggers by 4%.
+    - Increases your chance to get a critical strike with Daggers by 5%.
+  - id: 18427
+    slug: dual_wield_specialization
+    name: Dual Wield Specialization
+    tab: 2
+    tier: 3
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 18421
+    prereqPoints: 15
+    tooltip:
+    - Increases the damage done by your offhand weapon by 10%.
+    - Increases the damage done by your offhand weapon by 20%.
+    - Increases the damage done by your offhand weapon by 30%.
+    - Increases the damage done by your offhand weapon by 40%.
+    - Increases the damage done by your offhand weapon by 50%.
+  - id: 18428
+    slug: mace_specialization
+    name: Mace Specialization
+    tab: 2
+    tier: 4
+    col: 0
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Increases your skill with Maces by 1, and gives you a 1% chance to stun your target for 3 sec with a mace.
+    - Increases your skill with Maces by 2, and gives you a 2% chance to stun your target for 3 sec with a mace.
+    - Increases your skill with Maces by 3, and gives you a 3% chance to stun your target for 3 sec with a mace.
+    - Increases your skill with Maces by 4, and gives you a 4% chance to stun your target for 3 sec with a mace.
+    - Increases your skill with Maces by 5, and gives you a 5% chance to stun your target for 3 sec with a mace.
+  - id: 18429
+    slug: blade_flurry
+    name: Blade Flurry
+    tab: 2
+    tier: 4
+    col: 1
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - 25 Energy Instant 2 min cooldown Requires Melee Weapon Increases your attack speed by 20%. In addition, attacks strike
+      an additional nearby opponent. Lasts 15 sec.
+  - id: 18430
+    slug: sword_specialization
+    name: Sword Specialization
+    tab: 2
+    tier: 4
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Gives you a 1% chance to get an extra attack on the same target after dealing damage with your Sword.
+    - Gives you a 2% chance to get an extra attack on the same target after dealing damage with your Sword.
+    - Gives you a 3% chance to get an extra attack on the same target after dealing damage with your Sword.
+    - Gives you a 4% chance to get an extra attack on the same target after dealing damage with your Sword.
+    - Gives you a 5% chance to get an extra attack on the same target after dealing damage with your Sword.
+  - id: 18431
+    slug: fist_weapon_specialization
+    name: Fist Weapon Specialization
+    tab: 2
+    tier: 4
+    col: 3
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Increases your chance to get a critical strike with Fist Weapons by 1%.
+    - Increases your chance to get a critical strike with Fist Weapons by 2%.
+    - Increases your chance to get a critical strike with Fist Weapons by 3%.
+    - Increases your chance to get a critical strike with Fist Weapons by 4%.
+    - Increases your chance to get a critical strike with Fist Weapons by 5%.
+  - id: 18432
+    slug: weapon_expertise
+    name: Weapon Expertise
+    tab: 2
+    tier: 5
+    col: 1
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 18429
+    prereqPoints: 25
+    tooltip:
+    - Increases your skill with Swords, Fist, and Daggers by 3.
+    - Increases your skill with Swords, Fist, and Daggers by 5.
+  - id: 18433
+    slug: aggression
+    name: Aggression
+    tab: 2
+    tier: 5
+    col: 2
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 25
+    tooltip:
+    - Increases the damage of your Sinister Strike and Eviscerate abilities by 2%.
+    - Increases the damage of your Sinister Strike and Eviscerate abilities by 4%.
+    - Increases the damage of your Sinister Strike and Eviscerate abilities by 6%.
+  - id: 18434
+    slug: adrenaline_rush
+    name: Adrenaline Rush
+    tab: 2
+    tier: 6
+    col: 1
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 30
+    tooltip:
+    - Instant 5 min cooldown Increases your Energy regeneration rate by 100% for 15 sec.
+- key: 3
+  name: Subtlety
+  background: RogueSubtlety
+  nodes:
+  - id: 18435
+    slug: master_of_deception
+    name: Master of Deception
+    tab: 3
+    tier: 0
+    col: 1
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Reduces the chance enemies have to detect you while in Stealth mode.
+    - Reduces the chance enemies have to detect you while in Stealth mode. More effective than Master of Deception (Rank 1).
+    - Reduces the chance enemies have to detect you while in Stealth mode. More effective than Master of Deception (Rank 2).
+    - Reduces the chance enemies have to detect you while in Stealth mode. More effective than Master of Deception (Rank 3).
+    - Reduces the chance enemies have to detect you while in Stealth mode. More effective than Master of Deception (Rank 4).
+  - id: 18436
+    slug: opportunity
+    name: Opportunity
+    tab: 3
+    tier: 0
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Increases the damage dealt when striking from behind with your Backstab, Garrote, or Ambush abilities by 4%.
+    - Increases the damage dealt when striking from behind with your Backstab, Garrote, or Ambush abilities by 8%.
+    - Increases the damage dealt when striking from behind with your Backstab, Garrote, or Ambush abilities by 12%.
+    - Increases the damage dealt when striking from behind with your Backstab, Garrote, or Ambush abilities by 16%.
+    - Increases the damage dealt when striking from behind with your Backstab, Garrote, or Ambush abilities by 20%.
+  - id: 18437
+    slug: sleight_of_hand
+    name: Sleight of Hand
+    tab: 3
+    tier: 1
+    col: 0
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Reduces the chance you are critically hit by melee and ranged attacks by 1% and increases the threat reduced by your
+      Feint ability by 10%.
+    - Reduces the chance you are critically hit by melee and ranged attacks by 2% and increases the threat reduced by your
+      Feint ability by 20%.
+  - id: 18438
+    slug: elusiveness
+    name: Elusiveness
+    tab: 3
+    tier: 1
+    col: 1
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Reduces the cooldown of your Vanish and Blind abilities by 45 sec.
+    - Reduces the cooldown of your Vanish and Blind abilities by 1.5 min.
+    - Reduces the cooldown of your Evasion, Vanish, and Blind abilities by 1.3 min.
+  - id: 18439
+    slug: camouflage
+    name: Camouflage
+    tab: 3
+    tier: 1
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases your speed while stealthed by 3% and reduces the cooldown of your Stealth ability by 1 sec.
+    - Increases your speed while stealthed by 6% and reduces the cooldown of your Stealth ability by 2 sec.
+    - Increases your speed while stealthed by 9% and reduces the cooldown of your Stealth ability by 3 sec.
+    - Increases your speed while stealthed by 12% and reduces the cooldown of your Stealth ability by 4 sec.
+    - Increases your speed while stealthed by 15% and reduces the cooldown of your Stealth ability by 5 sec.
+  - id: 18440
+    slug: initiative
+    name: Initiative
+    tab: 3
+    tier: 2
+    col: 0
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Gives you a 25% chance to add an additional combo point to your target when using your Ambush, Garrote, or Cheap Shot
+      ability.
+    - Gives you a 50% chance to add an additional combo point to your target when using your Ambush, Garrote, or Cheap Shot
+      ability.
+    - Gives you a 75% chance to add an additional combo point to your target when using your Ambush, Garrote, or Cheap Shot
+      ability.
+  - id: 18441
+    slug: ghostly_strike
+    name: Ghostly Strike
+    tab: 3
+    tier: 2
+    col: 1
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - 40 Energy 5 yd range Instant 20 sec cooldown A strike that deals 125% weapon damage and increases your chance to dodge
+      by 15% for 7 sec. Awards 1 combo point.
+  - id: 18442
+    slug: improved_ambush
+    name: Improved Ambush
+    tab: 3
+    tier: 2
+    col: 2
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Increases the critical strike chance of your Ambush ability by 15%.
+    - Increases the critical strike chance of your Ambush ability by 30%.
+    - Increases the critical strike chance of your Ambush ability by 45%.
+  - id: 18443
+    slug: setup
+    name: Setup
+    tab: 3
+    tier: 3
+    col: 0
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Gives you a 15% chance to add a combo point to your target after dodging their attack or fully resisting one of their
+      spells.
+    - Gives you a 30% chance to add a combo point to your target after dodging their attack or fully resisting one of their
+      spells.
+    - Gives you a 45% chance to add a combo point to your target after dodging their attack or fully resisting one of their
+      spells.
+  - id: 18444
+    slug: improved_sap
+    name: Improved Sap
+    tab: 3
+    tier: 3
+    col: 1
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Gives you a 30% chance to return to stealth mode after using your Sap ability.
+    - Gives you a 60% chance to return to stealth mode after using your Sap ability.
+    - Gives you a 90% chance to return to stealth mode after using your Sap ability.
+  - id: 18445
+    slug: serrated_blades
+    name: Serrated Blades
+    tab: 3
+    tier: 3
+    col: 2
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Causes your attacks to ignore 1.67 armor/level of your target's Armor and increases the damage dealt by your Rupture
+      ability by 10%. The amount of Armor reduced increases with your level.
+    - Causes your attacks to ignore 3.34 armor/level of your target's Armor and increases the damage dealt by your Rupture
+      ability by 20%. The amount of Armor reduced increases with your level.
+    - Causes your attacks to ignore 5 armor/level of your target's Armor and increases the damage dealt by your Rupture ability
+      by 30%. The amount of Armor reduced increases with your level.
+  - id: 18446
+    slug: heightened_senses
+    name: Heightened Senses
+    tab: 3
+    tier: 4
+    col: 0
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Increases your Stealth detection and reduces the chance you are hit by spells and ranged attacks by 2%.
+    - Increases your Stealth detection and reduces the chance you are hit by spells and ranged attacks by 4%. More effective
+      than Heightened Senses (Rank 1).
+  - id: 18447
+    slug: preparation
+    name: Preparation
+    tab: 3
+    tier: 4
+    col: 1
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Instant 10 min cooldown When activated, this ability immediately finishes the cooldown on your other Rogue abilities.
+  - id: 18448
+    slug: dirty_deeds
+    name: Dirty Deeds
+    tab: 3
+    tier: 4
+    col: 2
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Reduces the Energy Cost of your Cheap Shot and Garrote abilities by 10
+    - Reduces the Energy Cost of your Cheap Shot and Garrote abilities by 20
+  - id: 18449
+    slug: hemorrhage
+    name: Hemorrhage
+    tab: 3
+    tier: 4
+    col: 3
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 18445
+    prereqPoints: 20
+    tooltip:
+    - 35 Energy 5 yd range Instant Requires Melee Weapon An instant strike that damages the opponent and causes the target
+      to hemorrhage, increasing any Physical damage dealt to the target by up to 3. Lasts 30 charges or 15 sec. Awards 1 combo
+      point.
+  - id: 18450
+    slug: deadliness
+    name: Deadliness
+    tab: 3
+    tier: 5
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 25
+    tooltip:
+    - Increases your Attack Power by 2%.
+    - Increases your Attack Power by 4%.
+    - Increases your Attack Power by 6%.
+    - Increases your Attack Power by 8%.
+    - Increases your Attack Power by 10%.
+  - id: 18451
+    slug: premeditation
+    name: Premeditation
+    tab: 3
+    tier: 6
+    col: 1
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 18447
+    prereqPoints: 30
+    tooltip:
+    - 20 yd range Instant 2 min cooldown Requires Stealth When used, adds 2 combo points to your target. You must add to or
+      use those combo points within 10 sec or the combo points are lost.

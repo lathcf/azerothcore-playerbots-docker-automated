@@ -1,0 +1,73 @@
+# Stock Warlock spell reference — live-verified from Spell.dbc (SpellClassSet=5) + `lookup spell`
+# on the dev-box worldserver console (2026-08-14). DO NOT guess ids/flags; see priest-spells.yaml /
+# mage-spells.yaml for the shape this mirrors and the general verification method.
+#
+# Verification method:
+#   - spells: flagsA/flagsB/flagsC = SpellClassMask_1/_2/_3 read straight from Spell.dbc for the
+#     rank-1 id (lowest id among the family=5, nonzero-mask entries sharing the spell's
+#     Name_Lang_enUS), via tools/dump_spell_family.py. EVERY warlock spell dumped here showed
+#     SpellClassSet=5 on its player-cast ranks (family 5 = WARLOCK confirmed). flagsC is ALWAYS 0
+#     here: NOT ONE of the 20 base spells carries any word-3 (SpellClassMask_3) bit — the entire
+#     warlock identity for these lives in word 1, except Curse of the Elements / Soul Fire / Fear /
+#     Conflagrate whose identity is in word 2 (flagsB). So no word-3-drop judgement call arose at
+#     all (unlike the Mage/Priest tables where a shared category bit had to be dropped).
+#   - grants/triggers/soulLinkStock: reused stock spell ids resolved on the LIVE dev-box worldserver
+#     via `tools/wgconsole.py ... "lookup spell <name>"`, taking the rank-1 [talent] entry for
+#     actives. Each is pasted with its lookup line in the Task-3 report.
+#   - corruptionRanks: the 7 player-cast Corruption ranks, cross-checked against BOTH `lookup spell
+#     Corruption` (172/6222/6223/7648/11671/11672 ranks 1-6, 25311 rank 7) AND IP's own list in
+#     mod-individual-progression/src/IndividualProgressionPlayer.cpp:550 (identical). The many other
+#     family=5 mask(2,0,0) "Corruption, rank 1" ids (13530, 18376, 21068, 28829, ...) are NPC/proc
+#     variants, deliberately excluded.
+familyName: 5            # WARLOCK (confirmed: every base spell below dumped SpellClassSet=5)
+spells:                  # SpellClassMask_1..3 of each stock base spell an `affects:` targets (rank-1 id)
+  "Shadow Bolt":         { id: 686,   flagsA: 1,        flagsB: 0,       flagsC: 0 }
+  Corruption:            { id: 172,   flagsA: 2,        flagsB: 0,       flagsC: 0 }
+  Immolate:              { id: 348,   flagsA: 4,        flagsB: 0,       flagsC: 0 }
+  "Drain Life":          { id: 689,   flagsA: 8,        flagsB: 0,       flagsC: 0 }
+  "Drain Mana":          { id: 5138,  flagsA: 16,       flagsB: 0,       flagsC: 0 }
+  "Rain of Fire":        { id: 5740,  flagsA: 32,       flagsB: 0,       flagsC: 0 }
+  Hellfire:              { id: 1949,  flagsA: 64,       flagsB: 0,       flagsC: 0 }
+  Shadowburn:            { id: 17877, flagsA: 128,      flagsB: 0,       flagsC: 0 }
+  "Searing Pain":        { id: 5676,  flagsA: 256,      flagsB: 0,       flagsC: 0 }
+  "Curse of Agony":      { id: 980,   flagsA: 1024,     flagsB: 0,       flagsC: 0 }
+  "Drain Soul":          { id: 1120,  flagsA: 16384,    flagsB: 0,       flagsC: 0 }
+  "Curse of Weakness":   { id: 702,   flagsA: 32768,    flagsB: 0,       flagsC: 0 }
+  "Death Coil":          { id: 6789,  flagsA: 524288,   flagsB: 0,       flagsC: 0 }
+  "Life Tap":            { id: 1454,  flagsA: 262144,   flagsB: 0,       flagsC: 0 }
+  "Curse of Exhaustion": { id: 18223, flagsA: 4194304,  flagsB: 0,       flagsC: 0 }
+  "Health Funnel":       { id: 755,   flagsA: 16777216, flagsB: 0,       flagsC: 0 }
+  # Added in Task 6 (Demonology authoring). Healthstone = the USE spell of the healthstone item
+  # (5720 rank-1, family=5 SpellFamilyFlags 65536) — its Effect_1 SPELL_EFFECT_HEAL is what a
+  # SPELLMOD op=allEffects pct scales for Improved Healthstone. "Summon Demon" = the four
+  # Summon Imp/Voidwalker/Succubus/Felhunter spells, which ALL share the SINGLE family bit
+  # 536870912 (verified: 688/697/712/691 all dump mask=(536870912,0,0)) — one entry binds all
+  # four for Master Summoner. Both live-dumped from Spell.dbc via dump_spell_family.py (2026-08-15).
+  "Healthstone":         { id: 5720,  flagsA: 65536,    flagsB: 0,       flagsC: 0 }
+  "Summon Demon":        { id: 688,   flagsA: 536870912, flagsB: 0,      flagsC: 0 }
+  # PET abilities (added 2026-08-16, final warlock pass). All are family=5 with real word-1 masks —
+  # dump_spell_family on every rank confirmed identical masks per ability line: Firebolt 3110
+  # mask=(4096,0,0); Lash of Pain 7814 mask=(8192,0,0); and ALL FOUR Voidwalker abilities (Torment
+  # 3716, Suffering 17735, Consume Shadows 17767, Sacrifice 7812) share the single bit
+  # mask=(33554432,0,0), so one entry binds the whole kit for Improved Voidwalker. An owner-side
+  # SPELLMOD binds to a pet's cast because the pet's GetSpellModOwner() is the warlock — the exact
+  # stock mechanism of WotLK Demonic Power 18126 (castTime spellmod masked 4096 + cooldown spellmod
+  # masked 8192, tool-verified).
+  Firebolt:              { id: 3110,  flagsA: 4096,     flagsB: 0,       flagsC: 0 }
+  "Lash of Pain":        { id: 7814,  flagsA: 8192,     flagsB: 0,       flagsC: 0 }
+  "Voidwalker Abilities": { id: 3716, flagsA: 33554432, flagsB: 0,       flagsC: 0 }
+  # Identity in WORD 2 (flagsB) for these four — raw masks (0,512,0)/(0,128,0)/(0,1024,0)/(0,8388608,0):
+  "Curse of the Elements": { id: 1490,  flagsA: 0,      flagsB: 512,     flagsC: 0 }
+  "Soul Fire":           { id: 6353,  flagsA: 0,        flagsB: 128,     flagsC: 0 }
+  Fear:                  { id: 5782,  flagsA: 0,        flagsB: 1024,    flagsC: 0 }
+  Conflagrate:           { id: 17962, flagsA: 0,        flagsB: 8388608, flagsC: 0 }
+grants:                  # stock WotLK ids reused by Bound nodes (live-verified via `lookup spell`)
+  amplify_curse:         { 1: 18288 }  # single-rank talent [passive]
+  dark_pact:             { 1: 18220 }  # rank chain: 1:18220 2:18937 3:18938 4:27265 5:59092 (base rank shown)
+  fel_domination:        { 1: 18708 }  # single-rank talent
+  conflagrate:           { 1: 17962 }  # rank-1 talent (same id as the spells: entry above)
+triggers:                # stock buff/debuff ids a data-proc node casts (live-verified)
+  shadow_trance:         17941         # Nightfall proc buff -> next Shadow Bolt instant (Nightfall talent aura = 23653 r1 / 18095 r2)
+petBuffsStock:           {}            # stock WotLK pet auras reused by pet-B nodes (fill per-node during authoring if any match)
+corruptionRanks:         [172, 6222, 6223, 7648, 11671, 11672, 25311]   # ranks 1-7, for the Task 9 cast-time patch
+soulLinkStock:           25228         # stock Soul Link rank-1 active (Task 8 clones it)

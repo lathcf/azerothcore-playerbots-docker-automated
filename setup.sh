@@ -11,9 +11,9 @@ FORK_BRANCH="Playerbot"
 # Server-side modules compiled into the build (name|git-url):
 #   mod-playerbots ................. the bot engine (required)
 #   mod-aoe-loot ................... (DISABLED 2026-06-21 — broke group-loot rolls, see below)
-#   mod-player-bot-level-brackets .. spread random bots across level ranges (living world)
 #   mod-junk-to-gold .............. auto-sell gray trash (less bag clutter for bots/players)
 #   mod-multibot-bridge ........... server half of the in-game "MultiBot" control addon
+#   mod-individual-progression .... per-character Vanilla→TBC→WotLK era progression (gated content/gear/difficulty)
 MODULES=(
   "mod-playerbots|https://github.com/mod-playerbots/mod-playerbots.git"
   # mod-aoe-loot DISABLED 2026-06-21: its area-loot aggregation invalidates pending
@@ -21,14 +21,14 @@ MODULES=(
   # vanishes from the corpse and nobody receives it (cf. mod-aoe-loot#43/#44). The
   # reconcile below prunes the existing clone on the next run. Uncomment to restore.
   # "mod-aoe-loot|https://github.com/azerothcore/mod-aoe-loot.git"
-  "mod-player-bot-level-brackets|https://github.com/DustinHendrickson/mod-player-bot-level-brackets.git"
   "mod-junk-to-gold|https://github.com/noisiver/mod-junk-to-gold.git"
   "mod-multibot-bridge|https://github.com/Wishmaster117/mod-multibot-bridge.git"
   "mod-ah-bot-plus|https://github.com/NathanHandley/mod-ah-bot-plus.git"
+  "mod-individual-progression|https://github.com/ZhengPeiRu21/mod-individual-progression.git"
 )
 
 # Modules we author and ship from THIS repo (copied in, not git-cloned). Kept by the reconcile.
-LOCAL_MODULES=( "mod-playerbot-chatter" "mod-raid-roster" "mod-ahbot-price" "mod-wintergrasp-bots" "mod-arena-roster" )
+LOCAL_MODULES=( "mod-playerbot-chatter" "mod-raid-roster" "mod-ahbot-price" "mod-wintergrasp-bots" "mod-arena-roster" "mod-era-talents" )
 
 # Optional commit pins (repo-pins.txt): freeze the fork and/or a module at a known-good commit
 # instead of its branch tip — used to hold a stable upstream when the latest HEAD is broken.
@@ -85,7 +85,7 @@ for entry in "${MODULES[@]}"; do
   apply_pin "$AC_DIR/modules/$name" "$name"
 done
 
-# Patches must apply AFTER the module clones/pins: several (0002+) target files inside
+# Patches must apply AFTER the module clones/pins: several (0003+) target files inside
 # modules/mod-playerbots, which doesn't exist yet on a fresh install at fork-clone time —
 # applying earlier made a fresh install abort on a perfectly good patch.
 apply_patches
@@ -110,6 +110,83 @@ if [[ -d "$AC_DIR/modules" ]]; then
   done
 fi
 
+# Copy the .env-enabled IP optional SQL files into IP's auto-import dir so they apply on the next
+# DB import; remove any that are disabled so toggling OFF actually reverts on rebuild. Idempotent.
+# IP uses the older data/sql/world/base layout (NOT db-world) — recon-confirmed.
+apply_ip_optional_sql () {
+  local modroot="$AC_DIR/modules/mod-individual-progression"
+  local optdir="$modroot/optional/sql/world"
+  local dest="$modroot/data/sql/world/base"
+  [[ -d "$optdir" && -d "$dest" ]] || { echo "    IP optional SQL: dir missing, skipping"; return 0; }
+  # flag env var -> optional filename
+  local map=(
+    "IP_OPT_SPELL_DMG_HEALING|zz_optional_spell_damage_and_healing.sql"
+    "IP_OPT_CREATURE_STATS|zz_optional_creature_stats.sql"
+    "IP_OPT_VANILLA_REGEN|zz_optional_vanilla_regen_values.sql"
+    "IP_OPT_ITEM_STACK_SIZES|zz_optional_item_stack_sizes.sql"
+    "IP_OPT_AMMO_STACK|zz_optional_ammo_stack_size.sql"
+    "IP_OPT_VANILLA_MODELS|zz_optional_vanilla_models.sql"
+    "IP_OPT_PHASING|zz_optional_phasing.sql"
+    "IP_OPT_REMOVE_HEIRLOOMS|zz_optional_remove_heirlooms.sql"
+    "IP_OPT_VANILLA_CRAFTING|zz_optional_vanilla_crafting_requirements.sql"
+    "IP_OPT_CRAFTING_CD|zz_optional_restore_crafting_cd_timers.sql"
+    "IP_OPT_POTION_CD|zz_optional_restore_potion_cd.sql"
+    "IP_OPT_ROGUE_POISONS|zz_optional_restore_rogue_poisons.sql"
+    "IP_OPT_LIMIT_SPELLS|zz_optional_limit_spells_to_expansion.sql"
+    "IP_OPT_VANILLA_TRANSPORTS|zz_optional_vanilla_transports.sql"
+    "IP_OPT_SMALL_GROUP_ADJ|zz_optional_small_group_adjustments.sql"
+    "IP_OPT_UNOBTAINABLE_ITEMS|zz_optional_unobtainable_items.sql"
+    "IP_OPT_WOTLK_HP_FOR_TBC_RAIDS|zz_optional_wotlk_hp_values_for_tbc_raids.sql"
+    "IP_OPT_AQ_QUEST_NERF|zz_optional_aq_quest_nerf.sql"
+    "IP_OPT_AV_LANDMINES|zz_optional_av_landmines.sql"
+    "IP_OPT_TBC_HEROIC_KEYS_NERF|zz_optional_tbc_heroic_dungeon_keys_nerf.sql"
+    "IP_OPT_TBC_PVP_PRICES|zz_optional_tbc_pvp_prices.sql"
+    "IP_OPT_STACKABLE_BUFF_SCROLLS|zz_optional_stackable_buff_scrolls.sql"
+  )
+  local pair var file on
+  for pair in "${map[@]}"; do
+    var="${pair%%|*}"; file="${pair#*|}"; on="${!var:-0}"
+    if [[ "$on" == "1" && "${IP_ENABLE:-1}" == "1" ]]; then
+      [[ -f "$optdir/$file" ]] && cp -f "$optdir/$file" "$dest/$file" && echo "    IP optional ON:  $file"
+    else
+      [[ -f "$dest/$file" ]] && rm -f "$dest/$file" && echo "    IP optional OFF: $file (removed)"
+    fi
+  done
+  # Local supplement: heal-weight the TBC healer items IP's spell_damage_and_healing optional missed
+  # (rides that optional's flag + the same patch-V/dbc prereq). See sql/ip-supplemental/ and docs.
+  local suppl="$ROOT/sql/ip-supplemental/zzz_ip_healer_spell_weighting.sql"
+  if [[ "${IP_OPT_SPELL_DMG_HEALING:-0}" == "1" && "${IP_ENABLE:-1}" == "1" && -f "$suppl" ]]; then
+    cp -f "$suppl" "$dest/zzz_ip_healer_spell_weighting.sql" && echo "    IP supplement: healer spell-weighting fix copied"
+  else
+    [[ -f "$dest/zzz_ip_healer_spell_weighting.sql" ]] && rm -f "$dest/zzz_ip_healer_spell_weighting.sql" && echo "    IP supplement: healer fix removed"
+  fi
+  return 0   # never let a final false [[ -f ]] (disabled optional) trip set -e at the call site
+}
+
+# Extract IP's SERVER-side DBCs (patch-V Spell.dbc + dbc.7z SkillLine*.dbc) into $AC_DIR/ip-dbc so
+# they can be bind-mounted over the worldserver's data/dbc. Client .mpq halves are ignored here
+# (patch-V.mpq is staged by fetch-client-addons.sh; patch-J/U are cosmetic and skipped). Idempotent:
+# the dir is rebuilt each run, so toggling a flag off removes the DBC next rebuild.
+extract_ip_server_dbc () {
+  local modopt="$AC_DIR/modules/mod-individual-progression/optional"
+  local out="$AC_DIR/ip-dbc"
+  rm -rf "$out"
+  [[ "${IP_ENABLE:-1}" == "1" ]] || return 0
+  { [[ "${IP_CLIENT_PATCH_V:-1}" == "1" || "${IP_CLIENT_DBC:-1}" == "1" ]]; } || return 0
+  command -v 7z >/dev/null || { echo "    IP DBC overlay: '7z' (p7zip) not found — skipping server DBC overlay"; return 0; }
+  [[ -d "$modopt" ]] || { echo "    IP DBC overlay: $modopt missing (module not cloned yet) — skipping"; return 0; }
+  mkdir -p "$out"
+  local tmp; tmp="$(mktemp -d)"
+  [[ "${IP_CLIENT_PATCH_V:-1}" == "1" && -f "$modopt/patch-V.7z" ]] && 7z x -y -o"$tmp/v" "$modopt/patch-V.7z" >/dev/null
+  [[ "${IP_CLIENT_DBC:-1}"     == "1" && -f "$modopt/dbc.7z"     ]] && 7z x -y -o"$tmp/d" "$modopt/dbc.7z"     >/dev/null
+  # Copy ONLY *.dbc (the server halves); archives may nest them in subdirs.
+  find "$tmp" -type f -iname '*.dbc' -exec cp -f {} "$out/" \;
+  rm -rf "$tmp"
+  if compgen -G "$out"/*.dbc >/dev/null 2>&1; then
+    echo "    IP DBC overlay: staged $(ls "$out"/*.dbc | wc -l) server DBC(s) into ip-dbc/"
+  fi
+}
+
 # Sync in-repo modules into the build tree (fresh copy each run so edits propagate).
 for lm in "${LOCAL_MODULES[@]}"; do
   if [[ -d "$ROOT/modules/$lm" ]]; then
@@ -118,6 +195,8 @@ for lm in "${LOCAL_MODULES[@]}"; do
     cp -a "$ROOT/modules/$lm" "$AC_DIR/modules/$lm"
   fi
 done
+# NB: apply_ip_optional_sql is called LATER, AFTER `source "$AC_DIR/.env"` — the IP_OPT_* flags it
+# reads are unset until then (calling it here silently disabled every optional).
 
 # Persist KEY=VALUE into the repo-root .env (the source of truth, copied to the live env on
 # every run) AND the live $AC_DIR/.env (used by THIS run's containers). Replaces an existing
@@ -191,26 +270,39 @@ set +a
 #                    is published by the base compose and is the only other port we want open.)
 # `ports: !override` REPLACES the base port list instead of appending to it — requires Docker
 # Compose v2.24+ (Jan 2024). If `docker compose version` is older, update it.
-cat > "$AC_DIR/docker-compose.override.yml" <<'YAML'
+# Copy the .env-enabled IP optional SQL into IP's auto-import dir (must be AFTER `source .env` above,
+# so the IP_OPT_* flags are set) and before the build/db-import below reads the module SQL.
+apply_ip_optional_sql
+extract_ip_server_dbc
+# One bind-mount line per staged DBC, overlaying the worldserver's data/dbc (paths relative to
+# $AC_DIR, where compose runs). Empty when IP/flags are off → no mounts added.
+IP_DBC_MOUNT_LINES=""
+if compgen -G "$AC_DIR"/ip-dbc/*.dbc >/dev/null 2>&1; then
+  for _dbc in "$AC_DIR"/ip-dbc/*.dbc; do
+    _b="$(basename "$_dbc")"
+    IP_DBC_MOUNT_LINES+="      - ./ip-dbc/${_b}:/azerothcore/env/dist/data/dbc/${_b}:ro"$'\n'
+  done
+fi
+cat > "$AC_DIR/docker-compose.override.yml" <<YAML
 # Generated by setup.sh — do not edit by hand.
 services:
   ac-worldserver:
     environment:
-      TZ: "${SERVER_TZ:-Etc/UTC}"
+      TZ: "\${SERVER_TZ:-Etc/UTC}"
     ports: !override
-      - "${DOCKER_WORLD_EXTERNAL_PORT:-8085}:8085"
+      - "\${DOCKER_WORLD_EXTERNAL_PORT:-8085}:8085"
     volumes:
       - ./modules:/azerothcore/modules:ro
-  ac-db-import:
+${IP_DBC_MOUNT_LINES}  ac-db-import:
     environment:
-      TZ: "${SERVER_TZ:-Etc/UTC}"
+      TZ: "\${SERVER_TZ:-Etc/UTC}"
     volumes:
       - ./modules:/azerothcore/modules:ro
   ac-database:
     environment:
-      TZ: "${SERVER_TZ:-Etc/UTC}"
+      TZ: "\${SERVER_TZ:-Etc/UTC}"
     ports: !override
-      - "127.0.0.1:${DOCKER_DB_EXTERNAL_PORT:-3306}:3306"
+      - "127.0.0.1:\${DOCKER_DB_EXTERNAL_PORT:-3306}:3306"
     volumes:
       - ./config/mysql-tuning.cnf:/etc/mysql/conf.d/zz-acore-tuning.cnf:ro
 YAML
@@ -300,14 +392,34 @@ ensure_conf () { [[ -f "$MODETC/$1.conf" ]] || { [[ -f "$MODETC/$1.conf.dist" ]]
 # a "Missing property ..." warning on EVERY read (e.g. mod-aoe-loot spamming AOELoot.Enable /
 # AOELoot.Message on each loot). Looping covers every module, present or future, instead of a
 # hand-maintained list that silently misses new ones.
+# The .dist copies in $MODETC are FROZEN at first install: the image entrypoint populates
+# env/dist/etc with `cp -rn` (no clobber), so a module whose .conf.dist gained keys after the
+# first boot never refreshes there. Refresh each from the module SOURCE tree first (the .dist is
+# never loaded by the server, so overwriting it is harmless), then instantiate/merge from it.
+for _src in "$AC_DIR"/modules/*/conf/*.conf.dist; do
+  [[ -e "$_src" ]] || continue
+  cp -f "$_src" "$MODETC/$(basename "$_src")"
+done
 for _dist in "$MODETC"/*.conf.dist; do
   [[ -e "$_dist" ]] || continue           # glob didn't match (no .dist files yet) -> skip
-  ensure_conf "$(basename "$_dist" .conf.dist)"
+  _name="$(basename "$_dist" .conf.dist)"
+  ensure_conf "$_name"
+  # Merge keys ADDED to the .dist since the .conf was first instantiated (ensure_conf only copies
+  # a MISSING .conf, so an existing install otherwise never sees new keys and the core logs
+  # "Missing property ..." on every read). Appends the .dist line verbatim; never touches a key
+  # the .conf already has, so set_conf overrides below and hand edits are preserved.
+  _conf="$MODETC/$_name.conf"
+  [[ -f "$_conf" ]] || continue
+  grep -E '^[A-Za-z][A-Za-z0-9_.]*[[:space:]]*=' "$_dist" | while IFS= read -r _line; do
+    _key="${_line%%=*}"; _key="${_key//[[:space:]]/}"
+    grep -qE "^[[:space:]]*${_key}[[:space:]]*=" "$_conf" || printf '%s\n' "$_line" >> "$_conf"
+  done
 done
 
 WS_CONF="$ETC/worldserver.conf"
 PB_CONF="$MODETC/playerbots.conf"
 PBCHAT_CONF="$MODETC/mod_playerbot_chatter.conf"
+IP_CONF="$MODETC/individualProgression.conf"
 
 # Idempotent ini setter: replace KEY's value, or append if absent.
 set_conf () {
@@ -362,6 +474,68 @@ set_conf "DungeonFinder.CastDeserter" "0" "$WS_CONF"
 # Same for battlegrounds: default 1 casts a Deserter spell on anyone who leaves a BG in progress.
 # 0 = leave a BG early with no penalty (matches the dungeon choice above; friendlier for LAN/bots).
 set_conf "Battleground.CastDeserter"  "0" "$WS_CONF"
+# ── Individual Progression (mod-individual-progression) ──────────────────────
+if [[ "${IP_ENABLE:-1}" == "1" ]]; then
+  # Core prerequisites required by IP's install doc.
+  set_conf "Updates.EnableDatabases" "7" "$WS_CONF"
+  set_conf "EnablePlayerSettings"    "1" "$WS_CONF"
+
+  set_conf "IndividualProgression.Enable"                      "1"                              "$IP_CONF"
+  set_conf "IndividualProgression.EnforceGroupRules"           "${IP_ENFORCE_GROUP_RULES:-0}"   "$IP_CONF"
+  set_conf "IndividualProgression.VanillaPowerAdjustment"      "${IP_VANILLA_POWER_ADJ:-1}"     "$IP_CONF"
+  set_conf "IndividualProgression.VanillaHealingAdjustment"    "${IP_VANILLA_HEALING_ADJ:-1}"   "$IP_CONF"
+  set_conf "IndividualProgression.TBCPowerAdjustment"          "${IP_TBC_POWER_ADJ:-1}"         "$IP_CONF"
+  set_conf "IndividualProgression.TBCHealingAdjustment"        "${IP_TBC_HEALING_ADJ:-1}"       "$IP_CONF"
+  set_conf "IndividualProgression.BotOnlyAdjustments"          "${IP_BOT_ONLY_ADJUSTMENTS:-0}"  "$IP_CONF"
+  set_conf "IndividualProgression.QuestXPFix"                  "${IP_QUEST_XP_FIX:-1}"          "$IP_CONF"
+  set_conf "IndividualProgression.DisableRDF"                  "${IP_DISABLE_RDF:-0}"           "$IP_CONF"
+  set_conf "IndividualProgression.DisableQuestMarkers"         "${IP_DISABLE_QUEST_MARKERS:-1}" "$IP_CONF"
+  set_conf "IndividualProgression.MaxMonsterSight"             "${IP_MAX_MONSTER_SIGHT:-1}"     "$IP_CONF"
+  set_conf "IndividualProgression.FishingFix"                  "${IP_FISHING_FIX:-1}"           "$IP_CONF"
+  set_conf "IndividualProgression.StartingProgression"         "${IP_STARTING_PROGRESSION:-0}"  "$IP_CONF"
+  set_conf "IndividualProgression.ProgressionLimit"            "${IP_PROGRESSION_LIMIT:-0}"     "$IP_CONF"
+  # Manual expansion advance (patch 0027 + mod-era-talents gossip): hold the two talent-wiping
+  # stages (8 = TBC, 13 = WotLK) so a boss kill / quest turn-in never crosses them; the player
+  # advances by choice at Anduin/Thrall. "" = stock automatic progression.
+  if [[ "${IP_MANUAL_ERA_ADVANCE:-1}" == "1" ]]; then
+    set_conf "IndividualProgression.ManualAdvanceStates" "8 13" "$IP_CONF"
+  else
+    set_conf "IndividualProgression.ManualAdvanceStates" ""     "$IP_CONF"
+  fi
+  set_conf "IndividualProgression.DeathKnightUnlockProgression" "${IP_DK_UNLOCK_STAGE:-13}"     "$IP_CONF"
+  set_conf "IndividualProgression.DeathKnightStartingProgression" "${IP_DK_START_STAGE:-13}"    "$IP_CONF"
+  set_conf "IndividualProgression.TbcRacesUnlockProgression"   "${IP_TBC_RACES_UNLOCK:-8}"      "$IP_CONF"
+  set_conf "IndividualProgression.tbcRacesStartingProgression" "${IP_TBC_RACES_START:-8}"       "$IP_CONF"
+  set_conf "IndividualProgression.RequireNaxxStrathEntrance"   "${IP_REQUIRE_NAXX_STRATH:-0}"   "$IP_CONF"
+  set_conf "IndividualProgression.BotAccountsRegex"            "${IP_BOT_ACCOUNTS_REGEX:-^RNDBOT.*}" "$IP_CONF"
+  set_conf "IndividualProgression.BotAccountsMaxLevel"         "${IP_BOT_ACCOUNTS_MAX_LEVEL:-80}" "$IP_CONF"
+  set_conf "IndividualProgression.ExcludedAccountsRegex"       "${IP_EXCLUDED_ACCOUNTS_REGEX:-}" "$IP_CONF"
+  echo "    IP: era progression ON (EnforceGroupRules=${IP_ENFORCE_GROUP_RULES:-0})."
+else
+  set_conf "IndividualProgression.Enable" "0" "$IP_CONF"
+  echo "    IP: DISABLED (IP_ENABLE!=1)."
+fi
+# ── Era Talents (mod-era-talents) ────────────────────────────────────────────
+# Era-authentic talent windows for era-gated chars; talents modify stock WotLK spells.
+# Meaningless without IP (eras come from Individual Progression) — force OFF if IP is off.
+if [[ "${ERATALENTS_ENABLE:-1}" == "1" && "${IP_ENABLE:-1}" != "1" ]]; then
+  echo "    EraTalents: ERATALENTS_ENABLE=1 but IP_ENABLE!=1 — era talents need IP; forcing OFF."
+  ERATALENTS_ENABLE=0
+fi
+ERATALENTS_CONF="$MODETC/mod_era_talents.conf"
+set_conf "EraTalents.Enable" "${ERATALENTS_ENABLE:-1}" "$ERATALENTS_CONF"
+set_conf "EraTalents.Debug"  "${ERATALENTS_DEBUG:-0}"  "$ERATALENTS_CONF"
+set_conf "EraTalents.BotTalents" "${ERATALENTS_BOTS:-0}" "$ERATALENTS_CONF"
+set_conf "EraTalents.GlyphGate" "${ERATALENTS_GLYPHGATE:-1}" "$ERATALENTS_CONF"
+# The faction-leader "Progress to the next expansion" gossip rides the same .env knob as the IP
+# hold above — on without the hold would be harmless but pointless, hold without the gossip
+# would strand players at 7/12, so they are one switch. Forced off with era talents.
+if [[ "${ERATALENTS_ENABLE:-1}" == "1" && "${IP_MANUAL_ERA_ADVANCE:-1}" == "1" ]]; then
+  set_conf "EraTalents.AdvanceGossip" "1" "$ERATALENTS_CONF"
+else
+  set_conf "EraTalents.AdvanceGossip" "0" "$ERATALENTS_CONF"
+fi
+echo "    EraTalents: $([[ "${ERATALENTS_ENABLE:-1}" == "1" ]] && echo ON || echo OFF)."
 # PvP realm (GameType 1). Drives World::IsPvPRealm(): players are auto-flagged for PvP in
 # contested/enemy territory, like a classic PvP server. (0=Normal/PvE, 6=RP, 8=RPPvP, 16=FFA.)
 # The realmlist 'icon' below is set to match so the realm-select screen also shows "PvP".
@@ -374,6 +548,10 @@ set_conf "Logger.playerbots"    "3,Playerbots" "$WS_CONF"
 # defined somewhere it reads (worldserver.conf is accepted). Define it as 0: silences that
 # spam AND keeps the bridge off the console, matching the Logger.playerbots choice above.
 set_conf "MultiBotBridge.EnableConsoleLogs" "0" "$WS_CONF"
+# Core 413bea61+ (2026-09-07 bump) added clustering support (feat(Core) #16832) and reads
+# Cluster.Enabled at startup; the entrypoint-created worldserver.conf predates the key on existing
+# installs, so define it as 0 (single realm, no sidecar) to silence the "Missing property" notice.
+set_conf "Cluster.Enabled" "0" "$WS_CONF"
 # Roaming bot population (from .env MAX_RANDOM_BOTS, default 2000). Account count 0 = automatic.
 # Only ~BotActiveAlone% run full AI when no real player is near, and SmartScale auto-throttles
 # if the server tick gets heavy — but more online bots still cost more RAM and CPU.
@@ -382,10 +560,10 @@ set_conf "AiPlayerbot.Enabled"            "1"      "$PB_CONF"
 set_conf "AiPlayerbot.RandomBotAutologin" "1"      "$PB_CONF"
 set_conf "AiPlayerbot.MinRandomBots"      "$BOTS"  "$PB_CONF"
 set_conf "AiPlayerbot.MaxRandomBots"      "$BOTS"  "$PB_CONF"
-# Required by mod-player-bot-level-brackets: bots must keep their random levels.
+# Required by the level-bracket balancer (AiPlayerbot.LevelBrackets.*): bots must keep their random levels.
 set_conf "AiPlayerbot.DisableRandomLevels" "0"   "$PB_CONF"
-# Disable gear/spec persistence: it's incompatible with mod-player-bot-level-brackets.
-# The brackets module constantly re-levels bots to follow the player population, including
+# Disable gear/spec persistence: it's incompatible with the level-bracket balancer.
+# The bracket balancer constantly re-levels bots to follow the player population, including
 # DEMOTING them (e.g. 45 -> 7) via PlayerbotFactory::Randomize(false). With persistence ON
 # (the playerbots default), Randomize skips ClearAllItems() for any bot at/above the
 # persistence level, so a demoted bot keeps its old high-level gear; InitEquipment only
@@ -394,7 +572,7 @@ set_conf "AiPlayerbot.DisableRandomLevels" "0"   "$PB_CONF"
 set_conf "AiPlayerbot.EquipAndSpecPersistence" "0" "$PB_CONF"
 # Battlegrounds & arenas.
 # On-demand (the key setting): with RandomBotJoinBG=1, when YOU queue any BG/arena at ANY
-# level, bots at your bracket fill it — and mod-player-bot-level-brackets keeps bots at every
+# level, bots at your bracket fill it — and the level-bracket balancer keeps bots at every
 # level, so BGs pop at all brackets, not just 80. This is what lets you join whenever you want.
 set_conf "AiPlayerbot.RandomBotJoinBG" "1" "$PB_CONF"
 # Always-on ambiance: bots also run their own BGs even with no humans. Kept light at level 80
@@ -504,16 +682,31 @@ set_conf "AiPlayerbot.RandomBotUpdateInterval"      "20"   "$PB_CONF"
 set_conf "AiPlayerbot.RandomBotCountChangeMinInterval" "1800" "$PB_CONF"
 set_conf "AiPlayerbot.RandomBotCountChangeMaxInterval" "7200" "$PB_CONF"
 
-# Level-bracket distribution: concentrate bots around the level(s) real players are at, so
-# your bracket feels busy (instead of 2000 bots spread thin across all levels). Re-evaluated
-# every few minutes, so the crowd follows you as you level. Weight 10 = strong solo focus
-# (module recommends 10-15); SyncFactions makes BOTH factions gather at your level too.
-BR_CONF="$MODETC/mod_player_bot_level_brackets.conf"
-if [[ -f "$BR_CONF" ]]; then
-  set_conf "BotLevelBrackets.Dynamic.UseDynamicDistribution" "1"  "$BR_CONF"
-  set_conf "BotLevelBrackets.Dynamic.RealPlayerWeight"       "10" "$BR_CONF"
-  set_conf "BotLevelBrackets.Dynamic.SyncFactions"          "1"  "$BR_CONF"
+# Era-align bot riding to Individual Progression. IP restores original riding REQUIREMENTS at the
+# trainer (trainer_spell.ReqLevel: Apprentice 40 / Journeyman 60 / Expert-fly 70), but bots never
+# use trainers — PlayerbotFactory learns the riding spells directly and CheckMountStateAction gates
+# USE, both keyed off these Use*MountAtMinLevel knobs (stock WotLK 20/40/60/70). Left at stock, bots
+# ride at level 20 under IP. Set them to the era values ONLY when IP is on; with IP off the stock
+# WotLK levels are correct, so we leave the conf.dist defaults untouched. (See .env IP_BOT_*_LEVEL.)
+if [[ "${IP_ENABLE:-1}" == "1" ]]; then
+  set_conf "AiPlayerbot.UseGroundMountAtMinLevel"     "${IP_BOT_GROUND_MOUNT_LEVEL:-40}"      "$PB_CONF"
+  set_conf "AiPlayerbot.UseFastGroundMountAtMinLevel" "${IP_BOT_FAST_GROUND_MOUNT_LEVEL:-60}" "$PB_CONF"
+  set_conf "AiPlayerbot.UseFlyMountAtMinLevel"        "${IP_BOT_FLY_MOUNT_LEVEL:-70}"         "$PB_CONF"
+  set_conf "AiPlayerbot.UseFastFlyMountAtMinLevel"    "${IP_BOT_FAST_FLY_MOUNT_LEVEL:-70}"    "$PB_CONF"
 fi
+
+# Level-bracket distribution (native to mod-playerbots since upstream 6cc5e3a, which absorbed the
+# former mod-player-bot-level-brackets module — that module is no longer cloned): concentrate bots
+# around the level(s) real players are at, so your bracket feels busy (instead of 2000 bots spread
+# thin across all levels). Re-evaluated every few minutes, so the crowd follows you as you level.
+# Weight 10 = strong solo focus (the original module recommended 10-15); SyncFactions makes BOTH
+# factions gather at your level too. Upstream ships Enabled=0, so this block is what turns it on.
+set_conf "AiPlayerbot.LevelBrackets.Enabled"                        "1"  "$PB_CONF"
+set_conf "AiPlayerbot.LevelBrackets.Dynamic.UseDynamicDistribution" "1"  "$PB_CONF"
+set_conf "AiPlayerbot.LevelBrackets.Dynamic.RealPlayerWeight"       "10" "$PB_CONF"
+set_conf "AiPlayerbot.LevelBrackets.Dynamic.SyncFactions"           "1"  "$PB_CONF"
+# The retired module's conf is dead weight once its clone is pruned; drop it so nobody tunes it.
+rm -f "$MODETC/mod_player_bot_level_brackets.conf" "$MODETC/mod_player_bot_level_brackets.conf.dist"
 
 
 # Auction-house economy (mod-ah-bot-plus): a dedicated AH character lists goods and buys
@@ -604,7 +797,7 @@ if [[ -f "$PBCHAT_CONF" ]]; then
   set_conf "PlayerbotChatter.Url"           "${CHATTER_URL:-http://${OLLAMA_IP:-localhost}:11434/api/generate}" "$PBCHAT_CONF"
   set_conf "PlayerbotChatter.Model"         "${CHATTER_MODEL:-llama3.1:8b}"         "$PBCHAT_CONF"
   set_conf "PlayerbotChatter.Think"         "${CHATTER_THINK:-0}"                   "$PBCHAT_CONF"
-  _CHATTER_SP_DEFAULT='You'"'"'re a real person playing WoW: Wrath of the Lich King (3.3.5a, level cap 80), chatting in-game with other players. Type like a normal friendly gamer: short, relaxed, light slang (lol, gg, lfg, lfm, ding, brb, gz, ty, wtb, wts, pst). Each message quietly tells you your current level just so you know what content you'"'"'ve reached — that note is background for you only: never announce, state, repeat, or tack your level (or "lvl N", "level N") onto what you say, since real players don'"'"'t sign their chat with their level. Only talk about content you would actually have reached by THAT level. If you'"'"'re low or mid level you'"'"'re still leveling: talk about your current zones, quests, dungeons your level, your class and spec, professions, gold, and saving for your first mounts — you have NOT been to Northrend, run heroics, or raided (Naxxramas/Ulduar/ToC/ICC) and you never talk as if you have. Only level-80 characters talk about heroics, raids, dailies, rep grinds, or endgame PvP. Only talk about real WoW things; never invent activities. You'"'"'re the person behind the keyboard, not the in-game character or an NPC — no fantasy roleplay voice. Vary how you start; never begin with '"'"'anyone'"'"'. You'"'"'re easygoing and mostly relaxed, but you'"'"'ve got a real personality and a sense of humor, not a chipper customer-service bot. Often enough to notice, though not every line, let some edge show: be dry or sarcastic, gripe about the usual WoW pain (bad RNG, repair bills, wipes, endless rep and daily grinds), rib another player good-naturedly, or crack a dumb joke. Keep it light: tease, don'"'"'t insult; never actually mean, hostile, or nasty toward the person you'"'"'re talking to, and still genuinely help if someone asks (a little sarcasm about it is fine). Vary how the humor lands so you don'"'"'t sound one-note. Never say you'"'"'re an AI, bot, or game master. No markdown, emojis, asterisk-actions, or quotation marks.'
+  _CHATTER_SP_DEFAULT='You'"'"'re a real person playing WoW: Wrath of the Lich King (3.3.5a, level cap 80), hanging out in-game and chatting with other players. Type like a normal gamer in chat: short, relaxed, light slang (lol, gg, lfg, lfm, ding, brb, gz, ty, wtb, wts, pst). You'"'"'re here to hang out, not to narrate your play session — talk about the game, the server, other players, your class, hot takes and gripes, the community, or whatever is on your mind, and the occasional totally off-topic real-life aside (tired, it is late, need coffee) is fine too. Don'"'"'t invent fake WoW content or activities that do not exist. Each message quietly tells you your current level, as background only: never announce or tack your level onto what you say (no lvl-42 or level-42 tags), and keep any specific game references to things you would actually know by that level — if you are low or mid level you have NOT been to Northrend, run heroics, or raided (Naxxramas/Ulduar/ToC/ICC) and you never talk as if you have; only level-80 characters talk about heroics, raids, dailies, rep grinds, or endgame PvP. You'"'"'re the person behind the keyboard, not the in-game character or an NPC — no fantasy roleplay voice. Vary how you start; never open with the word anyone. You'"'"'ve got a real personality: easygoing but opinionated, with a sense of humor, not a chipper customer-service bot. Be cranky, dry, and sarcastic when it fits — gripe about bad RNG, repair bills, wipes, grindy rep and dailies, class balance, the dungeon finder, blizzard, other servers, or the community; rib other players and share blunt opinions. Keep a floor though: no slurs, no real-world politics, and never genuinely hostile toward or targeting the person you are talking to — cranky and sarcastic is fine, cruel is not. Still help if someone actually asks (a little sarcasm about it is fine). Vary how the humor lands so you do not sound one-note. Never say you'"'"'re an AI, bot, or game master. No markdown, emojis, asterisk-actions, or quotation marks.'
   CHATTER_SYSTEM_PROMPT="${CHATTER_SYSTEM_PROMPT:-${_CHATTER_SP_DEFAULT}}"
   set_conf "PlayerbotChatter.SystemPrompt" "\"${CHATTER_SYSTEM_PROMPT}\"" "$PBCHAT_CONF"
   set_conf "PlayerbotChatter.MaxConcurrent" "${CHATTER_MAX_CONCURRENT:-3}"          "$PBCHAT_CONF"
@@ -635,9 +828,10 @@ if [[ -f "$PBCHAT_CONF" ]]; then
   set_conf "PlayerbotChatter.AmbientPerBotCooldown" "${CHATTER_AMBIENT_PER_BOT_COOLDOWN:-120}"    "$PBCHAT_CONF"
   set_conf "PlayerbotChatter.AmbientMaxPerMin"  "${CHATTER_AMBIENT_MAX_PER_MIN:-25}"              "$PBCHAT_CONF"
   set_conf "PlayerbotChatter.AmbientBufferLen"  "${CHATTER_AMBIENT_BUFFER_LEN:-8}"                "$PBCHAT_CONF"
-  set_conf "PlayerbotChatter.AmbientWeightGeneric" "${CHATTER_AMBIENT_W_GENERIC:-35}"             "$PBCHAT_CONF"
-  set_conf "PlayerbotChatter.AmbientWeightReact" "${CHATTER_AMBIENT_W_REACT:-45}"                 "$PBCHAT_CONF"
-  set_conf "PlayerbotChatter.AmbientWeightFlavor" "${CHATTER_AMBIENT_W_FLAVOR:-12}"               "$PBCHAT_CONF"
+  set_conf "PlayerbotChatter.AmbientWeightBanter" "${CHATTER_AMBIENT_W_BANTER:-40}"               "$PBCHAT_CONF"
+  set_conf "PlayerbotChatter.AmbientWeightGeneric" "${CHATTER_AMBIENT_W_GENERIC:-10}"             "$PBCHAT_CONF"
+  set_conf "PlayerbotChatter.AmbientWeightReact" "${CHATTER_AMBIENT_W_REACT:-35}"                 "$PBCHAT_CONF"
+  set_conf "PlayerbotChatter.AmbientWeightFlavor" "${CHATTER_AMBIENT_W_FLAVOR:-3}"                "$PBCHAT_CONF"
   set_conf "PlayerbotChatter.AmbientWeightEvent" "${CHATTER_AMBIENT_W_EVENT:-8}"                  "$PBCHAT_CONF"
 
   if [[ "$CHATTER_ENABLE" == "1" ]]; then

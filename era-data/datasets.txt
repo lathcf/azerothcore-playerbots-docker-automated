@@ -1,0 +1,22 @@
+# era-data dataset manifest — THE single source of truth for the dataset list.
+# Read by tools/era-regen.sh and tools/era_audit.py (DEFAULT_DATASETS); the client-side lists
+# (build-addon.sh, EraTalents.toc, client-patch/merge-into-patch.sh) are hand-extended.
+# Format: <era-dir>/<class>.yaml  <era_talent-data SQL>  <custom-spell SQL>
+vanilla/mage.yaml     2026_08_12_10_era_talent_data.sql              2026_08_13_00_era_talent_custom_spells.sql
+vanilla/priest.yaml   2026_08_13_10_era_talent_priest_data.sql       2026_08_13_11_era_talent_priest_custom_spells.sql
+vanilla/warlock.yaml  2026_08_14_12_era_talent_warlock_data.sql      2026_08_14_13_era_talent_warlock_custom_spells.sql
+vanilla/hunter.yaml   2026_08_16_20_era_talent_hunter_data.sql       2026_08_16_21_era_talent_hunter_custom_spells.sql
+vanilla/rogue.yaml    2026_08_17_10_era_talent_rogue_data.sql        2026_08_17_11_era_talent_rogue_custom_spells.sql
+vanilla/warrior.yaml  2026_08_18_10_era_talent_warrior_data.sql      2026_08_18_11_era_talent_warrior_custom_spells.sql
+vanilla/paladin.yaml  2026_08_18_30_era_talent_paladin_data.sql      2026_08_18_31_era_talent_paladin_custom_spells.sql
+vanilla/druid.yaml    2026_08_20_50_era_talent_druid_data.sql        2026_08_20_51_era_talent_druid_custom_spells.sql
+vanilla/shaman.yaml   2026_08_21_60_era_talent_shaman_data.sql       2026_08_21_61_era_talent_shaman_custom_spells.sql
+tbc/paladin.yaml      2026_08_27_00_era_talent_tbc_paladin_data.sql  2026_08_27_01_era_talent_tbc_paladin_custom_spells.sql
+tbc/druid.yaml        2026_08_31_00_era_talent_tbc_druid_data.sql    2026_08_31_01_era_talent_tbc_druid_custom_spells.sql
+tbc/shaman.yaml       2026_08_31_10_era_talent_tbc_shaman_data.sql   2026_08_31_11_era_talent_tbc_shaman_custom_spells.sql
+tbc/warrior.yaml      2026_09_03_00_era_talent_tbc_warrior_data.sql  2026_09_03_01_era_talent_tbc_warrior_custom_spells.sql
+tbc/rogue.yaml        2026_09_04_00_era_talent_tbc_rogue_data.sql    2026_09_04_01_era_talent_tbc_rogue_custom_spells.sql
+tbc/priest.yaml       2026_09_05_00_era_talent_tbc_priest_data.sql   2026_09_05_01_era_talent_tbc_priest_custom_spells.sql
+tbc/hunter.yaml       2026_09_06_00_era_talent_tbc_hunter_data.sql   2026_09_06_01_era_talent_tbc_hunter_custom_spells.sql
+tbc/warlock.yaml      2026_09_07_00_era_talent_tbc_warlock_data.sql  2026_09_07_01_era_talent_tbc_warlock_custom_spells.sql
+tbc/mage.yaml         2026_09_08_00_era_talent_tbc_mage_data.sql     2026_09_08_01_era_talent_tbc_mage_custom_spells.sql

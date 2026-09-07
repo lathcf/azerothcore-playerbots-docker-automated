@@ -1,0 +1,11 @@
+-- mod-era-talents: purge `character_spell` rows for the eight retired band ids that
+-- `2026_09_06_08_era_talent_final_review_orphans.sql` removes from `spell_dbc`.
+--
+-- Same eight ids (pre-Task-12 warrior Shield Specialization passives 924288-924292, warlock
+-- Fel Intellect pet r4/r5 928131/928132, shaman "Elemental Mastery" cost half 932414). No current
+-- generation grants any of them, so a surviving row is dead data from an older generation:
+-- `Player::_LoadSpells` would load a spell whose `spell_dbc` row no longer exists. Measured on
+-- the dev box at R11: 0 rows. Kept anyway so an older install converges.
+--
+-- Same idiom as `2026_08_26_10_era_bot_ghost_spell_cleanup.sql`. Idempotent.
+DELETE FROM `character_spell` WHERE `spell` IN (924288,924289,924290,924291,924292,928131,928132,932414);

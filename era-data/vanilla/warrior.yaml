@@ -1,0 +1,2468 @@
+era: 0
+class: 1
+eraName: Vanilla
+className: WARRIOR
+# Hand-assigned helper ids for the Warrior pass live in the 932800-932899 sub-band (see the helper
+# registry in docs/era-talents-framework.md). ARMS (Task 6) claims 932800-932807.
+# FURY (Task 7) claims 932808 (Death Wish Vanilla clone) + 932810-932814 (Flurry haste buffs r1-5) +
+# 932815-932819 (Enrage melee-damage buffs r1-5). 932809 left free. (932810-819 was the planned Fury
+# sub-band; the Death Wish clone needed one more id, so it uses the free 932808 — Arms took only
+# 800-807 — which stays clear of Protection's 932820-932829.)
+# Top-level SpellScript bindings: attach an EraTalentProcScripts.cpp SpellScript/AuraScript to a
+# STOCK spell (the generator emits spell_script_names rows). era_improved_berserker_rage (Task 11)
+# binds to stock Berserker Rage 18499 (the SOLE single-rank family-A-bit28 cast — warrior _ref) and
+# energizes the misc-15 marker's rage on cast. Global binding is harmless — inert without the
+# caster's misc-15 DUMMY marker (only a Vanilla warrior who learned node 18533 carries it), era-safe.
+scriptBindings:
+- { spell: 18499, script: era_improved_berserker_rage }  # Improved Berserker Rage (18533) — +5/10 rage on Berserker Rage cast
+# Bloodthirst Vanilla damage clones (node 18535, R1-R4) — era_bloodthirst_vanilla computes the instant
+# attack = 45% of attack power (mirrors stock spell_warr_bloodthirst; the heal-on-swings is pure DBC).
+- { spell: 932828, script: era_bloodthirst_vanilla }   # Bloodthirst R1 (talent-granted)
+- { spell: 932829, script: era_bloodthirst_vanilla }   # Bloodthirst R2 (trainer L48)
+- { spell: 932830, script: era_bloodthirst_vanilla }   # Bloodthirst R3 (trainer L54)
+- { spell: 932831, script: era_bloodthirst_vanilla }   # Bloodthirst R4 (trainer L60)
+# Last Stand Vanilla clone (node 18541) — era_last_stand replicates spell_warr_last_stand::HandleDummy
+# (the +30% max-HP-for-20s is script-bound to stock 12975, so a bare clone would add 0 HP). Bound to the
+# clone ONLY; stock 12975 keeps the core script (WotLK 3-min cd).
+- { spell: 932840, script: era_last_stand }            # Last Stand (talent-granted; 10-min cd clone of 12975)
+helpers:
+# --- Deep Wounds bleed (node 18509 proc-scripted -> era_deep_wounds casts this). ------------------
+# Vanilla Deep Wounds = "20/40/60% of your average melee weapon damage as a bleed over 12 sec". The
+# WotLK stock Deep Wounds bleed (12721) was RETUNED (dump 2026-08-18: aura 3 PERIODIC_DAMAGE, period
+# 1000 ms, DurationIndex 32 = 6000 ms, and in WotLK the % is of the TRIGGERING spell's damage, not of
+# weapon damage) — so it can't be granted; the era_deep_wounds AuraScript computes the Vanilla amount
+# and applies THIS helper as the carrier. Clone 12721 to inherit its 1000 ms tick period + physical
+# bleed visual (helpers have NO amplitude key — the period MUST come from a template), then re-stretch
+# to 12 s (durationIndex 29, the same 12s index the hunter Wyvern DoT 932966 uses; stock idx 32 = 6s)
+# -> 12000/1000 = 12 ticks (era_deep_wounds divides the total by GetMaxTicks()). family: 0 makes it
+# family-less so no warrior spellmod can stretch it AND it escapes the family-4 SpellInfoCorrections
+# sweep (the hunter Entrapment-clone precedent). Per-tick base point is set at cast time by the script.
+- id: 932800
+  name: Deep Wounds
+  template: 12721          # clone stock Deep Wounds bleed (inherit 1000ms period + physical bleed visual)
+  durationIndex: 29        # 12 sec (Vanilla; stock 12721 idx 32 = 6000). 12000/1000 = 12 ticks.
+  family: 0               # family-less: no warrior spellmod reaches it; escapes the family-4 sweep
+  school: 1              # physical
+  effects:
+  - { effect: 6, aura: 3, basePoints: 0, dieSides: 0, targetA: 6 }   # PERIODIC_DAMAGE; per-tick value set at cast by era_deep_wounds
+  client:
+    name: Deep Wounds
+    icon: 243             # stock Deep Wounds SpellIconID (12721 dump 2026-08-18)
+    auraDescription: "Bleeding for physical damage every 1 sec."
+# --- Mace Specialization stun (node 18514 proc trigger) — Vanilla 3 sec stun. --------------------
+# Identical situation to the rogue Mace Specialization stun (rogue helper 932988): WotLK reworked the
+# warrior Mace Specialization talent into a flat armor-pen/expertise passive with NO stun component,
+# and `lookup spell Mace Stun` returns nothing (warrior _ref.triggers) — the 3s stun has ZERO stock
+# support and must be authored. Mirrors the rogue 932988 / hunter Improved Concussive Shot 932971 /
+# priest Blackout 932970 shape: aura 12 MOD_STUN, Mechanic 12 MECHANIC_STUN, DurationIndex 27 = 3000ms
+# (== Hammer of Justice 853), targetA 6 (enemy), physical. Needs a client row or the 3.3.5a client
+# renders no debuff icon (the Blackout precedent).
+- id: 932801
+  name: Mace Specialization
+  aura: 12                 # SPELL_AURA_MOD_STUN
+  mechanic: 12             # MECHANIC_STUN (SharedDefines.h — NOT 7 = root)
+  durationIndex: 27        # 3 sec (SpellDuration.dbc idx 27 = 3000; == Hammer of Justice 853)
+  targetA: 6               # TARGET_UNIT_TARGET_ENEMY
+  basePoints: -1           # stun carries no amount (Blackout/Concussive/rogue-Mace precedent)
+  school: 1                # physical
+  client:
+    name: Mace Specialization
+    icon: 302              # Hammer of Justice 853 SpellIconID (3s-stun analog)
+    auraDescription: "Stunned."
+# --- Improved Hamstring immobilize (node 18517 proc trigger) — Vanilla 5 sec root. ----------------
+# Vanilla Improved Hamstring: X% chance the Hamstring HIT immobilizes the target for 5 sec. There is
+# no stock warrior "Hamstring root" spell (Hamstring 1715 is a slow, aura 33 MOD_DECREASE_SPEED, not a
+# root), so the 5s root is authored exactly like the hunter Entrapment root (932972): clone the stock
+# Entrapment root shell 19185 (aura 26 MOD_ROOT, Mechanic 7, family 0 — so no spellmod stretches it)
+# and set the 5s duration index. Visible debuff -> client block. Node 18517 is a data proc that casts
+# this on Hamstring hits (see the node).
+- id: 932802
+  name: Improved Hamstring
+  template: 19185          # clone stock Entrapment root — inherits root aura/mechanic/visual (family 0)
+  spellFixAck: >-
+    Same lost correction as the hunter's Entrapment clones (this clone shares template 19185):
+    SpellInfoCorrections.cpp:692 rewrites `Effects[EFFECT_0].TargetA` / `TargetB` to the victim-
+    centred AoE pair and ORs SPELL_ATTR5_ALWAYS_AOE_LINE_OF_SIGHT (0x04000000; post-fix
+    AttributesEx5 would be the template's live DBC 0 | 0x04000000 = 67108864). This clone authors
+    `targetA: 6` (single enemy) and inherits the template's ImplicitTargetB_1 = 15, so the emitted
+    row is 6 / 15; consequence is that line of sight is enforced on target selection (Spell.cpp:5901
+    / 8010) instead of skipped. Shipped, merged, real-client-verified Vanilla substrate:
+    deliberately NOT fixed here.
+  durationIndex: 28        # 5 sec (SpellDuration.dbc idx 28 = 5000; stock 19185 idx 39 = 2000)
+  effects:
+  - { effect: 6, aura: 26, basePoints: 0, dieSides: 0, targetA: 6 }   # MOD_ROOT on the enemy
+  client:
+    name: Improved Hamstring
+    icon: 20              # stock Entrapment root SpellIconID (19185 dump 2026-08-18)
+    auraDescription: "Immobilized."
+# --- Tactical Mastery clones 932803-807 (node 18505 grants one per rank) — rage retained on stance --
+# The rage-retention-on-stance-change mechanic is HARDCODED in the core (SpellAuraEffects.cpp
+# HandleAuraModShapeshift): it scans the player's spell+talent maps for a spell with SpellFamilyName ==
+# SPELLFAMILY_WARRIOR AND SpellIconID == 139, and retains CalculateSpellDamage(Effect_0) * 10 rage.
+# So the value MUST live in a spell that is (a) family 4 and (b) icon 139 — the generator's stat/multi
+# paths force family 0 + icon 1, so they CANNOT drive this. And granting the STOCK Tactical Mastery
+# chain (12295/12676/12677) is only 3 ranks (Vanilla is 5: 5/10/15/20/25) AND leaks the WotLK-only
+# Effect_2/3 pct mods (dump 2026-08-18: aura 108 misc 2). So clone 12295 five times: cloning inherits
+# SpellClassSet 4 + SpellIconID 139 (the two match keys) and the passive/hidden attributes; overriding
+# the effects list with a single DUMMY zero-fills the WotLK extras. Effect_0 DUMMY value = rage
+# retained (raw basePoints, dieSides 0). Node 18505 grants the matching clone per rank.
+- id: 932803
+  name: Tactical Mastery
+  template: 12295          # clone stock Tactical Mastery (inherit SpellClassSet 4 + SpellIconID 139 — the core's match keys)
+  effects:
+  - { effect: 6, aura: 4, basePoints: 5, dieSides: 0, targetA: 1 }    # DUMMY on self; Effect_0 = 5 rage retained
+  client:
+    name: Tactical Mastery
+    icon: 139
+    description: "You retain up to 5 of your rage points when you change stances."
+- id: 932804
+  name: Tactical Mastery
+  template: 12295
+  effects:
+  - { effect: 6, aura: 4, basePoints: 10, dieSides: 0, targetA: 1 }   # 10 rage retained
+  client:
+    name: Tactical Mastery
+    icon: 139
+    description: "You retain up to 10 of your rage points when you change stances."
+- id: 932805
+  name: Tactical Mastery
+  template: 12295
+  effects:
+  - { effect: 6, aura: 4, basePoints: 15, dieSides: 0, targetA: 1 }   # 15 rage retained
+  client:
+    name: Tactical Mastery
+    icon: 139
+    description: "You retain up to 15 of your rage points when you change stances."
+- id: 932806
+  name: Tactical Mastery
+  template: 12295
+  effects:
+  - { effect: 6, aura: 4, basePoints: 20, dieSides: 0, targetA: 1 }   # 20 rage retained
+  client:
+    name: Tactical Mastery
+    icon: 139
+    description: "You retain up to 20 of your rage points when you change stances."
+- id: 932807
+  name: Tactical Mastery
+  template: 12295
+  effects:
+  - { effect: 6, aura: 4, basePoints: 25, dieSides: 0, targetA: 1 }   # 25 rage retained
+  client:
+    name: Tactical Mastery
+    icon: 139
+    description: "You retain up to 25 of your rage points when you change stances."
+# --- Death Wish Vanilla clone (node 18531 grants it) — WotLK 12292 DIVERGED. --------------------
+# Vanilla Death Wish (warcraft.wiki.gg, verified 2026-08-18): +20% physical damage, IMMUNE TO FEAR,
+# but -20% armor AND all resistances, 30s, 3min cd, 10 rage. WotLK 12292 (dump 2026-08-18) DROPPED
+# the fear immunity and the armor/resist penalty and instead gives +20% physical damage (Effect_1
+# aura79 misc1) + Effect_3 aura87 MOD_DAMAGE_PERCENT_TAKEN +5% (misc127). Granting 12292 would ship
+# the WotLK behavior AND its client tooltip (both global, per-era override impossible) — so clone
+# 12292 (inherit instant cast / 180000ms cd / 100 ManaCost=10 rage / DurationIndex 9=30s / family 4
+# / attributes) and author the three Vanilla effects. Active castable -> client row w/ Vanilla text +
+# SkillLine 256 (warrior; SkillLineAbility.dbc 12292->256, dump 2026-08-18) so it tabs correctly.
+# family stays 4 (inherited): Death Wish IS a warrior spell and it is a granted ACTIVE, not a
+# spellmod target/passive — the Preparation-clone precedent (rogue 932983 kept SpellClassSet 8).
+- id: 932808
+  name: Death Wish
+  template: 12292          # clone stock Death Wish (inherit cast/cd/cost/DurationIndex 9/family/attrs)
+  effects:
+  - { effect: 6, aura: 79,  misc: 1,   basePoints: 20,  dieSides: 0, targetA: 1 }  # +20% physical (school mask 1) damage done
+  - { effect: 6, aura: 77,  misc: 5,   basePoints: 0,   dieSides: 0, targetA: 1 }  # MECHANIC_IMMUNITY, MECHANIC_FEAR (5) = immune to Fear
+  - { effect: 6, aura: 101, misc: 127, basePoints: -20, dieSides: 0, targetA: 1 }  # MOD_RESISTANCE_PCT -20%, school mask 127 (armor + all magic resists)
+  client:
+    name: Death Wish
+    icon: 169             # stock Death Wish SpellIconID (12292 dump 2026-08-18)
+    skillLine: 256        # Warrior skill line (SkillLineAbility 12292 -> 256; dump 2026-08-18) — else the granted active lands in the General tab
+    description: "When activated, increases your physical damage by 20% and makes you immune to Fear effects, but lowers your armor and all resistances by 20%. Lasts 30 sec."
+    auraDescription: "Physical damage increased by 20%. Immune to Fear. Armor and all resistances reduced by 20%."
+# --- Flurry Vanilla haste buffs (node 18534 proc applies one per rank) — 10/15/20/25/30%. --------
+# Vanilla Flurry buff = 10/15/20/25/30% melee haste for the next 3 swings after a crit. The stock
+# buff chain 12966-12970 (dump 2026-08-18) is family 4, Effect_1 aura138 MOD_MELEE_HASTE, DurationIndex
+# 8 (15s), ProcCharges 3, ProcTypeMask(=DBC ProcFlags) 4 (DONE_MELEE_AUTO_ATTACK — consumes 1 charge
+# per swing), but at the WotLK magnitudes 5/10/15/20/25% — NOT Vanilla. So clone 12966 per rank
+# (inherit the 3-charge / consume-on-swing / 15s mechanism verbatim — the core auto-generates the
+# charge-consumer proc from the inherited DBC ProcFlags 4, exactly like stock Flurry) and override
+# ONLY Effect_1's amount to the Vanilla value + family 0 (escape the family-4 SpellInfoCorrections
+# sweep; a buff carries no identity bit anyway). Visible buff -> client block w/ the Vanilla text.
+- id: 932810
+  name: Flurry
+  template: 12966         # clone stock Flurry buff (inherit aura138 / DurationIndex 8=15s / ProcCharges 3 / ProcFlags 4 consume-on-swing)
+  family: 0              # family-less: escape the family-4 sweep (buff has no identity bit)
+  effects:
+  - { effect: 6, aura: 138, basePoints: 10, dieSides: 0, targetA: 1 }   # +10% melee haste, self
+  client:
+    name: Flurry
+    icon: 108             # stock Flurry SpellIconID (12966 dump 2026-08-18)
+    auraDescription: "Increases attack speed by 10%. Consumed on 3 melee swings."
+- id: 932811
+  name: Flurry
+  template: 12966
+  family: 0
+  effects:
+  - { effect: 6, aura: 138, basePoints: 15, dieSides: 0, targetA: 1 }   # +15% melee haste
+  client:
+    name: Flurry
+    icon: 108
+    auraDescription: "Increases attack speed by 15%. Consumed on 3 melee swings."
+- id: 932812
+  name: Flurry
+  template: 12966
+  family: 0
+  effects:
+  - { effect: 6, aura: 138, basePoints: 20, dieSides: 0, targetA: 1 }   # +20% melee haste
+  client:
+    name: Flurry
+    icon: 108
+    auraDescription: "Increases attack speed by 20%. Consumed on 3 melee swings."
+- id: 932813
+  name: Flurry
+  template: 12966
+  family: 0
+  effects:
+  - { effect: 6, aura: 138, basePoints: 25, dieSides: 0, targetA: 1 }   # +25% melee haste
+  client:
+    name: Flurry
+    icon: 108
+    auraDescription: "Increases attack speed by 25%. Consumed on 3 melee swings."
+- id: 932814
+  name: Flurry
+  template: 12966
+  family: 0
+  effects:
+  - { effect: 6, aura: 138, basePoints: 30, dieSides: 0, targetA: 1 }   # +30% melee haste
+  client:
+    name: Flurry
+    icon: 108
+    auraDescription: "Increases attack speed by 30%. Consumed on 3 melee swings."
+# --- Enrage Vanilla melee-damage buffs (node 18529 proc applies one per rank) — 5/10/15/20/25%. --
+# Vanilla Enrage = +5/10/15/20/25% melee damage for 12 sec / up to 12 swings, after being crit. Stock
+# Enrage buffs 12880/14201-14204 (dump 2026-08-18) are family 0, Effect_1 aura79 MOD_DAMAGE_PERCENT_
+# DONE misc1 (physical), DurationIndex 29 (12s), icon 95 — BUT at the WotLK magnitudes 2/4/6/8/10%
+# AND with ProcCharges 0 (WotLK dropped the 12-swing cap). So clone 12880 per rank (inherit the
+# family-0 / aura79-misc1 / 12s / enrage icon) and override the amount to Vanilla, set ProcCharges 12,
+# and add an explicit spell_proc row (ProcFlags 4 = DONE_MELEE_AUTO_ATTACK) so the core decrements a
+# charge per swing — the Vanilla "up to 12 swings" cap, the same consume-on-swing mechanism stock
+# Flurry uses. Visible buff -> client block.
+- id: 932815
+  name: Enrage
+  template: 12880         # clone stock Enrage buff (inherit family 0 / aura79 misc1 physical / DurationIndex 29=12s / icon 95)
+  durationIndex: 29       # 12 sec (also inherited from 12880; explicit for clarity)
+  procCharges: 12         # Vanilla 12-swing cap (stock = 0 = uncapped); consumed via the proc row below
+  effects:
+  - { effect: 6, aura: 79, misc: 1, basePoints: 5, dieSides: 0, targetA: 1 }    # +5% physical (melee) damage done, self
+  proc:
+    flags: 4              # DONE_MELEE_AUTO_ATTACK — consume 1 charge per melee swing (the 12-swing cap; Flurry's consume-on-swing mechanism)
+  client:
+    name: Enrage
+    icon: 95              # stock Enrage SpellIconID (12880 dump 2026-08-18)
+    auraDescription: "Melee damage increased by 5%. Lasts 12 sec or up to 12 swings."
+- id: 932816
+  name: Enrage
+  template: 12880
+  durationIndex: 29
+  procCharges: 12
+  effects:
+  - { effect: 6, aura: 79, misc: 1, basePoints: 10, dieSides: 0, targetA: 1 }   # +10%
+  proc:
+    flags: 4
+  client:
+    name: Enrage
+    icon: 95
+    auraDescription: "Melee damage increased by 10%. Lasts 12 sec or up to 12 swings."
+- id: 932817
+  name: Enrage
+  template: 12880
+  durationIndex: 29
+  procCharges: 12
+  effects:
+  - { effect: 6, aura: 79, misc: 1, basePoints: 15, dieSides: 0, targetA: 1 }   # +15%
+  proc:
+    flags: 4
+  client:
+    name: Enrage
+    icon: 95
+    auraDescription: "Melee damage increased by 15%. Lasts 12 sec or up to 12 swings."
+- id: 932818
+  name: Enrage
+  template: 12880
+  durationIndex: 29
+  procCharges: 12
+  effects:
+  - { effect: 6, aura: 79, misc: 1, basePoints: 20, dieSides: 0, targetA: 1 }   # +20%
+  proc:
+    flags: 4
+  client:
+    name: Enrage
+    icon: 95
+    auraDescription: "Melee damage increased by 20%. Lasts 12 sec or up to 12 swings."
+- id: 932819
+  name: Enrage
+  template: 12880
+  durationIndex: 29
+  procCharges: 12
+  effects:
+  - { effect: 6, aura: 79, misc: 1, basePoints: 25, dieSides: 0, targetA: 1 }   # +25%
+  proc:
+    flags: 4
+  client:
+    name: Enrage
+    icon: 95
+    auraDescription: "Melee damage increased by 25%. Lasts 12 sec or up to 12 swings."
+# === PROTECTION (Task 8) helpers — sub-band 932820-932829 ==========================================
+# 932820 intentionally LEFT FREE: the Task-8 plan reserved it for a Defiance threat CLONE, but Defiance
+# (node 18544) ships as a plain family-less `stat` MOD_THREAT aura (0 helpers) — see that node's verdict.
+# 932823-827 CLAIMED (Task 12): Shield Specialization rage-on-block — 5 per-rank clones of the stock
+# Shield Spec chain (12298/12724/12725/12726/12727), each carrying BOTH halves (block% + block-gated
+# rage proc) as one granted passive (see the 932823-827 helper defs + node 18536). 932828-829 free.
+# --- Improved Revenge 3 sec stun (node 18543 proc trigger) — Vanilla stun-on-Revenge. -------------
+# Vanilla Improved Revenge: X% chance the Revenge HIT stuns the target for 3 sec (skeleton 15/30/45%,
+# 3 ranks). WotLK reworked Improved Revenge into a +Revenge-damage spellmod (12797/12799 = aura 108
+# misc0 +30/60% damage, dump 2026-08-18) and dropped the stun, so no stock stun payload exists — author
+# it exactly like the Arms Mace Specialization stun 932801 (aura 12 MOD_STUN, Mechanic 12 MECHANIC_STUN,
+# DurationIndex 27 = 3000ms == Hammer of Justice 853, targetA 6 enemy, physical, no amount). Visible
+# debuff -> client row (the Blackout/Mace-Spec precedent). Node 18543 is a data proc casting this on
+# Revenge hits.
+- id: 932821
+  name: Improved Revenge
+  aura: 12                 # SPELL_AURA_MOD_STUN
+  mechanic: 12             # MECHANIC_STUN (SharedDefines.h — NOT 7 = root)
+  durationIndex: 27        # 3 sec (SpellDuration.dbc idx 27 = 3000; == Hammer of Justice 853)
+  targetA: 6               # TARGET_UNIT_TARGET_ENEMY
+  basePoints: -1           # stun carries no amount (Mace-Spec/Blackout precedent)
+  school: 1                # physical
+  client:
+    name: Improved Revenge
+    icon: 302              # Hammer of Justice 853 SpellIconID (3s-stun analog; same as Mace Spec stun)
+    auraDescription: "Stunned."
+# --- Concussion Blow Vanilla clone (node 18549 grants it) — WotLK 12809 DIVERGED. ----------------
+# Vanilla Concussion Blow (wowhead classic, verified 2026-08-18): 15 rage, Instant, 45 sec cooldown,
+# stuns 5 sec, NO damage. WotLK 12809 (dump 2026-08-18) = RecoveryTime 30000 (30s, not 45s) + Effect_2
+# SCHOOL_DAMAGE (AP-scaled by spell_warr script) — both a magnitude (cd) AND a behavior (added damage)
+# divergence, so granting 12809 ships a stronger-than-Vanilla ability with the wrong tooltip. The stun
+# itself is pure DBC (Effect_1 aura 12 MOD_STUN, EffectMechanic 12, DurationIndex 28 = 5s), so unlike
+# Last Stand/Shield Slam (script-bound payloads that FORCE a grant) it can be cloned without C++: clone
+# 12809 (inherit 15 rage ManaCost / instant / DurationIndex 28 / RangeIndex 2 / family 4 / EffectMechanic
+# 12), override the cooldown to 45s and drop Effect_2 (damage) so only the 5s stun remains. Active
+# castable -> client row w/ Vanilla text + SkillLine 256 (else the granted active lands in the General
+# tab). The Death Wish clone precedent (932808). Category 0 (inherited) so it escapes the family-4
+# category-132 sweep.
+- id: 932822
+  name: Concussion Blow
+  template: 12809          # clone stock Concussion Blow (inherit 15 rage/instant/DurationIndex 28=5s/family 4/EffectMechanic 12/range)
+  cooldown: 45000         # Vanilla 45s cooldown (stock RecoveryTime 30000 = 30s)
+  effects:
+  - { effect: 6, aura: 12, basePoints: -1, dieSides: 0, targetA: 6 }   # MOD_STUN 5s only; stock Effect_2 SCHOOL_DAMAGE 0-filled (Vanilla is stun-only)
+  client:
+    name: Concussion Blow
+    icon: 25              # stock Concussion Blow SpellIconID (12809 dump 2026-08-18)
+    skillLine: 256        # Warrior skill line — else the granted active lands in the General tab
+    description: "Stuns the opponent for 5 sec."
+    auraDescription: "Stunned."
+# --- Shield Specialization 932823-827 (node 18536 grants one per rank) — Vanilla block% + rage-on-block.
+# Vanilla Shield Specialization (warcraft.wiki.gg Classic, verified 2026-08-18): 5 ranks, +1/2/3/4/5%
+# block chance AND a 20/40/60/80/100% chance to generate 1 rage WHEN A BLOCK OCCURS. Both halves live
+# in ONE granted passive per rank (a single talent node can't carry a stat effect AND a data proc — a
+# `multi` node is stat/spellmod-only and a `proc` node's carrier is aura-42-only — so the faithful
+# build is a per-rank helper clone that carries both effects + its own spell_proc row; framework:
+# "A helper may also carry a proc: block, which emits a spell_proc row").
+# Clone the MATCHING per-rank stock Shield Spec spell (932823<-12298 ... 932827<-12727): the clone
+# inherits Attributes 464 (PASSIVE 0x40 + hidden-clientside 0x80 -> no spellbook entry, so NO client:
+# block is needed, exactly like the shipping block% auto-passive) + SpellIconID 1463 + SpellClassSet 0
+# (family-less: no warrior spellmod reaches it AND it escapes the family-4 SpellInfoCorrections sweep).
+# Effect_1 = aura 51 MOD_BLOCK_PERCENT, basePoints eff-1 + dieSides 1 -> +1..5% (BYTE-IDENTICAL to the
+# stat node it replaces AND to stock). Effect_2 = aura 42 PROC_TRIGGER_SPELL -> 12964 (the stock +1-rage
+# energize; Effect_1 30 ENERGIZE +1 rage, already client-DBC-present, family 0 — the SAME payload
+# Unbridled Wrath 18522 reuses). Vanilla is 1 rage; stock Shield Spec triggers 23602 = +5 rage (a WotLK
+# divergence), so we deliberately swap the trigger to 12964.
+# proc: flags 680 = the stock Shield Spec ProcTypeMask (PROC_FLAG_TAKEN_{MELEE_AUTO 0x8, SPELL_MELEE
+# 0x20, RANGED_AUTO 0x80, SPELL_RANGED 0x200}) = all taken melee+ranged hits. hitMask 64 = PROC_HIT_BLOCK
+# (SpellMgr.h:263) = fires ONLY on a block: the block gate is REAL, not the WotLK behavior — stock Shield
+# Spec has NO spell_proc row so it uses the DBC default HitMask (NORMAL|CRIT) and rages on ANY taken hit;
+# our HitMask 64 restores Vanilla's block-only rage. Verified block-gated against the fork proc engine:
+# Unit.cpp:148 sets PROC_HIT_BLOCK whenever blocked_amount>0 (partial AND full block), and
+# SpellMgr::CanSpellTriggerProcOnEvent (SpellMgr.cpp:929-940) rejects the proc unless
+# eventInfo.GetHitMask() & procEntry.HitMask — so only a hit that blocked satisfies it. HitMask is
+# honored because flags 680 sits in TAKEN_HIT_PROC_FLAG_MASK (SpellMgr.h:178, LoadSpellProcs:2121).
+# typeMask 7 = PROC_SPELL_TYPE_MASK_ALL — the value the core auto-generates for an aura-42 carrier
+# (SpellMgr.cpp:1951 default; 42 is not in the damage-only override list). The generator's default
+# typeMask 1 (DAMAGE) would drop a FULL block of a melee-CLASS spell: SpellMgr.cpp:911 only checks
+# SpellTypeMask for spell events (TAKEN_SPELL_* are in SPELL_PROC_FLAG_MASK), and Unit.cpp:6820-6827
+# tags a fully-blocked spell hit (0 damage) as NO_DMG_HEAL (4), which 1 rejects but 7 accepts. Partial
+# blocks (damage>0 -> DAMAGE) and auto-attack blocks (flag 0x8, not spell-typed -> check skipped) pass
+# either way; 7 makes rage fire on ANY block, matching stock.
+# chance = per-rank 20/40/60/80/100 (one scalar per helper; matches the stock ProcChance).
+- id: 932823
+  name: Shield Specialization
+  template: 12298         # clone stock Shield Spec R1 (inherit PASSIVE+hidden attrs, icon 1463, family 0)
+  effects:
+  - { effect: 6, aura: 51, basePoints: 0, dieSides: 1, targetA: 1 }             # +1% block (base 0 + d1)
+  - { effect: 6, aura: 42, basePoints: -1, dieSides: 1, targetA: 1, trigger: 12964 }  # proc-trigger -> +1 rage
+  proc:
+    flags: 680            # all taken melee+ranged hits (stock Shield Spec ProcTypeMask)
+    typeMask: 7           # PROC_SPELL_TYPE_MASK_ALL — match stock so a full block still procs (see above)
+    hitMask: 64           # PROC_HIT_BLOCK — fires ONLY on a block (SpellMgr.h:263)
+    chance: 20
+- id: 932824
+  name: Shield Specialization
+  template: 12724         # clone stock Shield Spec R2
+  effects:
+  - { effect: 6, aura: 51, basePoints: 1, dieSides: 1, targetA: 1 }             # +2% block
+  - { effect: 6, aura: 42, basePoints: -1, dieSides: 1, targetA: 1, trigger: 12964 }
+  proc:
+    flags: 680
+    typeMask: 7
+    hitMask: 64
+    chance: 40
+- id: 932825
+  name: Shield Specialization
+  template: 12725         # clone stock Shield Spec R3
+  effects:
+  - { effect: 6, aura: 51, basePoints: 2, dieSides: 1, targetA: 1 }             # +3% block
+  - { effect: 6, aura: 42, basePoints: -1, dieSides: 1, targetA: 1, trigger: 12964 }
+  proc:
+    flags: 680
+    typeMask: 7
+    hitMask: 64
+    chance: 60
+- id: 932826
+  name: Shield Specialization
+  template: 12726         # clone stock Shield Spec R4
+  effects:
+  - { effect: 6, aura: 51, basePoints: 3, dieSides: 1, targetA: 1 }             # +4% block
+  - { effect: 6, aura: 42, basePoints: -1, dieSides: 1, targetA: 1, trigger: 12964 }
+  proc:
+    flags: 680
+    typeMask: 7
+    hitMask: 64
+    chance: 80
+- id: 932827
+  name: Shield Specialization
+  template: 12727         # clone stock Shield Spec R5
+  effects:
+  - { effect: 6, aura: 51, basePoints: 4, dieSides: 1, targetA: 1 }             # +5% block
+  - { effect: 6, aura: 42, basePoints: -1, dieSides: 1, targetA: 1, trigger: 12964 }
+  proc:
+    flags: 680
+    typeMask: 7
+    hitMask: 64
+    chance: 100
+# === FURY (Task: Bloodthirst rework) helpers — sub-band 932828-932839 ==============================
+# Vanilla Bloodthirst (node 18535) was a WRONG BOUND-grant of stock 23881 (WotLK: 50% AP, NO heal,
+# single rank). The real Vanilla ability (verified 2026-08-18 against Wowhead Classic 23881/23892/
+# 23893/23894 + warcraft.wiki.gg): an instant attack for 45% of attack power, PLUS the next 5
+# successful melee attacks restore a FLAT, rank-scaling amount of health (buff lasts 8 sec / 5
+# charges), across 4 ranks — R1 talent-granted at L40, R2/R3/R4 trainer-taught at L48/54/60. Heal per
+# rank = 10 / 13 / 17 / 20 (R3=17, R4=20 confirmed from wowclassicdb 23893/23894; R1=10, R2=13). Rage
+# 30, cooldown 6 sec (ALL ranks). The 3.3.5a DBC ships the WotLK tuning: 23881 = 50% AP (bp 49+d1),
+# 20 rage (ManaCost 200), a 4-sec CATEGORY cooldown (Category 971 / CategoryRecoveryTime 4000), and a
+# 3-charge heal buff (23885) whose heal (23880) is C++-overridden to %-max-health. So we CANNOT grant
+# 23881; each Vanilla rank is a custom clone trio: damage clone + heal buff + heal spell.
+#
+# --- Damage clones 932828-831 (node 18535 grants R1; R2-R4 trainer-taught). -----------------------
+# Clone 23881 to inherit instant cast / RangeIndex 2 (5 yd) / SpellClassSet 4 (Bloodthirst IS a warrior
+# ability, granted ACTIVE — the Death Wish/Concussion Blow precedent) / school 1 / attrs / SpellIconID
+# 38, then override: powerCost 300 (30 rage; stock rank 1 = 200 = 20 rage), NEUTRALIZE the WotLK 4s
+# category cd (category 0 + categoryCooldown 0, the Aimed Shot 932952 precedent) and set cooldown 6000
+# (RecoveryTime = Vanilla 6 sec), Effect_0 SCHOOL_DAMAGE bp 45 (the AP %, read by the SpellScript),
+# Effect_1 -> TRIGGER_SPELL the per-rank heal buff on the caster. category 0 also escapes the family-4
+# category-132 SpellInfoCorrections sweep (the Concussion Blow precedent). AP scaling is NOT a DBC value
+# (stock uses spell_warr_bloodthirst's ApplyPct); era_bloodthirst_vanilla (EraTalentProcScripts.cpp,
+# bound via scriptBindings to all 4 clones) mirrors that HandleDamage at 45%; it bails on !Enabled()
+# and on a non-Player caster ONLY — era-managed BOTS cast this too and must not be excluded.
+# client row -> warrior spellbook (skillLine 256 + per-rank `rank`) w/ the Vanilla tooltip. spell_ranks
+# 932828->829->830->831 + trainer rows live in the hand-written trainer SQL migration; strip mirror in
+# EraTalents.cpp kWarriorTrainedRanks (+ a stale-23881 strip for the grant change).
+- id: 932828
+  name: Bloodthirst
+  template: 23881          # clone stock Bloodthirst R1 (inherit instant / range 2 / family 4 / school 1 / icon 38 / attrs)
+  powerCost: 300          # 30 rage (stock R1 ManaCost 200 = 20 rage)
+  category: 0             # neutralize the WotLK shared cd category 971 (also escapes the family-4 category-132 sweep)
+  categoryCooldown: 0
+  cooldown: 6000          # Vanilla 6 sec cd (RecoveryTime; stock cd lived in CategoryRecoveryTime 4000 = 4s)
+  effects:
+  - { effect: 2, basePoints: 45, dieSides: 0, targetA: 6 }               # SCHOOL_DAMAGE; era_bloodthirst_vanilla reads 45 as the AP %
+  - { effect: 64, basePoints: 0, dieSides: 0, targetA: 1, trigger: 932832 }  # TRIGGER_SPELL -> heal buff R1 on the caster
+  client:
+    name: Bloodthirst
+    icon: 38              # stock Bloodthirst SpellIconID (23881 dump 2026-08-18)
+    rank: 1
+    skillLine: 256        # Warrior skill line — else the granted active lands in the General tab
+    description: "Instantly attack the target, causing damage equal to 45% of your attack power. In addition, the next 5 successful melee attacks will restore 10 health. This effect lasts 8 sec."
+- id: 932829
+  name: Bloodthirst
+  template: 23881
+  powerCost: 300
+  category: 0
+  categoryCooldown: 0
+  cooldown: 6000
+  effects:
+  - { effect: 2, basePoints: 45, dieSides: 0, targetA: 6 }
+  - { effect: 64, basePoints: 0, dieSides: 0, targetA: 1, trigger: 932833 }  # -> heal buff R2
+  client:
+    name: Bloodthirst
+    icon: 38
+    rank: 2
+    skillLine: 256
+    description: "Instantly attack the target, causing damage equal to 45% of your attack power. In addition, the next 5 successful melee attacks will restore 13 health. This effect lasts 8 sec."
+- id: 932830
+  name: Bloodthirst
+  template: 23881
+  powerCost: 300
+  category: 0
+  categoryCooldown: 0
+  cooldown: 6000
+  effects:
+  - { effect: 2, basePoints: 45, dieSides: 0, targetA: 6 }
+  - { effect: 64, basePoints: 0, dieSides: 0, targetA: 1, trigger: 932834 }  # -> heal buff R3
+  client:
+    name: Bloodthirst
+    icon: 38
+    rank: 3
+    skillLine: 256
+    description: "Instantly attack the target, causing damage equal to 45% of your attack power. In addition, the next 5 successful melee attacks will restore 17 health. This effect lasts 8 sec."
+- id: 932831
+  name: Bloodthirst
+  template: 23881
+  powerCost: 300
+  category: 0
+  categoryCooldown: 0
+  cooldown: 6000
+  effects:
+  - { effect: 2, basePoints: 45, dieSides: 0, targetA: 6 }
+  - { effect: 64, basePoints: 0, dieSides: 0, targetA: 1, trigger: 932835 }  # -> heal buff R4
+  client:
+    name: Bloodthirst
+    icon: 38
+    rank: 4
+    skillLine: 256
+    description: "Instantly attack the target, causing damage equal to 45% of your attack power. In addition, the next 5 successful melee attacks will restore 20 health. This effect lasts 8 sec."
+# --- Heal buffs 932832-835 (applied by the matching damage clone's TRIGGER_SPELL). ----------------
+# Clone stock 23885 (the Bloodthirst heal buff) to inherit the proven aura-42 PROC_TRIGGER_SPELL
+# mechanism + DurationIndex 31 (8 sec) + SpellIconID 38, then override: family 0 (a buff carries no
+# identity bit; escape the family-4 sweep — the Flurry/Enrage precedent), ProcCharges 5 (Vanilla; stock
+# 23885 = 3), and retarget the aura-42 trigger to the per-rank flat-heal spell. An explicit proc row
+# (flags 20 = DONE_MELEE_AUTO_ATTACK | DONE_SPELL_MELEE_DMG_CLASS = "successful melee attacks") drives
+# the trigger + charge-consume per swing — the Shield Spec aura-42 + Enrage consume-on-swing precedent;
+# the 5-charge cap comes from the DBC ProcCharges (Enrage's procCharges-12 pattern). Visible buff icon
+# -> client row.
+- id: 932832
+  name: Bloodthirst
+  template: 23885          # clone stock Bloodthirst heal buff (inherit aura-42 trigger + DurationIndex 31 = 8s + icon 38)
+  family: 0              # family-less: escape the family-4 sweep (buff has no identity bit)
+  procCharges: 5          # Vanilla 5 charges (stock 23885 = 3); consumed per swing via the proc row below
+  effects:
+  - { effect: 6, aura: 42, basePoints: 0, dieSides: 0, targetA: 1, trigger: 932836 }  # PROC_TRIGGER_SPELL -> flat heal R1
+  proc:
+    flags: 20            # DONE_MELEE_AUTO_ATTACK (4) | DONE_SPELL_MELEE_DMG_CLASS (16) — heal on any successful melee attack
+  client:
+    name: Bloodthirst
+    icon: 38
+    auraDescription: "The next 5 successful melee attacks restore 10 health. Lasts 8 sec."
+- id: 932833
+  name: Bloodthirst
+  template: 23885
+  family: 0
+  procCharges: 5
+  effects:
+  - { effect: 6, aura: 42, basePoints: 0, dieSides: 0, targetA: 1, trigger: 932837 }  # -> flat heal R2
+  proc:
+    flags: 20
+  client:
+    name: Bloodthirst
+    icon: 38
+    auraDescription: "The next 5 successful melee attacks restore 13 health. Lasts 8 sec."
+- id: 932834
+  name: Bloodthirst
+  template: 23885
+  family: 0
+  procCharges: 5
+  effects:
+  - { effect: 6, aura: 42, basePoints: 0, dieSides: 0, targetA: 1, trigger: 932838 }  # -> flat heal R3
+  proc:
+    flags: 20
+  client:
+    name: Bloodthirst
+    icon: 38
+    auraDescription: "The next 5 successful melee attacks restore 17 health. Lasts 8 sec."
+- id: 932835
+  name: Bloodthirst
+  template: 23885
+  family: 0
+  procCharges: 5
+  effects:
+  - { effect: 6, aura: 42, basePoints: 0, dieSides: 0, targetA: 1, trigger: 932839 }  # -> flat heal R4
+  proc:
+    flags: 20
+  client:
+    name: Bloodthirst
+    icon: 38
+    auraDescription: "The next 5 successful melee attacks restore 20 health. Lasts 8 sec."
+# --- Flat heal spells 932836-839 (triggered by the matching heal buff's aura-42 proc). ------------
+# Clone stock 23880 (the Bloodthirst heal) to inherit its SPELL_EFFECT_HEAL vehicle / instant cast /
+# self range, then override family 0 (escape the sweep) and the heal to a FLAT per-rank amount (10/13/
+# 17/20 — Vanilla, replacing the WotLK %-max-health that the stock spell_warr_bloodthirst_heal script
+# computes; that script binds to id 23880 only, NOT to these clones, so they stay plain flat heals).
+# targetA 1 = self. client rows (name+icon only, no skillLine): the old "VE hidden-heal precedent"
+# for omitting them was REVOKED by the live VE report — a hidden heal's ticks are INVISIBLE in the
+# combat log / floating combat text without a client row (the framework's hidden-payload gotcha).
+- id: 932836
+  name: Bloodthirst
+  template: 23880          # clone stock Bloodthirst heal (inherit HEAL effect / instant / self range)
+  family: 0
+  effects:
+  - { effect: 10, aura: 0, basePoints: 10, dieSides: 0, targetA: 1 }   # SPELL_EFFECT_HEAL flat 10, self
+  client: { name: Bloodthirst, icon: 38 }
+- id: 932837
+  name: Bloodthirst
+  template: 23880
+  family: 0
+  effects:
+  - { effect: 10, aura: 0, basePoints: 13, dieSides: 0, targetA: 1 }   # flat 13
+  client: { name: Bloodthirst, icon: 38 }
+- id: 932838
+  name: Bloodthirst
+  template: 23880
+  family: 0
+  effects:
+  - { effect: 10, aura: 0, basePoints: 17, dieSides: 0, targetA: 1 }   # flat 17
+  client: { name: Bloodthirst, icon: 38 }
+- id: 932839
+  name: Bloodthirst
+  template: 23880
+  family: 0
+  effects:
+  - { effect: 10, aura: 0, basePoints: 20, dieSides: 0, targetA: 1 }   # flat 20
+  client: { name: Bloodthirst, icon: 38 }
+# === PROTECTION — Last Stand Vanilla clone 932840 (node 18541) — WotLK 12975 cd DIVERGED. ==========
+# Vanilla Last Stand (wowhead classic 12975, verified 2026-08-18): Instant, 10 min cooldown, +30% max
+# HP for 20 sec. The +30%-HP MECHANIC is identical Vanilla->WotLK but is SCRIPT-BOUND to stock id 12975
+# (core spell_warr_last_stand): 12975 Effect_1 DUMMY base 29 -> the script casts triggered buff 12976
+# (aura 34 MOD_INCREASE_HEALTH, FLAT, base 0) with 30%-of-max-HP computed by the script. The ONLY
+# divergence is the cooldown: Vanilla 10 min vs stock 12975's 3-min CATEGORY cooldown (Category 1251 /
+# CategoryRecoveryTime 180000, RecoveryTime 0). Fixing the cd on the global stock spell is era-unsafe, so
+# clone 12975 (inherit the DUMMY effect + instant cast + free cost + attrs + icon) and neutralize the
+# inherited category cd — category:0 + categoryCooldown:0 so the 10-min cd lives purely in RecoveryTime
+# (the Aimed Shot 932952-957 category-neutralize precedent; else the inherited CategoryRecoveryTime 180000
+# would still gate at 3 min). The DUMMY effect does nothing without a bound script, so era_last_stand
+# (scriptBindings -> 932840 only) replicates spell_warr_last_stand::HandleDummy verbatim, delivering the
+# identical +30% HP via the stock 12976 buff. Active castable -> client row w/ SkillLine 256 (else the
+# granted active lands in the General tab). Stock 12975 ships untouched for WotLK-stage chars.
+- id: 932840
+  name: Last Stand
+  template: 12975          # clone stock Last Stand (inherit Effect_1 DUMMY base 29 -> 30% / instant / free / attrs / icon)
+  cooldown: 600000        # Vanilla 10-min cooldown (RecoveryTime; stock is a 3-min CategoryRecoveryTime)
+  category: 0             # neutralize inherited Category 1251 (else the category cd path still applies)
+  categoryCooldown: 0    # neutralize inherited CategoryRecoveryTime 180000 (3 min) — cd lives in RecoveryTime
+  effects:               # BYTE-IDENTICAL to stock 12975 Effect_1 (dump 2026-08-18): DUMMY base 29 + d1 -> GetEffectValue() 30
+  - { effect: 3, aura: 0, basePoints: 29, dieSides: 1, targetA: 1 }   # SPELL_EFFECT_DUMMY, self; era_last_stand reads value 30 and casts 12976
+  client:
+    name: Last Stand
+    icon: 177             # stock Last Stand SpellIconID (12975 dump 2026-08-18)
+    skillLine: 256        # Warrior skill line — else the granted active lands in the General tab
+    description: "When activated, this ability temporarily grants you 30% of your maximum hit points for 20 sec. After the effect expires, the hit points are lost."
+# === PROTECTION — Shield Slam Vanilla clone chain 932841-932844 (node 18552 grants r1; r2-r4 =========
+# trainer-taught at L48/54/60). FINAL REVIEW R7, item I-7 (2026-09-06). Node 18552 previously
+# BOUND-GRANTED stock 23922, but the stock chain carries the WOTLK damage while the node's own tooltip
+# (and 1.12.1) promise Vanilla's. BOTH RAW VALUES (wowhead classic / warcraft.wiki.gg vs the live DBC
+# dump 2026-09-06):
+#   rank  level  VANILLA bp/dieSides -> range     LIVE (stock) bp/dieSides -> range
+#   1     40     224 / 11              225-235    293 / 15 (23922)           294-308
+#   2     48     263 / 13              264-276    345 / 17 (23923)           346-362
+#   3     54     302 / 15              303-317    395 / 21 (23924)           396-416
+#   4     60     341 / 17              342-358    446 / 23 (23925)           447-469
+# The four Vanilla ranks are IDENTICAL to the first four TBC ranks (2.0 only ADDED r5/r6 at 66/70 and
+# left 1-4 alone), so these clones are modelled rank-for-rank on the shipped TBC chain 947541-947544
+# in era-data/tbc/warrior.yaml — same basePoints/dieSides, same 20 rage / instant / 6 s / shield gate.
+# They are still SEPARATE ids, not a reuse of the TBC clones: eras are per-character and the TBC chain
+# is rooted at its own node/trainer gate (the reuse_ledger "ALL FRESH" rule for this class).
+# The die-sides come from the tooltip's own words ("causing 225 to 235 damage"), which is the only
+# place the Vanilla RANGE (as opposed to the base) is recorded.
+#
+# CATEGORY 1209 IS KEPT, NOT NEUTRALIZED — the same deliberate departure the TBC chain documents, and
+# for the same reason: the CORE READS THE CATEGORY BY VALUE. `Spell::EffectSchoolDMG`
+# (SpellEffects.cpp:351) adds the shield block value only when `SpellFamilyFlags[1] & 0x200 &&
+# m_spellInfo->GetCategory() == 1209`, so neutralizing the category (the Bloodthirst/Last Stand
+# precedent) would silently drop "modified by your shield block value" — the headline half of the
+# ability. Keeping it also gives the chain the shared 6-second per-rank cooldown via
+# CategoryRecoveryTime. Category 1209 is not 132, so era_audit.check_sweep_collisions (the family-4
+# shared-cooldown sweep) is unaffected. NO spellFixAck: SpellInfoCorrections.cpp contains no by-id fix
+# for 23922-23925 (grep-verified 2026-09-06, the same check the TBC chain ran).
+#
+# family 4 + SpellClassMask_2 = 512 (Shield Slam's own identity bit) are INHERITED from each template
+# rather than authored — Vanilla has no Focused Rage, but any family-4 binding that enumerates Shield
+# Slam must still match the clone.
+#
+# ACCEPTED GAP (dispel chance): 1.12.1's tooltip reads "has a 50% chance of dispelling 1 magic effect".
+# The DBC has no per-effect dispel CHANCE column (`ProcChance` is the proc path, not
+# SPELL_EFFECT_DISPEL), so the clone dispels 1 magic effect on every hit — exactly as stock 23922 and
+# the shipped TBC clones do. Closing it would need a bespoke SpellScript for a minor difference; the
+# era tooltip keeps the 1.12.1 wording on purpose (framework: tooltips read the ERA text).
+#
+# spell_ranks 932841->842->843->844 + the TrainerId 1 rows (L48/54/60 at the stock MoneyCost) live in
+# the hand SQL 2026_09_06_05_era_talent_final_review_warrior.sql — the Bloodthirst 932828-831 pattern,
+# rooted at the talent-granted r1 so only a Vanilla warrior WITH the talent can buy the ladder. The
+# stock 23922-23925 strip for a Vanilla warrior lives in EraTalents.cpp CLASS_WARRIOR arm (4).
+- id: 932841
+  name: Shield Slam
+  template: 23922          # stock R1 — inherit 20 rage / instant / shield gate / family 4 + maskB 512 / icon 413 / attrs / PreventionType / SpellLevel 40
+  category: 1209           # kept EXPLICITLY: the core's block-value branch tests GetCategory() == 1209 (see above)
+  categoryCooldown: 6000   # 6 s, identical Vanilla/live
+  spellLevel: 40
+  baseLevel: 40
+  effects:
+  - { effect: 38, aura: 0, basePoints: 1,   dieSides: 0,  misc: 1, targetA: 6 }   # DISPEL 1 magic effect
+  - { effect: 2,  aura: 0, basePoints: 224, dieSides: 11,          targetA: 6 }   # SCHOOL_DAMAGE 225-235 (live 294-308)
+  client:
+    name: Shield Slam
+    icon: 413              # stock Shield Slam SpellIconID (23922, live DBC dump 2026-09-06)
+    rank: 1
+    skillLine: 256         # Warrior skill line — else the granted active lands in the General tab
+    description: "Slam the target with your shield, causing 225 to 235 damage, modified by your shield block value, and has a 50% chance of dispelling 1 magic effect on the target.  Also causes a high amount of threat."
+- id: 932842
+  name: Shield Slam
+  template: 23923
+  category: 1209
+  categoryCooldown: 6000
+  spellLevel: 48
+  baseLevel: 48
+  effects:
+  - { effect: 38, aura: 0, basePoints: 1,   dieSides: 0,  misc: 1, targetA: 6 }
+  - { effect: 2,  aura: 0, basePoints: 263, dieSides: 13,          targetA: 6 }   # 264-276 (live 346-362)
+  client:
+    name: Shield Slam
+    icon: 413
+    rank: 2
+    skillLine: 256
+    description: "Slam the target with your shield, causing 264 to 276 damage, modified by your shield block value, and has a 50% chance of dispelling 1 magic effect on the target.  Also causes a high amount of threat."
+- id: 932843
+  name: Shield Slam
+  template: 23924
+  category: 1209
+  categoryCooldown: 6000
+  spellLevel: 54
+  baseLevel: 54
+  effects:
+  - { effect: 38, aura: 0, basePoints: 1,   dieSides: 0,  misc: 1, targetA: 6 }
+  - { effect: 2,  aura: 0, basePoints: 302, dieSides: 15,          targetA: 6 }   # 303-317 (live 396-416)
+  client:
+    name: Shield Slam
+    icon: 413
+    rank: 3
+    skillLine: 256
+    description: "Slam the target with your shield, causing 303 to 317 damage, modified by your shield block value, and has a 50% chance of dispelling 1 magic effect on the target.  Also causes a high amount of threat."
+- id: 932844
+  name: Shield Slam
+  template: 23925
+  category: 1209
+  categoryCooldown: 6000
+  spellLevel: 60
+  baseLevel: 60
+  effects:
+  - { effect: 38, aura: 0, basePoints: 1,   dieSides: 0,  misc: 1, targetA: 6 }
+  - { effect: 2,  aura: 0, basePoints: 341, dieSides: 17,          targetA: 6 }   # 342-358 (live 447-469)
+  client:
+    name: Shield Slam
+    icon: 413
+    rank: 4
+    skillLine: 256
+    description: "Slam the target with your shield, causing 342 to 358 damage, modified by your shield block value, and has a 50% chance of dispelling 1 magic effect on the target.  Also causes a high amount of threat."
+# === BOTH MANAGED ERAS — stance-correction passives 932845-932847 ====================================
+# FINAL REVIEW R7, items G-11/G-30 (2026-09-06). WotLK RETUNED all three warrior stances; 1.12.1 and
+# 2.4.3 agree with each other on every number, so ONE set of correction passives serves BOTH managed
+# eras (the Lay on Hands 932668-670 / Blessing of Sanctuary 932617 dual-era-reuse precedent — the ids
+# live in the Vanilla slice and are referenced, not re-minted, by TBC).
+#
+# THE SHAPE IS DATA-ONLY, NOT A SHAPESHIFT HOOK. The stance passives themselves (7376 / 7381 / 21156)
+# are cast BY THE CORE from `AuraEffect::HandleShapeshiftBoosts` off hardcoded ids, so they cannot be
+# swapped for a clone the way a talent grant can. Instead each of these three is an ordinary hidden
+# LEARNED passive carrying `stances:` (ShapeshiftMask) so the core applies it only inside that stance —
+# the same mechanism the shipped Defiance ranks 924352-356 use (`stances: 131072`), which the
+# real-client Warrior close verified on 2026-08-24. `Player::_addSpell` casts it at learn time when the
+# character is already in the stance (`IsNeedCastPassiveSpellAtLearn`), `HandleShapeshiftBoosts` casts
+# it on every later stance ENTRY (its m_spells loop takes any spell with SPELL_ATTR0_DO_NOT_DISPLAY and
+# a matching `Stances` bit), and `Aura::IsRemovedOnShapeLost` drops it on stance EXIT. `attributes:
+# 262608` is the generator's own stat-passive value = 0x401D0 (0x10 IS_ABILITY | **0x40
+# SPELL_ATTR0_PASSIVE** | 0x80 DO_NOT_DISPLAY | 0x100 DO_NOT_LOG | 0x40000 DO_NOT_SHEATH) —
+# deliberately WITHOUT 0x10000 NOT_SHAPESHIFTED, which stock 7376/7381/21156 carry and which would
+# defeat `IsRemovedOnShapeLost`. The 0x40 PASSIVE bit is LOAD-BEARING, not decoration: the
+# stance-entry re-cast loop in `AuraEffect::HandleShapeshiftBoosts` (SpellAuraEffects.cpp:1452)
+# skips any m_spells entry that carries neither PASSIVE nor DO_NOT_DISPLAY, and `Player::_addSpell`
+# uses the same pair to decide whether to self-cast at learn time. Hidden => no `client:` block and
+# no client DBC row (the 947539 Rampage-watcher precedent for a learned, never-displayed passive).
+#
+# THE VALUES COMBINE WITH THE STOCK PASSIVE, THEY DO NOT REPLACE IT. Both percentage families the core
+# reads here are MULTIPLICATIVE across auras — `SPELL_AURA_MOD_DAMAGE_PERCENT_DONE`/`_TAKEN` accumulate
+# through repeated `AddPct` in Melee/SpellDamageBonusDone/Taken, and `SPELL_AURA_MOD_THREAT` through
+# `GetTotalAuraMultiplierByMiscMask` (ThreatManager.cpp:746/822) — so each correction is authored as
+# the multiplier that carries the stock value to the era value, and lands within rounding of it. The
+# ONE additive family is `SPELL_AURA_MOD_ARMOR_PENETRATION_PCT` (280), summed by
+# `Unit::CalcArmorReducedDamage`'s `GetTotalAuraModifier`, so its correction cancels EXACTLY.
+# STOCK VALUES, all from the live DBC dump 2026-09-06 (basePoints are stored value-1 with dieSides 1):
+#   7376  Defensive Stance passive : aura 87 -10% dmg TAKEN misc 127 | aura 79 -5% dmg DONE misc 127 | aura 10 +45% THREAT misc 127
+#   7381  Berserker Stance passive : aura 52 +3% weapon CRIT        | aura 87 +5% dmg TAKEN misc 127 | aura 10 -20% THREAT misc 127
+#   21156 Battle Stance passive    : aura 10 -20% THREAT misc 127   (Effect_2/3 empty)
+#   2457  Battle Stance itself     : aura 36 SHAPESHIFT misc 17     | aura 280 +10% ARMOR PENETRATION misc 0   <- the WotLK-only armor-pen half
+#   71 / 2458 (Defensive/Berserker Stance) carry ONLY the aura-36 shapeshift effect — no extra modifiers.
+# ERA TARGETS (identical in 1.12.1 and 2.4.3):
+#   Defensive : -10% damage done, -10% damage taken, +30% threat
+#   Berserker : +3% crit,        +10% damage taken,  no threat modifier
+#   Battle    : no modifiers at all
+# RESIDUAL ROUNDING (stated so it is not "fixed" later): the multiplicative families cannot land on an
+# exact integer target with integer aura amounts, so Defensive settles at -9.75% damage done
+# (0.95 x 0.95) against -10%, Defensive threat at +30.5% (1.45 x 0.90) against +30%, and Berserker
+# damage taken at +10.25% (1.05 x 1.05) against +10%. All three are <= 0.5 pp — the same class of
+# residual the TBC Heart of the Wild investigation measured (CLAUDE.md patch 0023) and far below what a
+# player can observe. The two THREAT-cancelling corrections (Berserker, Battle) and the Battle armor-pen
+# correction are EXACT (0.80 x 1.25 = 1.00; +10 + -10 = 0).
+- id: 932845
+  name: Defensive Stance (Era)
+  attributes: 262608       # hidden stance passive — see the block header (NO 0x10000 NOT_SHAPESHIFTED)
+  stances: 131072          # FORM_DEFENSIVESTANCE (1 << 17)
+  effects:
+  # damage DONE: stock 7376 gives -5%; era wants -10%. 0.95 x 0.95 = 0.9025 => -9.75% (residual +0.25 pp).
+  - { effect: 6, aura: 79, basePoints: -5,  dieSides: 0, misc: 127, targetA: 1 }
+  # THREAT: stock 7376 gives +45%; era wants +30%. 1.45 x 0.90 = 1.305 => +30.5% (residual +0.5 pp).
+  - { effect: 6, aura: 10, basePoints: -10, dieSides: 0, misc: 127, targetA: 1 }
+  # damage TAKEN needs NO correction: stock 7376's -10% is already the era value.
+- id: 932846
+  name: Berserker Stance (Era)
+  attributes: 262608
+  stances: 262144          # FORM_BERSERKERSTANCE (1 << 18)
+  effects:
+  # damage TAKEN: stock 7381 gives +5%; era wants +10%. 1.05 x 1.05 = 1.1025 => +10.25% (residual +0.25 pp).
+  - { effect: 6, aura: 87, basePoints: 5,  dieSides: 0, misc: 127, targetA: 1 }
+  # THREAT: stock 7381 gives -20%; era has NO threat modifier. 0.80 x 1.25 = 1.00 => exact cancel.
+  - { effect: 6, aura: 10, basePoints: 25, dieSides: 0, misc: 127, targetA: 1 }
+  # weapon CRIT needs NO correction: stock 7381's +3% (aura 52) is already the era value.
+- id: 932847
+  name: Battle Stance (Era)
+  attributes: 262608
+  stances: 65536           # FORM_BATTLESTANCE (1 << 16)
+  effects:
+  # THREAT: stock 21156 gives -20%; era has NO threat modifier. 0.80 x 1.25 = 1.00 => exact cancel.
+  - { effect: 6, aura: 10,  basePoints: 25,  dieSides: 0, misc: 127, targetA: 1 }
+  # ARMOR PENETRATION: stock 2457 (the stance spell itself) carries a WotLK-only +10% (aura 280, misc 0);
+  # era has none. Aura 280 is SUMMED (Unit::CalcArmorReducedDamage -> GetTotalAuraModifier), and that
+  # sum's own filter accepts an EquippedItemClass -1 aura with misc 0 and no class mask — which both
+  # 2457's effect and this one are — so +10 + -10 = 0 exactly, for spell and auto-attack alike.
+  - { effect: 6, aura: 280, basePoints: -10, dieSides: 0, misc: 0,   targetA: 1 }
+tabs:
+- key: 1
+  name: Arms
+  background: WarriorArms
+  nodes:
+  - id: 18501
+    slug: improved_heroic_strike
+    name: Improved Heroic Strike
+    tab: 1
+    tier: 0
+    col: 0
+    icon: ability_rogue_ambush
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Reduces the cost of your Heroic Strike ability by 1 rage point.
+    - Reduces the cost of your Heroic Strike ability by 2 rage points.
+    - Reduces the cost of your Heroic Strike ability by 3 rage points.
+    # BOUND-mod (spellmod op cost) — verdict 2026-08-18. Vanilla -1/-2/-3 rage (skeleton). Rage cost
+    # in the DBC is stored ×10 (Heroic Strike 78 ManaCost=150=15 rage; dump 2026-08-18) and
+    # SpellInfo::CalcPowerCost applies SPELLMOD_COST straight to that ×10 value, so the reduction is
+    # authored ×10 (-10/-20/-30). Family-4 SPELLMOD masked to Heroic Strike (78, bit 64, _ref).
+    # NB the era addon's Tooltip.RewriteCost only rewrites "X Mana" lines, so the spellbook's Rage
+    # cost line won't visually update (server reduction is correct) — a known cosmetic gap.
+    mechanic: spellmod
+    affects: ["Heroic Strike"]   # 78, family 4 bit 64 (_ref)
+    op: cost                     # SPELLMOD_COST (14)
+    kind: flat
+    vals: [-10, -20, -30]        # -1/-2/-3 rage (×10 internal rage units)
+  - id: 18502
+    slug: deflection
+    name: Deflection
+    tab: 1
+    tier: 0
+    col: 1
+    icon: ability_parry
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Increases your Parry chance by 1%.
+    - Increases your Parry chance by 2%.
+    - Increases your Parry chance by 3%.
+    - Increases your Parry chance by 4%.
+    - Increases your Parry chance by 5%.
+    # AUTHORED (stat) — verdict 2026-08-18. Vanilla Deflection = +1..5% Parry, 5 ranks (skeleton).
+    # aura 47 MOD_PARRY_PERCENT (the rogue Deflection precedent, node 18420). Family-less passive
+    # (misc 0), so it can't false-match a spell.
+    mechanic: stat
+    aura: 47                     # SPELL_AURA_MOD_PARRY_PERCENT
+    school: 0                    # EffectMiscValue 0 (aura 47 ignores misc)
+    vals: [1, 2, 3, 4, 5]
+  - id: 18503
+    slug: improved_rend
+    name: Improved Rend
+    tab: 1
+    tier: 0
+    col: 2
+    icon: ability_gouge
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Increases the bleed damage done by your Rend ability by 15%.
+    - Increases the bleed damage done by your Rend ability by 25%.
+    - Increases the bleed damage done by your Rend ability by 35%.
+    # AUTHORED (spellmod op dot) — verdict 2026-08-18. Vanilla +15/25/35% bleed damage (skeleton).
+    # Rend 772's damage is entirely periodic (Effect_1 aura 3 PERIODIC_DAMAGE; dump 2026-08-18), so
+    # SPELLMOD_DOT (op dot) pct scales the whole bleed. Family-4 SPELLMOD masked to Rend (772, bit 32,
+    # _ref). No clean grant: no stock warrior spellmod carries +15/25/35% on Rend.
+    mechanic: spellmod
+    affects: ["Rend"]            # 772, family 4 bit 32 (_ref)
+    op: dot                      # SPELLMOD_DOT (22) — Rend's damage is entirely periodic
+    kind: pct
+    vals: [15, 25, 35]
+  - id: 18504
+    slug: improved_charge
+    name: Improved Charge
+    tab: 1
+    tier: 1
+    col: 0
+    icon: ability_warrior_charge
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases the amount of rage generated by your Charge ability by 3.
+    - Increases the amount of rage generated by your Charge ability by 6.
+    # AUTHORED (spellmod op effect2) — verdict 2026-08-18. Vanilla +3/+6 rage on Charge (skeleton).
+    # Charge 100's rage is Effect_2 (a DUMMY, value 90 = 9 rage; dump 2026-08-18); the core script
+    # spell_warr_charge reads it via GetEffectValue() (which runs Unit::ApplyEffectModifiers ->
+    # SPELLMOD_EFFECT2 for effect index 1) and casts 34846 ENERGIZE(POWER_RAGE) with that value.
+    # Rage energize is in ×10 internal units, so +3/+6 rage = +30/+60. Family-4 SPELLMOD op effect2
+    # masked to Charge (100, bit 0, _ref) therefore reaches it. VERIFY the rage gain in-game
+    # (headless stance/charge test) — if it doesn't land, downgrade to a tracked gap.
+    mechanic: spellmod
+    affects: ["Charge"]          # 100, family 4 bit 0 (_ref)
+    op: effect2                  # SPELLMOD_EFFECT2 (12) — Charge's rage DUMMY is Effect_2 (index 1)
+    kind: flat
+    vals: [30, 60]               # +3/+6 rage (×10 internal rage units)
+  - id: 18505
+    slug: tactical_mastery
+    name: Tactical Mastery
+    tab: 1
+    tier: 1
+    col: 1
+    icon: spell_nature_enchantarmor
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - You retain up to 5 of your rage points when you change stances.
+    - You retain up to 10 of your rage points when you change stances.
+    - You retain up to 15 of your rage points when you change stances.
+    - You retain up to 20 of your rage points when you change stances.
+    - You retain up to 25 of your rage points when you change stances.
+    # CLONE + GRANT — verdict 2026-08-18. Rage-retention-on-stance-change is hardcoded in the core
+    # (SpellAuraEffects.cpp HandleAuraModShapeshift): it sums CalculateSpellDamage(Effect_0)*10 over
+    # every learned spell with SpellFamilyName==WARRIOR AND SpellIconID==139. A stat/multi passive
+    # (forced family 0 / icon 1) can't drive it; the stock chain is only 3 ranks (5/10/15) and leaks
+    # WotLK-only pct mods. So grant a per-rank clone of 12295 (helpers 932803-807) — cloning inherits
+    # family 4 + icon 139 (the match keys); the effects override zero-fills the WotLK extras, leaving
+    # a single DUMMY whose value is the rage retained (5/10/15/20/25). VERIFY in-game (stance change)
+    # — granted spells rely on a valid specMask for the core's IsInSpec() gate in that loop.
+    grants: {1: [932803], 2: [932804], 3: [932805], 4: [932806], 5: [932807]}
+  - id: 18506
+    slug: improved_thunder_clap
+    name: Improved Thunder Clap
+    tab: 1
+    tier: 1
+    col: 3
+    icon: ability_thunderclap
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Reduces the cost of your Thunder Clap ability by 1 rage point and increases its damage by 10%.
+    - Reduces the cost of your Thunder Clap ability by 2 rage points and increases its damage by 20%.
+    - Reduces the cost of your Thunder Clap ability by 4 rage points and increases its damage by 30%.
+    # AUTHORED (multi: cost spellmod + damage spellmod) — verdict 2026-08-18. Vanilla Improved Thunder
+    # Clap = -1/-2/-4 rage cost AND +10/20/30% damage (classic 1.12; the max -4 rage is web-confirmed,
+    # the damage half is the well-known Vanilla component — the attack-speed-slow improvement was a TBC
+    # addition and is deliberately NOT included). Thunder Clap 6343: ManaCost=200=20 rage (×10) so op
+    # cost flat -10/-20/-40; Effect_1 SCHOOL_DAMAGE so op damage pct +10/20/30. Both masked to Thunder
+    # Clap (6343, bit 128, _ref). Cost line won't visually rewrite (addon RewriteCost handles only
+    # "X Mana") — server reduction is correct.
+    mechanic: multi
+    effects:
+      - type: spellmod
+        affects: ["Thunder Clap"]   # 6343, family 4 bit 128 (_ref)
+        op: cost                    # SPELLMOD_COST (14)
+        kind: flat
+        vals: [-10, -20, -40]       # -1/-2/-4 rage (×10 internal rage units)
+      - type: spellmod
+        affects: ["Thunder Clap"]
+        op: damage                  # SPELLMOD_DAMAGE (0) — Thunder Clap's Effect_1 direct damage
+        kind: pct
+        vals: [10, 20, 30]
+  - id: 18507
+    slug: improved_overpower
+    name: Improved Overpower
+    tab: 1
+    tier: 2
+    col: 0
+    icon: inv_sword_05
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Increases the critical strike chance of your Overpower ability by 25%.
+    - Increases the critical strike chance of your Overpower ability by 50%.
+    # BOUND-mod (spellmod op crit) — verdict 2026-08-18. Vanilla +25/50% crit chance on Overpower
+    # (skeleton). SPELLMOD_CRITICAL_CHANCE is applied as a FLAT percentage-point addition in the core
+    # (Player::ApplySpellMod: totalflat += value for the flat branch; a PCT mod would only scale the
+    # base crit relatively and is guarded by HasSpellModApplied), so kind MUST be flat with the raw
+    # percentage points. Family-4 SPELLMOD masked to Overpower (7384, bit 4, _ref).
+    mechanic: spellmod
+    affects: ["Overpower"]       # 7384, family 4 bit 4 (_ref)
+    op: crit                     # SPELLMOD_CRITICAL_CHANCE (7)
+    kind: flat                   # crit chance is an additive %-point mod (flat), NOT pct
+    vals: [25, 50]
+  - id: 18508
+    slug: anger_management
+    name: Anger Management
+    tab: 1
+    tier: 2
+    col: 1
+    icon: spell_holy_blessingofstamina
+    maxRank: 1
+    prereqTalentId: 18505
+    prereqPoints: 10
+    tooltip:
+    - Increases the time required for your Rage to decay while out of combat by 30%.
+    # BOUND-grant — verdict 2026-08-18. _ref.grants.anger_management = 12296 (family 0 passive, aura
+    # 85 MOD_POWER_REGEN, periodic rage gain; dump/lookup 2026-08-18) is the Vanilla spell unchanged.
+    # A family-4 SPELLMOD could not reach a family-0 passive anyway, but granting the stock id is exact
+    # (single rank both eras). Decision-tree branch 3 (grant a stock id): behavior + magnitude match.
+    grants: {1: [12296]}
+  - id: 18509
+    slug: deep_wounds
+    name: Deep Wounds
+    tab: 1
+    tier: 2
+    col: 2
+    icon: ability_backstab
+    maxRank: 3
+    prereqTalentId: 18503
+    prereqPoints: 10
+    tooltip:
+    - Your critical strikes cause the opponent to bleed, dealing 20% of your melee weapon's average damage over 12 sec.
+    - Your critical strikes cause the opponent to bleed, dealing 40% of your melee weapon's average damage over 12 sec.
+    - Your critical strikes cause the opponent to bleed, dealing 60% of your melee weapon's average damage over 12 sec.
+    # PROC-SCRIPTED (era_deep_wounds -> bleed helper 932800) — verdict 2026-08-18. Vanilla Deep Wounds
+    # = 20/40/60% of average melee weapon damage as a bleed over 12 sec, on any melee/ability CRIT.
+    # The WotLK stock chain (12834/12849/12867 -> 12162 -> 12721) is retuned (formula/duration differ;
+    # 12721 is a 6s bleed whose % is of the triggering spell's damage), so it can't be granted. The
+    # generator mints a per-rank hidden DUMMY passive (amount = vals) + a spell_proc (flags 20 = melee
+    # auto + melee ability, hitMask 2 = crit-only, chance 100) + a spell_script_names row -> the
+    # era_deep_wounds AuraScript, which reads its own amount and applies helper 932800 (see helpers:).
+    # No `affects` scope: Deep Wounds procs off ANY melee/ability crit (auto-attacks included).
+    mechanic: proc-scripted
+    script: era_deep_wounds
+    vals: [20, 40, 60]           # % of average main-hand weapon damage (carried in the DUMMY amount)
+    proc:
+      flags: 20                  # DONE_MELEE_AUTO_ATTACK (4) | DONE_SPELL_MELEE_DMG_CLASS (16)
+      hitMask: 2                 # crit-only (PROC_HIT_CRITICAL)
+      chance: [100, 100, 100]    # 100% on crit; the magnitude scales by rank via the DUMMY amount
+  - id: 18510
+    slug: two_handed_weapon_specialization
+    name: Two-Handed Weapon Specialization
+    tab: 1
+    tier: 3
+    col: 1
+    icon: inv_axe_09
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Increases the damage you deal with two-handed melee weapons by 1%.
+    - Increases the damage you deal with two-handed melee weapons by 2%.
+    - Increases the damage you deal with two-handed melee weapons by 3%.
+    - Increases the damage you deal with two-handed melee weapons by 4%.
+    - Increases the damage you deal with two-handed melee weapons by 5%.
+    # AUTHORED (stat, equip-gated) — verdict 2026-08-18. Vanilla +1/2/3/4/5% two-handed damage, 5
+    # ranks (skeleton). Stock analog Two-Handed Weapon Spec 12163 = aura 79 MOD_DAMAGE_PERCENT_DONE,
+    # misc 1 = physical school mask (dump 2026-08-18). aura 79 + school 1 gated to 2H weapons via
+    # EquippedItemClass=2 + EquippedItemSubclass 354 (_ref twoHandSpecMask = axe2|mace2|polearm|sword2)
+    # — the Mage Wand Spec equip-gate precedent (core CheckAttackFitToAuraRequirement scopes it to 2H
+    # swings). Family-less.
+    mechanic: stat
+    aura: 79                     # SPELL_AURA_MOD_DAMAGE_PERCENT_DONE (stock 12163 analog)
+    school: 1                    # EffectMiscValue = physical school mask (stock 12163 encoding)
+    equipClass: 2                # ITEM_CLASS_WEAPON
+    equipSubclass: 354           # twoHandSpecMask (_ref): axe2|mace2|polearm|sword2
+    vals: [1, 2, 3, 4, 5]
+  - id: 18511
+    slug: impale
+    name: Impale
+    tab: 1
+    tier: 3
+    col: 2
+    icon: ability_searingarrow
+    maxRank: 2
+    prereqTalentId: 18509
+    prereqPoints: 15
+    tooltip:
+    - Increases the critical strike damage bonus of your abilities in Battle, Defensive, and Berserker stance by 10%.
+    - Increases the critical strike damage bonus of your abilities in Battle, Defensive, and Berserker stance by 20%.
+    # BOUND-grant — verdict 2026-08-18. Stock Impale 16493(r1)/16494(r2) = aura 108 ADD_PCT_MODIFIER,
+    # misc 15 SPELLMOD_CRIT_DAMAGE_BONUS, +10/+20% (dump 2026-08-18: bp 9/19 -> 10/20), masked to the
+    # warrior ability set — Vanilla-EXACT in BOTH magnitude and behavior (+10/20% crit damage on
+    # abilities), so the decision tree's branch 3 (grant a stock id) applies. Authoring a spellmod
+    # would only reproduce the same +10/20% but require reverse-engineering the exact ability mask;
+    # granting is faithful AND simpler.
+    grants: {1: [16493], 2: [16494]}
+  - id: 18512
+    slug: axe_specialization
+    name: Axe Specialization
+    tab: 1
+    tier: 4
+    col: 0
+    icon: inv_axe_06
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Increases your chance to get a critical strike with Axes by 1%.
+    - Increases your chance to get a critical strike with Axes by 2%.
+    - Increases your chance to get a critical strike with Axes by 3%.
+    - Increases your chance to get a critical strike with Axes by 4%.
+    - Increases your chance to get a critical strike with Axes by 5%.
+    # AUTHORED (stat, equip-gated) — verdict 2026-08-18. Vanilla +1..5% crit with Axes, 5 ranks
+    # (skeleton). aura 52 MOD_WEAPON_CRIT_PERCENT gated to axes via EquippedItemClass=2 +
+    # EquippedItemSubclass 3 (_ref axeSpecMask = axe1h|axe2h) — the rogue Dagger Spec precedent (node
+    # 18426). Core Player.cpp sums MOD_WEAPON_CRIT_PERCENT per-hand through
+    # CheckAttackFitToAuraRequirement, so the crit only counts for axe swings. Family-less. (Vanilla
+    # split axe from polearm; WotLK merged them into Poleaxe Spec 12700 — we keep them separate.)
+    mechanic: stat
+    aura: 52                     # SPELL_AURA_MOD_WEAPON_CRIT_PERCENT
+    school: 0                    # EffectMiscValue 0 (aura 52 ignores misc)
+    equipClass: 2                # ITEM_CLASS_WEAPON
+    equipSubclass: 3             # axeSpecMask (_ref): axe1h(1)|axe2h(2)
+    vals: [1, 2, 3, 4, 5]
+  - id: 18513
+    slug: sweeping_strikes
+    name: Sweeping Strikes
+    tab: 1
+    tier: 4
+    col: 1
+    icon: ability_rogue_slicedice
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Your next 5 melee weapon swings strike
+      an additional nearby opponent.
+    # BOUND-grant — verdict 2026-08-18. _ref.grants.sweeping_strikes = 12328 (single rank both eras;
+    # lookup 2026-08-18 = 12328 rank 1 [talent]). An ACTIVE castable whose client tooltip must be the
+    # correct Vanilla text, so a grant (not an authored passive) is required. Unchanged Vanilla->WotLK.
+    grants: {1: [12328]}
+  - id: 18514
+    slug: mace_specialization
+    name: Mace Specialization
+    tab: 1
+    tier: 4
+    col: 2
+    icon: inv_mace_01
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Gives you a 1% chance to stun your target for 3 sec with a Mace.
+    - Gives you a 2% chance to stun your target for 3 sec with a Mace.
+    - Gives you a 3% chance to stun your target for 3 sec with a Mace.
+    - Gives you a 4% chance to stun your target for 3 sec with a Mace.
+    - Gives you a 6% chance to stun your target for 3 sec with a Mace.
+    # AUTHORED (proc -> stun clone 932801, equip-gated) — verdict 2026-08-18. Vanilla 1/2/3/4/6% chance
+    # to stun 3s with a mace (skeleton — note rank 5 jumps to 6%). No stock stun support (WotLK Mace
+    # Spec is a flat armor-pen passive; no "Mace Stun" spell — warrior _ref.triggers), so the 3s stun
+    # is authored as helper 932801 (see helpers:). Proc on a mace melee hit (flags 20 = melee auto +
+    # melee ability), chance per rank, equip-gated to 1H|2H maces (EquippedItemClass=2 + subclass 48,
+    # _ref maceSpecMask) — the rogue Mace Spec precedent (node 18428); core Aura::CheckProc checks the
+    # ATTACKING hand's subclass so the stun fires only off mace swings.
+    mechanic: proc
+    equipClass: 2                # ITEM_CLASS_WEAPON
+    equipSubclass: 48            # maceSpecMask (_ref): mace1h(16)|mace2h(32)
+    proc:
+      flags: 20                  # DONE_MELEE_AUTO_ATTACK (4) | DONE_SPELL_MELEE_DMG_CLASS (16)
+      chance: [1, 2, 3, 4, 6]
+      trigger: 932801            # authored Vanilla 3s mace-stun clone (helpers above)
+  - id: 18515
+    slug: sword_specialization
+    name: Sword Specialization
+    tab: 1
+    tier: 4
+    col: 3
+    icon: inv_sword_27
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Gives you a 1% chance to get an extra attack on the same target after dealing damage with your Sword.
+    - Gives you a 2% chance to get an extra attack on the same target after dealing damage with your Sword.
+    - Gives you a 3% chance to get an extra attack on the same target after dealing damage with your Sword.
+    - Gives you a 4% chance to get an extra attack on the same target after dealing damage with your Sword.
+    - Gives you a 5% chance to get an extra attack on the same target after dealing damage with your Sword.
+    # AUTHORED (proc -> stock extra-attack 16459, equip-gated) — verdict 2026-08-18. Vanilla 1/2/3/4/5%
+    # chance for an extra attack with a sword (skeleton). The extra-attack payload is stock 16459
+    # (family 0, Effect_1 = 19 ADD_EXTRA_ATTACKS, +1 attack; _ref.triggers.extra_attack_1) — reused
+    # directly, no clone. Proc on a sword melee hit (flags 20), equip-gated to 1H|2H swords
+    # (EquippedItemClass=2 + subclass 384, _ref swordSpecMask) — the rogue Sword Spec pattern.
+    mechanic: proc
+    equipClass: 2                # ITEM_CLASS_WEAPON
+    equipSubclass: 384           # swordSpecMask (_ref): sword1h(128)|sword2h(256)
+    proc:
+      flags: 20                  # DONE_MELEE_AUTO_ATTACK (4) | DONE_SPELL_MELEE_DMG_CLASS (16)
+      chance: [1, 2, 3, 4, 5]
+      trigger: 16459             # stock Sword Specialization extra-attack payload (+1 attack)
+  - id: 18516
+    slug: polearm_specialization
+    name: Polearm Specialization
+    tab: 1
+    tier: 5
+    col: 0
+    icon: inv_weapon_halbard_01
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 25
+    tooltip:
+    - Increases your chance to get a critical strike with Polearms by 1%.
+    - Increases your chance to get a critical strike with Polearms by 2%.
+    - Increases your chance to get a critical strike with Polearms by 3%.
+    - Increases your chance to get a critical strike with Polearms by 4%.
+    - Increases your chance to get a critical strike with Polearms by 5%.
+    # AUTHORED (stat, equip-gated) — verdict 2026-08-18. Polearm Specialization IS a distinct Vanilla
+    # Arms talent (skeleton; WotLK merged it into Poleaxe Spec 12700 = axe|axe2|polearm). Vanilla
+    # +1..5% crit with Polearms, 5 ranks. Same shape as Axe Spec: aura 52 MOD_WEAPON_CRIT_PERCENT gated
+    # to polearms via EquippedItemClass=2 + EquippedItemSubclass 64 (_ref polearmSpecMask). Family-less.
+    mechanic: stat
+    aura: 52                     # SPELL_AURA_MOD_WEAPON_CRIT_PERCENT
+    school: 0                    # EffectMiscValue 0 (aura 52 ignores misc)
+    equipClass: 2                # ITEM_CLASS_WEAPON
+    equipSubclass: 64            # polearmSpecMask (_ref): polearm(64)
+    vals: [1, 2, 3, 4, 5]
+  - id: 18517
+    slug: improved_hamstring
+    name: Improved Hamstring
+    tab: 1
+    tier: 5
+    col: 2
+    icon: ability_shockwave
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 25
+    tooltip:
+    - Gives your Hamstring ability a 5% chance to immobilize the target for 5 sec.
+    - Gives your Hamstring ability a 10% chance to immobilize the target for 5 sec.
+    - Gives your Hamstring ability a 15% chance to immobilize the target for 5 sec.
+    # AUTHORED (proc on Hamstring -> 5s root clone 932802) — verdict 2026-08-18. Vanilla 5/10/15%
+    # chance the Hamstring hit immobilizes for 5 sec (skeleton). No stock warrior root exists
+    # (Hamstring 1715 is a slow, aura 33), so the 5s root is authored as helper 932802 (clone of the
+    # Entrapment root shell 19185 at durationIndex 28 = 5s; see helpers:). Proc scoped to Hamstring via
+    # `affects` (family 4 bit 2) on a melee-damage-class hit (flags 16), chance per rank.
+    mechanic: proc
+    proc:
+      flags: 16                  # DONE_SPELL_MELEE_DMG_CLASS (Hamstring is a melee-class ability)
+      typeMask: 5                # DAMAGE(1) | NO_DMG_HEAL(4): Hamstring 1715 is a pure slow (aura 33,
+                                 # no damage effect) so its hit event carries NO_DMG_HEAL — without
+                                 # bit 4 the proc could never fire (the Improved Wing Clip bug, caught
+                                 # by era_audit 2026-08-18)
+      chance: [5, 10, 15]
+      affects: ["Hamstring"]     # 1715, family 4 bit 2 (_ref) — scope the proc to Hamstring
+      trigger: 932802            # authored Vanilla 5s root clone (helpers above)
+  - id: 18518
+    slug: mortal_strike
+    name: Mortal Strike
+    tab: 1
+    tier: 6
+    col: 1
+    icon: ability_warrior_savageblow
+    maxRank: 1
+    prereqTalentId: 18513
+    prereqPoints: 30
+    tooltip:
+    - A vicious strike that deals weapon damage plus 85 and
+      wounds the target, reducing the effectiveness of any healing by 50% for 10 sec.
+    # BOUND-grant — verdict 2026-08-18. _ref.grants.mortal_strike = 12294 (rank 1 [talent]; aura 118
+    # MOD_HEALING_PCT -50% + Effect_2 NORMALIZED_WEAPON_DMG; dump/lookup 2026-08-18). The Vanilla
+    # mechanic (weapon damage + 50% healing reduction for 10s) is identical to WotLK rank 1, and it is
+    # an ACTIVE castable needing the correct client tooltip, so grant the stock id (single rank).
+    grants: {1: [12294]}
+- key: 2
+  name: Fury
+  background: WarriorFury
+  nodes:
+  - id: 18519
+    slug: booming_voice
+    name: Booming Voice
+    tab: 2
+    tier: 0
+    col: 1
+    icon: spell_nature_purge
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Increases the area of effect and duration of your Battle Shout and Demoralizing Shout by 10%.
+    - Increases the area of effect and duration of your Battle Shout and Demoralizing Shout by 20%.
+    - Increases the area of effect and duration of your Battle Shout and Demoralizing Shout by 30%.
+    - Increases the area of effect and duration of your Battle Shout and Demoralizing Shout by 40%.
+    - Increases the area of effect and duration of your Battle Shout and Demoralizing Shout by 50%.
+    # AUTHORED (multi: duration spellmod + radius spellmod) — verdict 2026-08-18. Vanilla Booming Voice
+    # = +10/20/30/40/50% area-of-effect AND duration of Battle Shout + Demoralizing Shout (skeleton;
+    # Vanilla affected only those two shouts — the wider shout list is a later-expansion change). WotLK
+    # reworked it, so no clean grant. Battle Shout 2048 (bit 65536) has a real buff duration + party
+    # radius; Demoralizing Shout 1160 (bit 131072) has a debuff duration + enemy radius (both dumped) —
+    # so op duration (SPELLMOD_DURATION 1, pct) and op radius (SPELLMOD_RADIUS 6, pct) each masked to
+    # BOTH shouts reproduce the Vanilla effect. Family-4 SPELLMOD.
+    mechanic: multi
+    effects:
+      - type: spellmod
+        affects: ["Battle Shout", "Demoralizing Shout"]   # 2048 bit 65536 + 1160 bit 131072 (_ref)
+        op: duration                # SPELLMOD_DURATION (1)
+        kind: pct
+        vals: [10, 20, 30, 40, 50]
+      - type: spellmod
+        affects: ["Battle Shout", "Demoralizing Shout"]
+        op: radius                  # SPELLMOD_RADIUS (6)
+        kind: pct
+        vals: [10, 20, 30, 40, 50]
+  - id: 18520
+    slug: cruelty
+    name: Cruelty
+    tab: 2
+    tier: 0
+    col: 2
+    icon: ability_rogue_eviscerate
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Increases your chance to get a critical strike with melee weapons by 1%.
+    - Increases your chance to get a critical strike with melee weapons by 2%.
+    - Increases your chance to get a critical strike with melee weapons by 3%.
+    - Increases your chance to get a critical strike with melee weapons by 4%.
+    - Increases your chance to get a critical strike with melee weapons by 5%.
+    # BOUND-grant — verdict 2026-08-18. Stock Cruelty 12320/12852/12853/12855/12856 (dump 2026-08-18:
+    # family 0, aura 52 MOD_WEAPON_CRIT_PERCENT, basePoints 0/1/2/3/4 dieSides 1 -> +1/2/3/4/5% crit)
+    # is the EXACT Vanilla 5-rank chain (skeleton +1..5%). aura 52 is melee/ranged weapon crit (the
+    # rogue Malice precedent, node 18403). Decision-tree branch 3 (grant a stock id): behavior +
+    # magnitude match. NB the chain skips 12854 (id gap is inherent to the stock DBC).
+    grants: {1: [12320], 2: [12852], 3: [12853], 4: [12855], 5: [12856]}
+  - id: 18521
+    slug: improved_demoralizing_shout
+    name: Improved Demoralizing Shout
+    tab: 2
+    tier: 1
+    col: 1
+    icon: ability_warrior_warcry
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases the Attack Power reduction of your Demoralizing Shout by 8%.
+    - Increases the Attack Power reduction of your Demoralizing Shout by 16%.
+    - Increases the attack power reduction of your Demoralizing Shout by 24%.
+    - Increases the Attack Power reduction of your Demoralizing Shout by 32%.
+    - Increases the attack power reduction of your Demoralizing Shout by 40%.
+    # AUTHORED (spellmod op allEffects) — verdict 2026-08-18. Vanilla +8/16/24/32/40% AP reduction
+    # (skeleton). Demoralizing Shout 1160's ONLY effect is Effect_1 aura 99 MOD_ATTACK_POWER, base -37
+    # (dump 2026-08-18), so SPELLMOD_ALL_EFFECTS (op allEffects 8, pct) scales that -37 to -51.8 at r5
+    # (a pct mod multiplies the base incl. sign, so +40% of -37 = a BIGGER reduction — exactly "increase
+    # the AP reduction"). No 5-rank stock chain (only 37536, a single family-4 proc, exists), so no
+    # clean grant. Family-4 SPELLMOD masked to Demoralizing Shout (1160, bit 131072, _ref).
+    mechanic: spellmod
+    affects: ["Demoralizing Shout"]   # 1160, family 4 bit 131072 (_ref)
+    op: allEffects                    # SPELLMOD_ALL_EFFECTS (8) — scales Demo Shout's lone AP-reduction effect
+    kind: pct
+    vals: [8, 16, 24, 32, 40]
+  - id: 18522
+    slug: unbridled_wrath
+    name: Unbridled Wrath
+    tab: 2
+    tier: 1
+    col: 2
+    icon: spell_nature_stoneclawtotem
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Gives you a 8% chance to generate an additional Rage point when you deal melee damage with a weapon.
+    - Gives you a 16% chance to generate an additional Rage point when you deal melee damage with a weapon.
+    - Gives you a 24% chance to generate an additional Rage point when you deal melee damage with a weapon.
+    - Gives you a 32% chance to generate an additional Rage point when you deal melee damage with a weapon.
+    - Gives you a 40% chance to generate an additional Rage point when you deal melee damage with a weapon.
+    # AUTHORED (proc -> stock energize 12964) — verdict 2026-08-18. Vanilla Unbridled Wrath = 8/16/24/
+    # 32/40% chance for +1 rage on a melee hit (skeleton). The stock talent chain 12322/12999/13000/
+    # 13001/13002 (dump 2026-08-18: family 0, aura 42 PROC_TRIGGER_SPELL -> 12964, ProcFlags 4) was
+    # reworked to a PROCS-PER-MINUTE proc in WotLK — the world spell_proc rows carry ProcsPerMinute
+    # 3/6/9/12/15 (DB query 2026-08-18), NOT the Vanilla flat 8/16/24/32/40% per-hit chance — so a
+    # grant would ship PPM behavior. Author a flat-chance proc instead, REUSING the stock rage payload
+    # 12964 (family 0, Effect_1 30 ENERGIZE +1 rage [base 9 dieSides 1 -> value 10 = 1 rage, ×10
+    # internal]; already in the client DBC, no clone). flags 20 = DONE_MELEE_AUTO_ATTACK (4) |
+    # DONE_SPELL_MELEE_DMG_CLASS (16) = "deal melee damage with a weapon" (auto + specials); default
+    # hitMask (normal+crit) so any melee hit qualifies.
+    mechanic: proc
+    proc:
+      flags: 20                  # DONE_MELEE_AUTO_ATTACK | DONE_SPELL_MELEE_DMG_CLASS
+      chance: [8, 16, 24, 32, 40]
+      trigger: 12964             # stock Unbridled Wrath rage payload (+1 rage energize)
+  - id: 18523
+    slug: improved_cleave
+    name: Improved Cleave
+    tab: 2
+    tier: 2
+    col: 0
+    icon: ability_warrior_cleave
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Increases the bonus damage done by your Cleave ability by 40%.
+    - Increases the bonus damage done by your Cleave ability by 80%.
+    - Increases the bonus damage done by your Cleave ability by 120%.
+    # BOUND-grant — verdict 2026-08-18. Stock Improved Cleave 12329/12950/20496 (dump 2026-08-18:
+    # family 4, aura 108 ADD_PCT_MODIFIER, misc 8 SPELLMOD_ALL_EFFECTS, basePoints 39/79/119 -> +40/80/
+    # 120%, masked to Cleave) is Vanilla-EXACT in BOTH magnitude and behavior (+40/80/120% Cleave bonus
+    # damage — matches the skeleton tooltip; the plan's "40/70/100" guess was wrong). Cleave 845's bonus
+    # damage is Effect_1 = 58 WEAPON_DAMAGE +15 (dump), which SPELLMOD_ALL_EFFECTS scales. Decision-tree
+    # branch 3 (grant a stock id): grant is faithful AND simpler than re-deriving the mask (the Arms
+    # Impale precedent, node 18511).
+    grants: {1: [12329], 2: [12950], 3: [20496]}
+  - id: 18524
+    slug: piercing_howl
+    name: Piercing Howl
+    tab: 2
+    tier: 2
+    col: 1
+    icon: spell_shadow_deathscream
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Causes all enemies near the warrior to be dazed, reducing movement speed by 50% for 6 sec.
+    # BOUND-grant — verdict 2026-08-18. _ref.grants.piercing_howl = 12323 (dump 2026-08-18: family 4,
+    # Effect_1 aura 33 MOD_DECREASE_SPEED -50%, DurationIndex 32 = 6s; single rank both eras). An ACTIVE
+    # castable AoE slow whose client tooltip must read the Vanilla text, so a grant (not an authored
+    # passive) is required. Unchanged Vanilla->WotLK.
+    grants: {1: [12323]}
+  - id: 18525
+    slug: blood_craze
+    name: Blood Craze
+    tab: 2
+    tier: 2
+    col: 2
+    icon: spell_shadow_summonimp
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Regenerates 1% of your total health over 6 sec after being the victim of a critical strike.
+    - Regenerates 2% of your total health over 6 sec after being the victim of a critical strike.
+    - Regenerates 3% of your total health over 6 sec after being the victim of a critical strike.
+    # AUTHORED (proc, crit-only -> stock HoTs 16488/16490/16491) — verdict 2026-08-18. Vanilla Blood
+    # Craze = regen 1/2/3% health over 6s AFTER BEING CRIT (skeleton). The stock talent chain 16487/
+    # 16489/16492 (dump 2026-08-18: family 0, aura 42 PROC_TRIGGER_SPELL -> HoT 16488/16490/16491,
+    # ProcFlags 664232 = all TAKEN hits) has NO world spell_proc row (DB query 2026-08-18) so the core
+    # auto-generates its proc with the default HitMask (normal+crit) — i.e. WotLK Blood Craze fires on
+    # ANY hit taken, NOT crit-only. Vanilla is crit-only, so author the crit gate: proc on a taken hit
+    # (flags 664232, the stock TAKEN mask) with hitMask 2 (crit-only), REUSING the stock HoT payloads
+    # 16488/16490/16491 (aura 20 OBS_MOD_HEALTH, DurationIndex 32 = 6s — the ORIGINAL Vanilla heal
+    # spells, unchanged, already in the client DBC so no clone). Per-rank trigger = the matching HoT.
+    mechanic: proc
+    proc:
+      flags: 664232              # stock Blood Craze TAKEN mask (all taken-damage flags)
+      hitMask: 2                 # PROC_HIT_CRITICAL — Vanilla is crit-only (the WotLK any-hit default is the divergence)
+      chance: [100, 100, 100]    # 100% on a taken crit
+      trigger: [16488, 16490, 16491]   # stock Blood Craze HoTs r1/r2/r3 (1/2/3% over 6s)
+  - id: 18526
+    slug: improved_battle_shout
+    name: Improved Battle Shout
+    tab: 2
+    tier: 2
+    col: 3
+    icon: ability_warrior_battleshout
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Increases the Attack Power bonus of your Battle Shout by 5%.
+    - Increases the Attack Power bonus of your Battle Shout by 10%.
+    - Increases the Attack Power bonus of your Battle Shout by 15%.
+    - Increases the Attack Power bonus of your Battle Shout by 20%.
+    - Increases the Attack Power bonus of your Battle Shout by 25%.
+    # AUTHORED (spellmod op allEffects) — verdict 2026-08-18. Vanilla +5/10/15/20/25% Battle Shout AP
+    # bonus (skeleton). No stock 5-rank chain: the only "Improved Battle Shout" in the DBC is 37536, a
+    # single family-4 aura-42 PROC (dump 2026-08-18), NOT a spellmod chain — so no clean grant. Battle
+    # Shout 2048 carries Effect_1 aura 99 MOD_ATTACK_POWER +305 AND Effect_2 aura 124 MOD_RANGED_ATTACK_
+    # POWER +305 (dump 2026-08-18), so SPELLMOD_ALL_EFFECTS (op allEffects 8, pct) scales BOTH the melee
+    # and ranged AP bonuses by +5..25%. Family-4 SPELLMOD masked to Battle Shout (2048, bit 65536, _ref).
+    mechanic: spellmod
+    affects: ["Battle Shout"]     # 2048, family 4 bit 65536 (_ref)
+    op: allEffects               # SPELLMOD_ALL_EFFECTS (8) — scales Battle Shout's melee + ranged AP effects
+    kind: pct
+    vals: [5, 10, 15, 20, 25]
+  - id: 18527
+    slug: dual_wield_specialization
+    name: Dual Wield Specialization
+    tab: 2
+    tier: 3
+    col: 0
+    icon: ability_dualwield
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Increases the damage done by your offhand weapon by 5%.
+    - Increases the damage done by your offhand weapon by 10%.
+    - Increases the damage done by your offhand weapon by 15%.
+    - Increases the damage done by your offhand weapon by 20%.
+    - Increases the damage done by your offhand weapon by 25%.
+    # BOUND-grant — verdict 2026-08-18. Stock WARRIOR Dual Wield Specialization 23584/23585/23586/
+    # 23587/23588 (dump 2026-08-18: family 4, aura 122 MOD_OFFHAND_DAMAGE_PCT, basePoints 4/9/14/19/24
+    # dieSides 1 -> +5/10/15/20/25%) is the EXACT Vanilla 5-rank chain (skeleton +5..25%). (NOT the
+    # rogue family-8 chain 13715/... which is +10/20/30/40/50%.) A plain passive stat aura -> grant the
+    # stock ids (decision-tree branch 3; the rogue DW-Spec precedent, node 18427).
+    grants: {1: [23584], 2: [23585], 3: [23586], 4: [23587], 5: [23588]}
+  - id: 18528
+    slug: improved_execute
+    name: Improved Execute
+    tab: 2
+    tier: 3
+    col: 1
+    icon: inv_sword_48
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Reduces the Rage cost of your Execute ability by 2.
+    - Reduces the Rage cost of your Execute ability by 5.
+    # AUTHORED (spellmod op cost) — verdict 2026-08-18. Vanilla -2/-5 rage on Execute's base cost
+    # (skeleton). Execute 5308 ManaCost = 150 = 15 rage (×10; dump 2026-08-18) — the base cost the
+    # "consume all rage above base" mechanic starts from — and SpellInfo::CalcPowerCost applies
+    # SPELLMOD_COST straight to that ×10 value, so the reduction is authored ×10 (-20/-50 = -2/-5 rage).
+    # No stock 2-rank cost-mod chain, so authored. Family-4 SPELLMOD masked to Execute (5308, bit
+    # 536870912, _ref). (Cost line won't visually rewrite — the addon RewriteCost handles only "X Mana"
+    # — but the server reduction is correct; the Arms Heroic Strike/Thunder Clap cost-node precedent.)
+    mechanic: spellmod
+    affects: ["Execute"]         # 5308, family 4 bit 536870912 (_ref)
+    op: cost                     # SPELLMOD_COST (14)
+    kind: flat
+    vals: [-20, -50]             # -2/-5 rage (×10 internal rage units)
+  - id: 18529
+    slug: enrage
+    name: Enrage
+    tab: 2
+    tier: 3
+    col: 2
+    icon: spell_shadow_unholyfrenzy
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Gives you a 5% melee damage bonus for 12 sec up to a maximum of 12 swings after being the victim of a critical strike.
+    - Gives you a 10% melee damage bonus for 12 sec up to a maximum of 12 swings after being the victim of a critical strike.
+    - Gives you a 15% melee damage bonus for 12 sec up to a maximum of 12 swings after being the victim of a critical strike.
+    - Gives you a 20% melee damage bonus for 12 sec up to a maximum of 12 swings after being the victim of a critical strike.
+    - Gives you a 25% melee damage bonus for 12 sec up to a maximum of 12 swings after being the victim of a critical strike.
+    # AUTHORED (proc, crit-only -> Enrage buff clones 932815-819) — verdict 2026-08-18. Vanilla Enrage =
+    # +5/10/15/20/25% melee damage for 12s / up to 12 swings, after being crit (skeleton). family 0, so
+    # a family-4 SPELLMOD cannot reach it; and the stock Enrage buffs 12880/14201-14204 are only 2/4/6/
+    # 8/10% with NO swing cap (dump 2026-08-18) — wrong magnitude AND missing the 12-swing cap, no clean
+    # grant. So author a per-rank proc on a TAKEN crit (flags 664232 = the stock Blood Craze/enrage
+    # TAKEN mask, hitMask 2 = crit-only) that applies the matching Enrage buff clone (helpers 932815-819:
+    # clone of stock buff 12880 at the Vanilla amount + ProcCharges 12 + a ProcFlags-4 consume-on-swing
+    # row = the 12-swing cap). Per-rank trigger = the matching buff.
+    mechanic: proc
+    proc:
+      flags: 664232              # all TAKEN-damage flags (stock enrage/Blood Craze mask)
+      hitMask: 2                 # PROC_HIT_CRITICAL — "after being the victim of a critical strike"
+      chance: [100, 100, 100, 100, 100]
+      trigger: [932815, 932816, 932817, 932818, 932819]   # Enrage buff clones r1-5 (see helpers:)
+  - id: 18530
+    slug: improved_slam
+    name: Improved Slam
+    tab: 2
+    tier: 4
+    col: 0
+    icon: ability_warrior_decisivestrike
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Decreases the casting time of your Slam ability by 0.1 sec.
+    - Decreases the casting time of your Slam ability by 0.2 sec.
+    - Decreases the casting time of your Slam ability by 0.3 sec.
+    - Decreases the casting time of your Slam ability by 0.4 sec.
+    - Decreases the casting time of your Slam ability by 0.5 sec.
+    # AUTHORED (spellmod op castTime) — verdict 2026-08-18. Vanilla -0.1s per rank = -0.1/0.2/0.3/0.4/
+    # 0.5s (skeleton). Slam 1464 has a real cast time (CastingTimeIndex 16 = 1.5s; dump 2026-08-18) and
+    # SpellInfo::CalcCastTime applies SPELLMOD_CASTING_TIME to it, so op castTime (SPELLMOD_CASTING_TIME
+    # 10, flat, ms) subtracts the cast time directly. -100/-200/-300/-400/-500 ms. Family-4 SPELLMOD
+    # masked to Slam (1464, bit 2097152, _ref).
+    mechanic: spellmod
+    affects: ["Slam"]            # 1464, family 4 bit 2097152 (_ref)
+    op: castTime                 # SPELLMOD_CASTING_TIME (10)
+    kind: flat
+    vals: [-100, -200, -300, -400, -500]   # -0.1 .. -0.5 sec (ms)
+  - id: 18531
+    slug: death_wish
+    name: Death Wish
+    tab: 2
+    tier: 4
+    col: 1
+    icon: spell_shadow_deathpact
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - When activated, increases your physical damage by 20% and makes you immune to Fear effects,
+      but lowers your armor and all resistances by 20%. Lasts 30 sec.
+    # CLONE + GRANT — verdict 2026-08-18. WotLK Death Wish 12292 DIVERGED from Vanilla: it dropped the
+    # Fear immunity and the -20% armor/resist penalty, giving instead +20% physical damage + Effect_3
+    # aura 87 MOD_DAMAGE_PERCENT_TAKEN +5% (dump 2026-08-18). Vanilla (warcraft.wiki.gg, verified
+    # 2026-08-18) = +20% physical damage, IMMUNE TO FEAR, -20% armor and all resistances, 30s/3min/10
+    # rage. spell_dbc + client Spell.dbc are global (no per-era override), so grant clone 932808 (see
+    # helpers:) — the stock 12292 ships untouched for WotLK-stage chars, the Vanilla behavior + tooltip
+    # only exists at the Vanilla era. The Demonic Sacrifice clone precedent (warlock 932929).
+    grants: {1: [932808]}
+  - id: 18532
+    slug: improved_intercept
+    name: Improved Intercept
+    tab: 2
+    tier: 4
+    col: 3
+    icon: ability_rogue_sprint
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Reduces the cooldown of your Intercept ability by 5 sec.
+    - Reduces the cooldown of your Intercept ability by 10 sec.
+    # AUTHORED (spellmod op cooldown) — verdict 2026-08-18. Vanilla -5/-10s Intercept cooldown
+    # (skeleton). Intercept 20252's 30s cooldown is a CATEGORY cooldown (Category 1158,
+    # CategoryRecoveryTime 30000, RecoveryTime 0; dump 2026-08-18) — and Player::_ApplySpellMods
+    # (Player.cpp:11151) applies SPELLMOD_COOLDOWN to catrec too, gated on !SPELL_ATTR6_NO_CATEGORY_
+    # COOLDOWN_MODS; Intercept's AttributesEx6 = 0x800000 does NOT carry that 0x80000000 flag, so op
+    # cooldown reaches the category cooldown. Flat ms: -5000/-10000. Family-4 SPELLMOD masked to
+    # Intercept (20252, bit 1073741824, _ref).
+    mechanic: spellmod
+    affects: ["Intercept"]       # 20252, family 4 bit 1073741824 (_ref)
+    op: cooldown                 # SPELLMOD_COOLDOWN (11) — applies to Intercept's category cooldown
+    kind: flat
+    vals: [-5000, -10000]        # -5 / -10 sec (ms)
+  - id: 18533
+    slug: improved_berserker_rage
+    name: Improved Berserker Rage
+    tab: 2
+    tier: 5
+    col: 0
+    icon: spell_nature_ancestralguardian
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 25
+    mechanic: scripted
+    marker: 15                 # band-gated DUMMY misc value the SpellScript reads off the warrior (registry #15)
+    vals: [5, 10]              # rage generated on Berserker Rage cast (rank 1 / rank 2)
+    tooltip:
+    - The Berserker Rage ability will generate 5 rage when used.
+    - The Berserker Rage ability will generate 10 rage when used.
+    # WIRED (Task 11, scripted). Vanilla verdict 2026-08-18 (warcraft.wiki.gg / Wowhead Classic):
+    # Improved Berserker Rage = 2 ranks, "Berserker Rage generates 5 / 10 rage when used" — a single
+    # effect, no second component. NOT expressible in data: Berserker Rage 18499's three effects are
+    # all aura 77 MECHANIC_IMMUNITY (fear/sap/incapacitate; dump 2026-08-18) with no ENERGIZE for a
+    # SPELLMOD to scale (a spellmod modifies an EXISTING effect, it cannot ADD a new energize), and
+    # "grant X rage when a specific spell is cast" has no clean proc-flag. So `mechanic: scripted`
+    # mints a per-rank hidden band-gated DUMMY marker passive (misc 15, amount = 5/10) that self-
+    # applies on learn, and era_improved_berserker_rage (SpellScript, EraTalentProcScripts.cpp) is
+    # bound via the top-level scriptBindings to STOCK Berserker Rage (18499): on cast, if the warrior
+    # carries the misc-15 marker it energizes `amount` rage (×10 internal). Inert without the marker —
+    # a WotLK / untalented warrior's Berserker Rage is never mutated (global binding, marker-gated,
+    # era-safe). Live rage-gain firing on a real Berserker Rage cast is a Task-10 real-client check.
+  - id: 18534
+    slug: flurry
+    name: Flurry
+    tab: 2
+    tier: 5
+    col: 2
+    icon: ability_ghoulfrenzy
+    maxRank: 5
+    prereqTalentId: 18529
+    prereqPoints: 25
+    tooltip:
+    - Increases your attack speed by 10% for your next 3 swings after dealing a critical strike.
+    - Increases your attack speed by 15% for your next 3 swings after dealing a critical strike.
+    - Increases your attack speed by 20% for your next 3 swings after dealing a critical strike.
+    - Increases your attack speed by 25% for your next 3 swings after dealing a critical strike.
+    - Increases your attack speed by 30% for your next 3 swings after dealing a critical strike.
+    # AUTHORED (proc, crit-only -> Flurry haste-buff clones 932810-814) — verdict 2026-08-18. Vanilla
+    # Flurry = 10/15/20/25/30% melee haste for the next 3 swings after a crit (skeleton). The stock
+    # buff chain 12966-12970 is family-4 EMPTY-mask (no bit to spellmod) at the WotLK magnitudes 5/10/
+    # 15/20/25% (dump 2026-08-18), so no grant. The talent PASSIVE (12319 chain) is family 0. So author
+    # a per-rank proc on a melee crit (flags 20 = DONE_MELEE_AUTO_ATTACK | DONE_SPELL_MELEE_DMG_CLASS,
+    # hitMask 2 = crit-only) that applies the matching Flurry buff clone (helpers 932810-814: clone of
+    # 12966 at the Vanilla haste %, inheriting the 3-charge consume-on-swing 15s buff verbatim). Per-
+    # rank trigger = the matching buff.
+    mechanic: proc
+    proc:
+      flags: 20                  # DONE_MELEE_AUTO_ATTACK | DONE_SPELL_MELEE_DMG_CLASS ("dealing a critical strike")
+      hitMask: 2                 # PROC_HIT_CRITICAL — crit-only
+      chance: [100, 100, 100, 100, 100]
+      trigger: [932810, 932811, 932812, 932813, 932814]   # Flurry haste-buff clones r1-5 (see helpers:)
+  - id: 18535
+    slug: bloodthirst
+    name: Bloodthirst
+    tab: 2
+    tier: 6
+    col: 1
+    icon: spell_nature_bloodlust
+    maxRank: 1
+    prereqTalentId: 18531
+    prereqPoints: 30
+    tooltip:
+    - Instantly attack the target, causing damage equal to 45% of your attack power.
+      In addition, the next 5 successful melee attacks will restore 10 health. This effect lasts 8 sec.
+    # CLONE + GRANT (was a WRONG bound-grant of 23881) — reworked 2026-08-18. Stock 23881 is WotLK-tuned
+    # (50% AP, NO heal, 20 rage, 4s category cd) and granting it shipped that behavior AND its global
+    # client tooltip over the Vanilla ability. Vanilla Bloodthirst = 45% AP + the next 5 melee attacks
+    # restore a flat rank-scaling amount (10/13/17/20; buff 8s/5 charges), 30 rage, 6s cd, 4 ranks —
+    # R1 talent-granted (L40), R2/R3/R4 trainer-taught (L48/54/60). Built as custom clone trios per rank
+    # (damage clone 932828-831 + heal buff 932832-835 + flat heal 932836-839; see helpers): the damage
+    # clone's 45% AP is computed by era_bloodthirst_vanilla (scriptBindings), the heal is pure DBC
+    # (Effect_1 TRIGGER_SPELL -> the 5-charge aura-42 buff -> flat heal). This node grants R1; the upper
+    # ranks self-gate on ReqAbility1=932828 at the warrior trainer (only a Vanilla warrior with the
+    # talent has 932828). spell_ranks 932828->829->830->831 + trainer rows:
+    # data/sql/world/base/2026_08_18_20_era_talent_warrior_bloodthirst_trainer.sql; strip mirror +
+    # stale-23881 strip in EraTalents.cpp (CLASS_WARRIOR block). Stock 23881 stays UNTOUCHED (WotLK
+    # warriors keep real Bloodthirst). The Hemorrhage 3-rank trainer-chain precedent (node 18449).
+    grants: {1: [932828]}
+- key: 3
+  name: Protection
+  background: WarriorProtection
+  nodes:
+  - id: 18536
+    slug: shield_specialization
+    name: Shield Specialization
+    tab: 3
+    tier: 0
+    col: 1
+    icon: inv_shield_06
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Increases your chance to block attacks with a shield by 1% and has a 20% chance to generate 1 rage when a block occurs.
+    - Increases your chance to block attacks with a shield by 2% and has a 40% chance to generate 1 rage when a block occurs.
+    - Increases your chance to block attacks with a shield by 3% and has a 60% chance to generate 1 rage when a block occurs.
+    - Increases your chance to block attacks with a shield by 4% and has a 80% chance to generate 1 rage when a block occurs.
+    - Increases your chance to block attacks with a shield by 5% and has a 100% chance to generate 1 rage when a block occurs.
+    # CLONE + GRANT (BOTH halves) — verdict 2026-08-18, gap CLOSED Task 12. Vanilla Shield
+    # Specialization = +1/2/3/4/5% block chance AND a 20/40/60/80/100% chance to generate 1 rage
+    # WHEN A BLOCK OCCURS (warcraft.wiki.gg Classic, verified 2026-08-18). Both halves ship in ONE
+    # granted passive per rank: a single talent node CAN'T carry a stat effect AND a data proc
+    # (`multi` is stat/spellmod-only; a `proc` node's carrier passive is aura-42-only), so per the
+    # framework ("a helper may also carry a proc: block") the faithful build is a per-rank helper
+    # clone of the stock Shield Spec chain (932823-827 <- 12298/12724/12725/12726/12727) carrying
+    # Effect_1 aura 51 MOD_BLOCK_PERCENT (block%, BYTE-IDENTICAL to the stat node this replaces) +
+    # Effect_2 aura 42 PROC_TRIGGER_SPELL -> 12964 (the stock +1-rage energize; Vanilla is 1 rage,
+    # stock Shield Spec triggers 23602 = +5 rage) + a spell_proc row.
+    # The proc is genuinely BLOCK-GATED (Vanilla-correct, unlike WotLK): flags 680 (all taken melee+
+    # ranged hits, the stock ProcTypeMask) + HitMask 64 = PROC_HIT_BLOCK (SpellMgr.h:263) — the fork
+    # only sets PROC_HIT_BLOCK on a blocked hit (Unit.cpp:148) and CanSpellTriggerProcOnEvent
+    # (SpellMgr.cpp:929-940) rejects the proc unless the event's hitMask intersects HitMask, so rage
+    # fires ONLY on a block. Stock Shield Spec has NO spell_proc row so it rages on ANY taken hit
+    # (WotLK divergence); our HitMask 64 restores the Vanilla block-only gate. Encoding + fork-enum
+    # evidence live on the 932823-827 helper defs. (Live block->rage FIRING is real-client Task 10.)
+    grants: {1: [932823], 2: [932824], 3: [932825], 4: [932826], 5: [932827]}
+  - id: 18537
+    slug: anticipation
+    name: Anticipation
+    tab: 3
+    tier: 0
+    col: 2
+    icon: spell_nature_mirrorimage
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Increases your Defense skill by 2.
+    - Increases your Defense skill by 4.
+    - Increases your Defense skill by 6.
+    - Increases your Defense skill by 8.
+    - Increases your Defense skill by 10.
+    # AUTHORED (stat) — verdict 2026-08-18. Vanilla Anticipation = +2/4/6/8/10 Defense SKILL, 5 ranks
+    # (skeleton). aura 30 MOD_SKILL with EffectMiscValue 95 (the Defense skill line — confirmed: stock
+    # Anticipation 12297/12753 still carry vestigial misc 95, though WotLK reworked their AURA to 49
+    # MOD_DODGE_PERCENT; dump 2026-08-18). The 3.3.5 core DOES translate raw Defense skill to avoidance:
+    # Player::UpdateDefenseBonusesMod + the crit/dodge/parry/block calcs add
+    # (GetSkillValue(SKILL_DEFENSE) - GetMaxSkillValueForLevel())*0.04 (StatSystem.cpp:642/745/780/819,
+    # Unit.cpp:3928/9410), and MOD_SKILL feeds GetSkillValue — so this is the Vanilla-exact encoding and
+    # not a no-op. Family-less passive (the stat builder forces family 0).
+    mechanic: stat
+    aura: 30                     # SPELL_AURA_MOD_SKILL
+    school: 95                   # EffectMiscValue = SKILL_DEFENSE (skill line 95)
+    vals: [2, 4, 6, 8, 10]
+  - id: 18538
+    slug: improved_bloodrage
+    name: Improved Bloodrage
+    tab: 3
+    tier: 1
+    col: 0
+    icon: ability_racial_bloodrage
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases the instant Rage generated by your Bloodrage ability by 2.
+    - Increases the instant Rage generated by your Bloodrage ability by 5.
+    # AUTHORED (spellmod op effect1) — verdict 2026-08-18. Vanilla +2/+5 instant rage on Bloodrage
+    # (skeleton). Bloodrage 2687's instant rage is Effect_1 = 30 ENERGIZE (base 199 dieSides 1 -> value
+    # 200 = 20 rage ×10; misc 1 = POWER_RAGE; dump 2026-08-18); SpellEffectInfo::CalcValue runs
+    # ApplyEffectModifiers -> SPELLMOD_EFFECT1 for effect index 0, so op effect1 flat adds to it. Rage
+    # energize is ×10 internal, so +2/+5 rage = +20/+50 (the Arms Improved Charge op-effect2 rage
+    # precedent, node 18504). CONFIRMED the target effect index: WotLK Improved Bloodrage 12301/12818
+    # is aura 108 misc 3 = SPELLMOD_EFFECT1 pct (+25/+50%) masked to Bloodrage (dump 2026-08-18) — same
+    # effect, we author flat to match the skeleton's explicit "+2/+5". Family-4 SPELLMOD masked to
+    # Bloodrage (2687, bit 256, _ref).
+    mechanic: spellmod
+    affects: ["Bloodrage"]       # 2687, family 4 bit 256 (_ref)
+    op: effect1                  # SPELLMOD_EFFECT1 (3) — Bloodrage's instant-rage ENERGIZE is Effect_1
+    kind: flat
+    vals: [20, 50]               # +2/+5 rage (×10 internal rage units)
+  - id: 18539
+    slug: toughness
+    name: Toughness
+    tab: 3
+    tier: 1
+    col: 2
+    icon: spell_holy_devotion
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases your armor value from items by 2%.
+    - Increases your armor value from items by 4%.
+    - Increases your armor value from items by 6%.
+    - Increases your armor value from items by 8%.
+    - Increases your armor value from items by 10%.
+    # AUTHORED (stat) — verdict 2026-08-18. Vanilla Toughness = +2/4/6/8/10% armor from items, 5 ranks
+    # (skeleton). Stock Toughness 12299/12764 = Effect_1 aura 142 MOD_BASE_RESISTANCE_PCT misc 1 (base
+    # 1..9 dieSides 1 -> +2..10%) — Vanilla-exact for the armor half (its Effect_2 aura 232
+    # MECHANIC_DURATION_MOD movement-slow reduction is a WotLK addition, dropped here). aura 142 misc 1
+    # = the physical/armor school; core scopes MOD_BASE_RESISTANCE_PCT to item armor. Family-less.
+    mechanic: stat
+    aura: 142                    # SPELL_AURA_MOD_BASE_RESISTANCE_PCT (stock Toughness 12299 analog)
+    school: 1                    # EffectMiscValue = physical/armor school mask (stock 12299 encoding)
+    vals: [2, 4, 6, 8, 10]
+  - id: 18540
+    slug: iron_will
+    name: Iron Will
+    tab: 3
+    tier: 1
+    col: 3
+    icon: spell_magic_magearmor
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases your chance to resist stun and charm effects by 3%.
+    - Increases your chance to resist stun and charm effects by 6%.
+    - Increases your chance to resist stun and charm effects by 9%.
+    - Increases your chance to resist stun and charm effects by 12%.
+    - Increases your chance to resist stun and charm effects by 15%.
+    # AUTHORED (multi: two stat effects) — verdict 2026-08-18. Vanilla Iron Will = +3/6/9/12/15% chance
+    # to RESIST stun AND charm, 5 ranks (skeleton). The "chance to resist a mechanic" aura is 117
+    # MOD_MECHANIC_RESISTANCE (framework: NOT 232 = MECHANIC_DURATION_MOD, which is what WotLK reworked
+    # Iron Will 12300/12959/12960 into — reduce-duration, dump 2026-08-18). One aura effect carries one
+    # mechanic misc, and Vanilla covers two, so two stat effects: misc 1 = MECHANIC_CHARM, misc 12 =
+    # MECHANIC_STUN (SharedDefines.h; the same misc pair the stock 12300 uses on its aura-232 effects).
+    # Family-less passive.
+    mechanic: multi
+    effects:
+      - type: stat
+        aura: 117                # SPELL_AURA_MOD_MECHANIC_RESISTANCE
+        misc: 1                  # MECHANIC_CHARM
+        vals: [3, 6, 9, 12, 15]
+      - type: stat
+        aura: 117
+        misc: 12                 # MECHANIC_STUN
+        vals: [3, 6, 9, 12, 15]
+  - id: 18541
+    slug: last_stand
+    name: Last Stand
+    tab: 3
+    tier: 2
+    col: 0
+    icon: spell_holy_ashestoashes
+    maxRank: 1
+    prereqTalentId: 18538
+    prereqPoints: 10
+    tooltip:
+    - When activated, this ability temporarily grants you 30% of your maximum hit points for 20 sec.
+      After the effect expires, the hit points are lost.
+    # SCRIPTED-ACTIVE grant (reworked 2026-08-18). The +30%-HP-for-20s MECHANIC is identical
+    # Vanilla->WotLK but SCRIPT-BOUND to stock 12975 (spell_warr_last_stand: DUMMY -> casts 12976 with
+    # 30%-of-max-HP computed by the script). The ONLY divergence is the cooldown — Vanilla 10 min
+    # (wowhead classic) vs stock 12975's 3-min CATEGORY cooldown (CategoryRecoveryTime 180000,
+    # Category 1251) — which can't be changed on the global stock spell (era-safety forbids it). So this
+    # node now grants the era clone 932840 (template of 12975 w/ category/categoryCooldown neutralized +
+    # RecoveryTime 600000; see helpers:) and the era_last_stand SpellScript (scriptBindings) replicates
+    # HandleDummy verbatim so the clone delivers the identical +30% HP via the stock 12976 buff. Stock
+    # 12975 keeps the core script (WotLK 3-min cd). Stale-12975 strip in EraTalents.cpp for chars who
+    # learned Last Stand before this rework (mirrors the Bloodthirst 23881 strip).
+    grants: {1: [932840]}
+  - id: 18542
+    slug: improved_shield_block
+    name: Improved Shield Block
+    tab: 3
+    tier: 2
+    col: 1
+    icon: ability_defend
+    maxRank: 3
+    prereqTalentId: 18536
+    prereqPoints: 10
+    tooltip:
+    - Allows your Shield Block ability to block an additional attack, and increases the duration by 0.5 sec.
+    - Allows your Shield Block ability to block an additional attack, and increases the duration by 1 sec.
+    - Allows your Shield Block ability to block an additional attack, and increases the duration by 2 sec.
+    # AUTHORED (spellmod op duration) — verdict 2026-08-18. Vanilla Improved Shield Block = +0.5/1/2 sec
+    # Shield Block duration AND "block an additional attack" (skeleton). Shield Block 2565 is an aura
+    # (Effect_1 aura 51 +100% block chance + Effect_2 aura 150 block-value%, dump 2026-08-18) with NO
+    # ProcCharges (0 = unlimited blocks for the duration, the WotLK mechanic), so op duration
+    # (SPELLMOD_DURATION 1, flat ms) extends the block window. The "additional attack" half is INHERENT:
+    # WotLK Shield Block blocks EVERY attack during its window (no charge cap to add), so a longer
+    # duration IS "block more attacks" — there is no separate charge to increment on this core.
+    # Family-4 SPELLMOD masked to Shield Block (2565, bit 4096, _ref).
+    mechanic: spellmod
+    affects: ["Shield Block"]    # 2565, family 4 bit 4096 (_ref)
+    op: duration                 # SPELLMOD_DURATION (1)
+    kind: flat
+    vals: [500, 1000, 2000]      # +0.5 / +1 / +2 sec (ms)
+  - id: 18543
+    slug: improved_revenge
+    name: Improved Revenge
+    tab: 3
+    tier: 2
+    col: 2
+    icon: ability_warrior_revenge
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Gives your Revenge ability a 15% chance to stun the target for 3 sec.
+    - Gives your Revenge ability a 30% chance to stun the target for 3 sec.
+    - Gives your Revenge ability a 45% chance to stun the target for 3 sec.
+    # AUTHORED (proc -> 3s stun clone 932821) — verdict 2026-08-18. Vanilla Improved Revenge = 15/30/45%
+    # chance the Revenge hit stuns for 3 sec, STUN-ONLY, 3 ranks (skeleton). WotLK reworked it into a
+    # +30/60% Revenge-damage spellmod (12797/12799 = aura 108 misc0, dump 2026-08-18) and dropped the
+    # stun — no stock stun payload, so the 3s stun is authored as helper 932821 (mirrors the Arms Mace
+    # Specialization stun 932801; see helpers:). Revenge 6572 IS a damaging melee ability, so the proc
+    # fires on its melee-damage-class hit (flags 16 = DONE_SPELL_MELEE_DMG_CLASS); scope to Revenge via
+    # `affects` (family 4 bit 1024). Vanilla had no damage bonus, so this is proc-only (not multi).
+    mechanic: proc
+    proc:
+      flags: 16                  # DONE_SPELL_MELEE_DMG_CLASS (Revenge is a melee-class damaging ability)
+      chance: [15, 30, 45]
+      affects: ["Revenge"]       # 6572, family 4 bit 1024 (_ref) — scope the proc to Revenge
+      trigger: 932821            # authored Vanilla 3s Revenge-stun clone (helpers above)
+  - id: 18544
+    slug: defiance
+    name: Defiance
+    tab: 3
+    tier: 2
+    col: 3
+    icon: ability_warrior_innerrage
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Increases the threat generated by your attacks by 3% while in Defensive Stance.
+    - Increases the threat generated by your attacks by 6% while in Defensive Stance.
+    - Increases the threat generated by your attacks by 9% while in Defensive Stance.
+    - Increases the threat generated by your attacks by 12% while in Defensive Stance.
+    - Increases the threat generated by your attacks by 15% while in Defensive Stance.
+    # AUTHORED (stat, V-only threat) — verdict 2026-08-18. Vanilla Defiance = +3/6/9/12/15% threat, 5
+    # ranks, THREAT-ONLY (skeleton). WotLK 12303/12788/12789 = Effect_1 aura 10 MOD_THREAT misc 127 (all
+    # schools) + Effect_2 aura 107 misc 8 EXPERTISE (dump 2026-08-18) — drop the expertise (a WotLK
+    # addition) and ship the threat as a plain aura 10 MOD_THREAT stat, misc 127. "an aura for generated
+    # threat %" per the Task-3 note.
+    # STANCE-GATE (final-review Warrior close, 2026-08-24): the threat is now correctly gated to Defensive
+    # Stance via `stances: 131072` (ShapeshiftMask, FORM_DEFENSIVESTANCE = 1<<17 = 131072 — stock 12303's
+    # own gate, confirmed dump 2026-08-18). The generator's `stances:` feature honors `mechanic: stat`
+    # (_STANCES_HONORED_MECHANICS) and takes a raw int mask, so this restores the Vanilla gate — and matches
+    # the node's own tooltips ("while in Defensive Stance") — with ZERO helpers/clones, superseding the
+    # earlier "would need 5 clones (932820-824)" rationale (932820 stays free). Vanilla Defiance =
+    # +3/6/9/12/15% threat, 5 ranks, THREAT-ONLY; the WotLK expertise half (12303 Effect_2 aura 107 misc 8)
+    # is correctly dropped.
+    mechanic: stat
+    aura: 10                     # SPELL_AURA_MOD_THREAT
+    school: 127                  # EffectMiscValue = all-schools mask (stock 12303 encoding)
+    stances: 131072              # gate to Defensive Stance (FORM_DEFENSIVESTANCE 1<<17) — matches stock 12303 ShapeshiftMask + the node tooltip
+    vals: [3, 6, 9, 12, 15]
+  - id: 18545
+    slug: improved_sunder_armor
+    name: Improved Sunder Armor
+    tab: 3
+    tier: 3
+    col: 0
+    icon: ability_warrior_sunder
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Reduces the cost of your Sunder Armor ability by 1 rage point.
+    - Reduces the cost of your Sunder Armor ability by 2 rage points.
+    - Reduces the cost of your Sunder Armor ability by 3 rage points.
+    # BOUND-mod (spellmod op cost) — verdict 2026-08-18. Vanilla -1/-2/-3 rage on Sunder Armor
+    # (skeleton). Sunder Armor 7386 ManaCost 150 = 15 rage (×10; dump 2026-08-18); SpellInfo::
+    # CalcPowerCost applies SPELLMOD_COST straight to that ×10 value, so the reduction is authored ×10
+    # (-10/-20/-30). Family-4 SPELLMOD masked to Sunder Armor (7386, bit 16384, _ref). (Cost line won't
+    # visually rewrite — the addon RewriteCost handles only "X Mana" — but the server reduction is
+    # correct; the Arms Heroic Strike cost-node precedent.)
+    mechanic: spellmod
+    affects: ["Sunder Armor"]     # 7386, family 4 bit 16384 (_ref)
+    op: cost                     # SPELLMOD_COST (14)
+    kind: flat
+    vals: [-10, -20, -30]        # -1/-2/-3 rage (×10 internal rage units)
+  - id: 18546
+    slug: improved_disarm
+    name: Improved Disarm
+    tab: 3
+    tier: 3
+    col: 1
+    icon: ability_warrior_disarm
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Increases the duration of your Disarm ability by 1 secs.
+    - Increases the duration of your Disarm ability by 2 secs.
+    - Increases the duration of your Disarm ability by 3 secs.
+    # AUTHORED (spellmod op duration) — verdict 2026-08-18. Vanilla Improved Disarm = +1/2/3 sec Disarm
+    # duration, 3 ranks (skeleton). Disarm 676 applies Effect_1 aura 67 MOD_DISARM for its duration
+    # (dump 2026-08-18); SpellInfo::CalcDuration applies SPELLMOD_DURATION to it, so op duration flat
+    # extends it (+1000/2000/3000 ms). (WotLK reworked Improved Disarm 12313/12804 into a cooldown-
+    # reduction + effect2 mod, dump 2026-08-18 — Vanilla is duration-only per the skeleton, so authored
+    # not granted.) Family-4 SPELLMOD masked to Disarm (676, bit 512, _ref).
+    mechanic: spellmod
+    affects: ["Disarm"]          # 676, family 4 bit 512 (_ref)
+    op: duration                 # SPELLMOD_DURATION (1)
+    kind: flat
+    vals: [1000, 2000, 3000]     # +1/+2/+3 sec (ms)
+  - id: 18547
+    slug: improved_taunt
+    name: Improved Taunt
+    tab: 3
+    tier: 3
+    col: 2
+    icon: spell_nature_reincarnation
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Reduces the cooldown of your Taunt ability by 1 sec.
+    - Reduces the cooldown of your Taunt ability by 2 sec.
+    # BOUND-mod (spellmod op cooldown) — verdict 2026-08-18. Vanilla -1/-2 sec Taunt cooldown (skeleton).
+    # Taunt 355's 8s cooldown is a CATEGORY cooldown (Category 82, CategoryRecoveryTime 8000, RecoveryTime
+    # 0; dump 2026-08-18); Player::_ApplySpellMods applies SPELLMOD_COOLDOWN to catrec too, gated on
+    # !SPELL_ATTR6_NO_CATEGORY_COOLDOWN_MODS (0x80000000). Taunt's AttributesEx6 = 0x800000 (bit 23) does
+    # NOT carry that flag, so op cooldown reaches the category cooldown (the Fury Improved Intercept
+    # precedent, node 18532). Flat ms -1000/-2000. Family-4 SPELLMOD masked to Taunt (355, bit 32768,
+    # _ref).
+    mechanic: spellmod
+    affects: ["Taunt"]           # 355, family 4 bit 32768 (_ref)
+    op: cooldown                 # SPELLMOD_COOLDOWN (11) — applies to Taunt's category cooldown
+    kind: flat
+    vals: [-1000, -2000]         # -1 / -2 sec (ms)
+  - id: 18548
+    slug: improved_shield_wall
+    name: Improved Shield Wall
+    tab: 3
+    tier: 4
+    col: 0
+    icon: ability_warrior_shieldwall
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Increases the effect duration of your Shield Wall ability by 3 secs.
+    - Increases the effect duration of your Shield Wall ability by 5 secs.
+    # AUTHORED (spellmod op duration) — verdict 2026-08-18. Vanilla Improved Shield Wall = +3/+5 sec
+    # Shield Wall duration, 2 ranks (skeleton). Shield Wall 871 = Effect_1 aura 87 MOD_DAMAGE_PERCENT_
+    # TAKEN -60% for DurationIndex 29 = 12s (dump 2026-08-18); SPELLMOD_DURATION flat extends the buff
+    # (+3000/+5000 ms). Shield Wall CARRIES a family identity bit (family 4 mask (8192,0,0) = word1 bit
+    # 13, dump 2026-08-18 — added to _ref this task), so a family-4 op-duration SPELLMOD binds it.
+    # Shield Wall is spell Category 132 (the shared-cooldown category), but we are a SPELLMOD ON the
+    # stock spell (op duration, not cooldown, and our passive is Category 0) — NOT a clone into category
+    # 132 — so the SpellInfoCorrections category-132 sweep (which strips cooldown mods) does not apply
+    # and era_audit does not flag us (its predicate is family4 AND Category==132 on OUR row).
+    mechanic: spellmod
+    affects: ["Shield Wall"]     # 871, family 4 word1 bit 13 = 8192 (_ref, added this task)
+    op: duration                 # SPELLMOD_DURATION (1)
+    kind: flat
+    vals: [3000, 5000]           # +3 / +5 sec (ms)
+  - id: 18549
+    slug: concussion_blow
+    name: Concussion Blow
+    tab: 3
+    tier: 4
+    col: 1
+    icon: ability_thunderbolt
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Stuns the opponent for 5 sec.
+    # CLONE + GRANT — verdict 2026-08-18. WotLK Concussion Blow 12809 DIVERGED from Vanilla: stock is a
+    # 30 sec cooldown (RecoveryTime 30000) + Effect_2 SCHOOL_DAMAGE (AP-scaled by script), whereas
+    # Vanilla (wowhead classic, verified 2026-08-18) is a 45 sec cooldown, 15 rage, 5 sec stun, NO
+    # damage. Granting 12809 would ship a stronger-than-Vanilla ability with the wrong tooltip; the stun
+    # is pure DBC (not script-bound like Last Stand's HP / Shield Slam's block-value), so it clones
+    # cleanly without C++. Grant per-era clone 932822 (45s cd, stun-only; see helpers:) — stock 12809
+    # ships untouched for WotLK-stage chars. The Death Wish clone precedent (node 18531).
+    grants: {1: [932822]}
+  - id: 18550
+    slug: improved_shield_bash
+    name: Improved Shield Bash
+    tab: 3
+    tier: 4
+    col: 2
+    icon: ability_warrior_shieldbash
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Gives your Shield Bash ability a 50% chance to silence the target for 3 sec.
+    - Gives your Shield Bash ability a 100% chance to silence the target for 3 sec.
+    # AUTHORED (proc -> stock 3s silence 18498) — verdict 2026-08-18. Vanilla Improved Shield Bash =
+    # 50/100% chance the Shield Bash silences for 3 sec, 2 ranks (skeleton). The 3s silence payload
+    # already exists as a STOCK client-DBC spell: 18498 "Silenced - Gag Order" (aura 27 MOD_SILENCE,
+    # Mechanic 9 MECHANIC_SILENCE, DurationIndex 27 = 3000ms, dump 2026-08-18) — reused directly as the
+    # trigger (no clone, no client block; it's the WotLK warrior Gag-Order silence, so it renders a real
+    # debuff). Shield Bash 72 is a melee-class ability that deals NO damage (Effect_1 68 INTERRUPT_CAST,
+    # no SCHOOL_DAMAGE), so its hit event carries NO_DMG_HEAL — mirror the Arms Improved Hamstring proc:
+    # flags 16 (DONE_SPELL_MELEE_DMG_CLASS) + typeMask 5 (DAMAGE|NO_DMG_HEAL) or the proc could never
+    # fire. Scope to Shield Bash via `affects` (family 4 bit 2048).
+    mechanic: proc
+    proc:
+      flags: 16                  # DONE_SPELL_MELEE_DMG_CLASS (Shield Bash is a melee-class ability)
+      typeMask: 5                # DAMAGE(1) | NO_DMG_HEAL(4): Shield Bash deals no damage (interrupt
+                                 # only), so its hit event is NO_DMG_HEAL — without bit 4 the proc never
+                                 # fires (the Improved Hamstring / Improved Wing Clip bug class)
+      chance: [50, 100]
+      affects: ["Shield Bash"]   # 72, family 4 bit 2048 (_ref) — scope the proc to Shield Bash
+      trigger: 18498             # stock "Silenced - Gag Order" 3s silence (already in client DBC)
+  - id: 18551
+    slug: one_handed_weapon_specialization
+    name: One-Handed Weapon Specialization
+    tab: 3
+    tier: 5
+    col: 2
+    icon: inv_sword_20
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 25
+    tooltip:
+    - Increases the damage you deal with One-Handed Melee weapons by 2%.
+    - Increases the damage you deal with One-Handed Melee weapons by 4%.
+    - Increases the damage you deal with One-Handed Melee weapons by 6%.
+    - Increases the damage you deal with One-Handed Melee weapons by 8%.
+    - Increases the damage you deal with One-Handed Melee weapons by 10%.
+    # AUTHORED (stat, equip-gated) — verdict 2026-08-18. Vanilla +2/4/6/8/10% one-handed weapon damage,
+    # 5 ranks (skeleton). Stock One-Handed Weapon Spec 16542 = aura 79 MOD_DAMAGE_PERCENT_DONE misc 1
+    # (physical) EquippedItemSubclass 41105 (dump 2026-08-18) — same shape as the Arms Two-Handed Weapon
+    # Spec node 18510. aura 79 + school 1 gated to 1H weapons via EquippedItemClass=2 + EquippedItem
+    # Subclass 41105 (_ref oneHandSpecMask = axe|mace|sword|fist|dagger 1-handers); core
+    # CheckAttackFitToAuraRequirement scopes it to 1H swings. Family-less.
+    mechanic: stat
+    aura: 79                     # SPELL_AURA_MOD_DAMAGE_PERCENT_DONE (stock 16542 analog)
+    school: 1                    # EffectMiscValue = physical school mask (stock 16542 encoding)
+    equipClass: 2                # ITEM_CLASS_WEAPON
+    equipSubclass: 41105         # oneHandSpecMask (_ref): axe(1)|mace(16)|sword(128)|fist(8192)|dagger(32768)
+    vals: [2, 4, 6, 8, 10]
+  - id: 18552
+    slug: shield_slam
+    name: Shield Slam
+    tab: 3
+    tier: 6
+    col: 1
+    icon: inv_shield_05
+    maxRank: 1
+    prereqTalentId: 18549
+    prereqPoints: 30
+    tooltip:
+    - Slam the target with your shield, causing 225 to 235 damage,
+      modified by your shield block value, and has a 50% chance of dispelling 1 magic effect on the target. Also causes a
+      high amount of threat.
+    # CLONE-grant — verdict 2026-08-18, REVISED by final review R7 (2026-09-06, item I-7).
+    # ORIGINAL VERDICT (superseded): grant stock 23922 because 20 rage / 6 s cd / dispel-1-magic all
+    # match Vanilla and the block-value scaling is not a clonable DBC value.
+    # WHAT THAT MISSED: the block-value scaling is NOT script-driven — `Spell::EffectSchoolDMG`
+    # (SpellEffects.cpp:351) adds it in the CORE effect handler, gated on `SpellFamilyFlags[1] & 0x200
+    # && GetCategory() == 1209`, both of which a clone can carry. What genuinely diverges is the
+    # DAMAGE: stock 23922-23925 ship the WotLK ranges 294-308 / 346-362 / 396-416 / 447-469 against
+    # Vanilla's 225-235 / 264-276 / 303-317 / 342-358 — the numbers this node's own tooltip states.
+    # So the node now grants the era clone chain (helpers 932841-932844; r2-r4 trainer-taught at
+    # L48/54/60 behind r1, hand SQL 2026_09_06_05), exactly as TBC node 20362 grants 947541-947546.
+    # The stock ranks are stripped from a Vanilla warrior UNCONDITIONALLY (they are wrong at every
+    # rank, so the strip cannot be node-gated) by EraTalents.cpp CLASS_WARRIOR arm (4); the
+    # kBaselineSpellGates row keyed on this node keeps force-granting stock r1 to WotLK-stage
+    # warriors, whose trainer row for it is globally deleted.
+    grants: {1: [932841]}
+_ref:
+  familyName: 4
+  spells:
+    Charge:
+      id: 100
+      flagsA: 1
+      flagsB: 0
+      flagsC: 0
+    Hamstring:
+      id: 1715
+      flagsA: 2
+      flagsB: 0
+      flagsC: 0
+    Overpower:
+      id: 7384
+      flagsA: 4
+      flagsB: 0
+      flagsC: 0
+    Recklessness:
+      id: 1719
+      flagsA: 16
+      flagsB: 0
+      flagsC: 0
+    Rend:
+      id: 772
+      flagsA: 32
+      flagsB: 0
+      flagsC: 0
+    Heroic Strike:
+      id: 78
+      flagsA: 64
+      flagsB: 0
+      flagsC: 0
+    Thunder Clap:
+      id: 6343
+      flagsA: 128
+      flagsB: 0
+      flagsC: 0
+    Bloodrage:
+      id: 2687
+      flagsA: 256
+      flagsB: 0
+      flagsC: 0
+    Disarm:
+      id: 676
+      flagsA: 512
+      flagsB: 0
+      flagsC: 0
+    Revenge:
+      id: 6572
+      flagsA: 1024
+      flagsB: 0
+      flagsC: 0
+    Shield Bash:
+      id: 72
+      flagsA: 2048
+      flagsB: 0
+      flagsC: 0
+    Shield Block:
+      id: 2565
+      flagsA: 4096
+      flagsB: 0
+      flagsC: 0
+    Shield Wall:
+      id: 871
+      flagsA: 8192
+      flagsB: 0
+      flagsC: 0
+    Sunder Armor:
+      id: 7386
+      flagsA: 16384
+      flagsB: 0
+      flagsC: 0
+    Taunt:
+      id: 355
+      flagsA: 32768
+      flagsB: 0
+      flagsC: 0
+    Battle Shout:
+      id: 2048
+      flagsA: 65536
+      flagsB: 0
+      flagsC: 0
+    Demoralizing Shout:
+      id: 1160
+      flagsA: 131072
+      flagsB: 0
+      flagsC: 0
+    Intimidating Shout:
+      id: 5246
+      flagsA: 262144
+      flagsB: 0
+      flagsC: 0
+    Challenging Shout:
+      id: 1161
+      flagsA: 524288
+      flagsB: 0
+      flagsC: 0
+    Death Wish:
+      id: 12292
+      flagsA: 1048576
+      flagsB: 0
+      flagsC: 0
+    Slam:
+      id: 1464
+      flagsA: 2097152
+      flagsB: 0
+      flagsC: 0
+    Cleave:
+      id: 845
+      flagsA: 4194304
+      flagsB: 0
+      flagsC: 0
+    Mortal Strike:
+      id: 12294
+      flagsA: 33554432
+      flagsB: 0
+      flagsC: 0
+    Concussion Blow:
+      id: 12809
+      flagsA: 67108864
+      flagsB: 0
+      flagsC: 0
+    Berserker Rage:
+      id: 18499
+      flagsA: 268435456
+      flagsB: 0
+      flagsC: 0
+    Execute:
+      id: 5308
+      flagsA: 536870912
+      flagsB: 0
+      flagsC: 0
+    Intercept:
+      id: 20252
+      flagsA: 1073741824
+      flagsB: 0
+      flagsC: 0
+    Whirlwind:
+      id: 1680
+      flagsA: 0
+      flagsB: 4
+      flagsC: 0
+    Retaliation:
+      id: 20230
+      flagsA: 0
+      flagsB: 8
+      flagsC: 0
+    Deep Wounds:
+      id: 12721
+      flagsA: 0
+      flagsB: 16
+      flagsC: 0
+    Piercing Howl:
+      id: 12323
+      flagsA: 0
+      flagsB: 32
+      flagsC: 0
+    Shield Slam:
+      id: 23922
+      flagsA: 0
+      flagsB: 512
+      flagsC: 0
+    Bloodthirst:
+      id: 23881
+      flagsA: 0
+      flagsB: 1024
+      flagsC: 0
+    Last Stand:
+      id: 12975
+      flagsA: 0
+      flagsB: 524288
+      flagsC: 0
+    Sweeping Strikes:
+      id: 12328
+      flagsA: 0
+      flagsB: 1048576
+      flagsC: 0
+    Flurry (buff):
+      id: 12966
+      flagsA: 0
+      flagsB: 0
+      flagsC: 0
+    Tactical Mastery:
+      id: 12295
+      flagsA: 0
+      flagsB: 0
+      flagsC: 0
+  grants:
+    mortal_strike:
+      1: 12294
+    bloodthirst:
+      1: 23881
+    death_wish:
+      1: 12292
+    sweeping_strikes:
+      1: 12328
+    last_stand:
+      1: 12975
+    concussion_blow:
+      1: 12809
+    shield_slam:
+      1: 23922
+    piercing_howl:
+      1: 12323
+    anger_management:
+      1: 12296
+    recklessness:
+      1: 1719
+    retaliation:
+      1: 20230
+  triggers:
+    deep_wounds_proc:
+      1: 12834
+      2: 12849
+      3: 12867
+    deep_wounds_intermediate: 12162
+    deep_wounds_bleed: 12721
+    flurry_buff:
+      1: 12966
+      2: 12967
+      3: 12968
+      4: 12969
+      5: 12970
+    flurry_talent:
+      1: 12319
+      2: 12971
+      3: 12972
+      4: 12973
+      5: 12974
+    extra_attack_1: 16459
+  weaponSubclassMasks:
+    equipClass: 2
+    axe1h: 1
+    axe2h: 2
+    axeSpecMask: 3
+    mace1h: 16
+    mace2h: 32
+    maceSpecMask: 48
+    sword1h: 128
+    sword2h: 256
+    swordSpecMask: 384
+    polearm: 64
+    polearmSpecMask: 64
+    twoHandSpecMask: 354
+    oneHandSpecMask: 41105
+  coreScriptSupport: null

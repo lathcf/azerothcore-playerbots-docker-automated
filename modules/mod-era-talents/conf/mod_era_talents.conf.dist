@@ -1,0 +1,31 @@
+# modules/mod-era-talents/conf/mod_era_talents.conf.dist
+[worldserver]
+EraTalents.Enable = 1
+EraTalents.Debug = 0
+# Bots in a managed era band (level 1-60 = Vanilla) get era talent builds instead of WotLK
+# trees. Default 0 = today's behavior byte-for-byte. See the 2026-08-26 bot design spec.
+EraTalents.BotTalents = 0
+#    EraTalents.GlyphGate
+#        Description: Glyphs are a WotLK-era system. When enabled, characters whose era is
+#                     Vanilla or TBC (players by IP progression, bots by level band; Death
+#                     Knights always exempt) cannot apply glyph items, and any equipped
+#                     glyphs are stripped on login / era transition / factory reconcile.
+#                     Stripped glyphs are consumed (same as respec). Requires
+#                     EraTalents.Enable = 1.
+#        Default:     1
+EraTalents.GlyphGate = 1
+#    EraTalents.AdvanceGossip
+#        Description: Player-initiated expansion advance. When a character is eligible (IP stage 7
+#                     = Kel'Thuzad-40 down, or stage 12 + the Kil'jaeden kill achievement), Anduin
+#                     Wrynn (Alliance) / Thrall (Horde) offer "Progress to the next expansion" with
+#                     a confirm popup; accepting force-advances Individual Progression to stage 8 /
+#                     13, which the normal era transition then applies (talents wiped, new trees).
+#                     Pair with IndividualProgression.ManualAdvanceStates = "8 13" (patch 0027) so
+#                     the automatic paths no longer cross those stages. Requires EraTalents.Enable.
+#        Default:     1
+EraTalents.AdvanceGossip = 1
+#    EraTalents.AdvanceGossip.TextTBC / .TextWotLK
+#        Description: The confirm-popup text for each transition. Keep to a few sentences (client
+#                     popup). Leave the defaults unless you want different wording.
+EraTalents.AdvanceGossip.TextTBC = "Step through the Dark Portal? This will WIPE your current talents and move your character to The Burning Crusade: new talent trees and new spell ranks. Some spells will need to be re-learned at trainers. This cannot be undone."
+EraTalents.AdvanceGossip.TextWotLK = "Sail for Northrend? This will WIPE your current talents and move your character to Wrath of the Lich King: new talent trees and new spell ranks. Some spells will need to be re-learned at trainers. This cannot be undone."

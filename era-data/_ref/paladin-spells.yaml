@@ -1,0 +1,231 @@
+# Stock Paladin spell reference — live-verified from Spell.dbc (SpellClassSet=10, SPELLFAMILY_PALADIN) +
+# `lookup spell` on the dev-box worldserver console (2026-08-18). DO NOT guess ids/flags; see
+# warrior-spells.yaml / rogue-spells.yaml for the shape this mirrors and the general verification method.
+#
+# Verification method (Phase 8 Task 3):
+#   - Spell.dbc pulled live out of the running container:
+#       docker exec ac-worldserver cat /azerothcore/env/dist/data/dbc/Spell.dbc > /tmp/claude-1000/dbc/Spell.dbc
+#     (kept in place — Tasks 6-8 reuse it for dump_spell_effects.py)
+#   - spells: flagsA/flagsB/flagsC = SpellClassMask_1/_2/_3 (the spell's OWN identity mask — what a
+#     SPELLMOD's EffectSpellClassMask must intersect to bind it), read straight from that DBC via
+#       python3 tools/dump_spell_family.py <Spell.dbc> tools/spell_dbc_columns.txt --names "..."
+#     Every rank/homonym returned was inspected; the recorded mask is the SHARED mask across the
+#     player-cast ranks, and NPC/decoy ids sharing the NAME but a different family (or family=10 with
+#     an EMPTY mask) are called out explicitly. flagsA bit31 dumps as the SIGNED int -2147483648; it is
+#     recorded here as the UNSIGNED uint32 (2147483648 = 0x80000000) because that is how the DB stores
+#     a SPELLMOD EffectSpellClassMask.
+#   - Effect-level detail (Effect_N / EffectAura_N / EffectBasePoints_N / DurationIndex) came from
+#       python3 tools/dump_spell_effects.py <Spell.dbc> tools/spell_dbc_columns.txt --ids <id> --cols ...
+#     Aura/effect numbers resolved against the fork's OWN headers, never from memory:
+#       SPELL_AURA_* -> azerothcore-wotlk/src/server/game/Spells/Auras/SpellAuraDefines.h
+#       SPELL_EFFECT_* -> azerothcore-wotlk/src/server/shared/SharedDefines.h
+#   - grants:/triggers: stock ids + the survival: verdicts resolved on the LIVE dev-box worldserver via
+#       python3 tools/wgconsole.py <out> "lookup spell <name>" "wait:N" ...
+#     Raw output kept at /tmp/claude-1000/pids.out + skill.out.
+#
+# HELPER-ID CHECK (Task 3 Step 1) — run 2026-08-18, result ALL FREE:
+#   grep -rn "9326[0-9][0-9]" era-data/ modules/mod-era-talents/data/sql/
+#     client-addons-src/EraTalents/data/  -> no hits (paladin reserves the 9326xx hand-assigned helper
+#   block for any authored/reconstructed custom spell in Tasks 6-8).
+
+familyName: 10           # PALADIN (confirmed: every player-cast spell below dumped SpellClassSet=10)
+
+skillLines:              # live-confirmed via `lookup skill` (skill.out). Paladin tree spellbook tabs;
+                         # a wrong skillLine just misplaces a reconstruction's spellbook tab.
+  holy: 594              # "594 - Holy"        (NOTE 56 = Priest Holy, 772 = DK Unholy — different classes)
+  protection: 267        # "267 - Protection"  (NOTE 257 = Warrior Protection — different class)
+  retribution: 184       # "184 - Retribution" (paladin-only, no homonym)
+
+spells:                  # SpellClassMask_1..3 identity of each stock base spell a SPELLMOD `affects:`
+                         # would bind by family mask (rank-1 id). Bit position noted in the comment.
+                         # (family=10 unless noted.)
+  # --- Holy tree casters / SPELLMOD targets --------------------------------------------------------
+  "Holy Light":          { id: 635,   flagsA: 2147483648, flagsB: 0,         flagsC: 0 }  # A bit31 (0x80000000; dbc-signed -2147483648). ranks 635/639/647/1026/1042/3472/10328/10329/25292/27135/27136/48781/48782. (many family=0 "Holy Light" decoys — heals on items/NPCs)
+  "Flash of Light":      { id: 19750, flagsA: 1073741824, flagsB: 0,         flagsC: 0 }  # A bit30. ranks 19750/19939-19943/27137/48784/48785. (33641/57766/59997/71930 are family=6 DRUID = different class; several family=0 decoys)
+  "Holy Shock":          { id: 20473, flagsA: 2097152,    flagsB: 0,         flagsC: 0 }  # A bit21 (heal form). [talent]. WotLK chain r1-r7 (20473/20929/20930/27174/33072/48824/48825). The DAMAGE-form ids (25903/25913/25914/33074/48820/48821) carry mask (0,65536,0) = B bit16 instead — bind BOTH if a spellmod must reach damage+heal.
+  "Lay on Hands":        { id: 633,   flagsA: 32768,      flagsB: 0,         flagsC: 0 }  # A bit15. ranks 633/2800/10310/27154/48788. (Greater variants 20233/20236 carry B mask; 9257/17233/53778 family=0 decoys)
+  "Consecration":        { id: 26573, flagsA: 32,         flagsB: 0,         flagsC: 0 }  # A bit5. rank-1 = 26573 (NOT [talent] in WotLK — trainer-baseline; see survival). chain 26573/20116/20922/20923/20924/27173/48818/48819. (43429/69930/71122 family=0 decoys)
+  "Exorcism":            { id: 879,   flagsA: 0,          flagsB: 2,         flagsC: 0 }  # B bit1. ranks 879/5614/5615/10312/10313/10314/27138/48800/48801. (17147/17149/33632/52445/58822 family=0)
+  "Holy Wrath":          { id: 2812,  flagsA: 0,          flagsB: 2097152,   flagsC: 0 }  # B bit21. ranks 2812/10318/27139/48816/48817. (23979/32445/53638 are family=6 DRUID; several family=0)
+  "Hammer of Wrath":     { id: 24239, flagsA: 0,          flagsB: 128,       flagsC: 0 }  # B bit7. ranks 24239/24274/24275/27180/48805/48806. (32772/37251/37255/37259 family=10 EMPTY-mask NPC decoys; 51384 family=0)
+  "Divine Favor":        { id: 20216, flagsA: 0,          flagsB: 256,       flagsC: 0 }  # B bit8. single rank [talent]. (see grants.divine_favor)
+  # --- Seals (identity masks; the seal AURA carries the mask, the judgement proc often a separate one) --
+  "Seal of Righteousness": { id: 20154, flagsA: 134217728, flagsB: 536870912, flagsC: 0 } # A bit27 + B bit29. ranks 20154/21084 share it; 25742 (the Judgement-of-Righteousness proc) = (0,536870912,0) B bit29 only. Improved SoR spellmod must intersect BOTH.
+  "Seal of Command":     { id: 20375, flagsA: 33554432,   flagsB: 0,         flagsC: 0 }  # A bit25. [talent] (Ret). ranks 20375/20424/33127/42058/57770/69403 share it; the 29385/41469/57769/66004/68020-68022 "Seal of Command" ids are family=10 EMPTY-mask or family=0 (proc payloads/NPC).
+  "Seal of Justice":     { id: 20164, flagsA: 134217728,  flagsB: 0,         flagsC: 0 }  # A bit27 (SHARES bit27 with Seal of Righteousness — a bit27-only spellmod hits BOTH seals; SoR additionally owns B bit29).
+  "Seal of Light":       { id: 20165, flagsA: 0,          flagsB: 33554432,  flagsC: 0 }  # B bit25 (seal aura). 20167 = (262144,0,0) A bit18 = the on-hit heal proc.
+  "Seal of Wisdom":      { id: 20166, flagsA: 0,          flagsB: 67108864,  flagsC: 0 }  # B bit26 (seal aura). 20168 = (262144,0,0) A bit18 = the on-hit mana proc (SHARES A bit18 with Seal of Light's proc).
+  "Judgement":           { id: 20271, flagsA: 8388608,    flagsB: 0,         flagsC: 0 }  # A bit23 = the Judgement ACTIVE identity. NB: in THIS 3.3.5a DBC 20271 is NAMED "Judgement of Light" (WotLK split Judgement into 3 abilities). Improved-Judgement (cooldown) spellmod binds A bit23 (41467/53407/53408/54158 all carry bit23). The 23591 "Judgement" is family=10 EMPTY-mask.
+  "Judgement of Light":  { id: 20185, flagsA: 524288,     flagsB: 0,         flagsC: 0 }  # A bit19 (the seal-of-light judgement debuff line). 20267 = (0,1,0) B bit0 (the heal-on-attack proc it applies).
+  "Judgement of Wisdom": { id: 20186, flagsA: 524288,     flagsB: 0,         flagsC: 0 }  # A bit19 (SHARES with Judgement of Light).
+  "Judgement of Justice": { id: 20184, flagsA: 1048576,   flagsB: 0,         flagsC: 0 }  # A bit20.
+  # --- Reconstructed Vanilla-only spells (custom band, NOT stock 3.3.5a ids) ------------------------
+  # Seal of the Crusader (the player-castable SEAL) and Judgement of the Crusader (its judge debuff) are
+  # ABSENT from 3.3.5a (survival: reconstruct). Authored as custom helpers 932634-639 (seal r1-6, cloned
+  # off 20375 so they inherit word-A bit25 -> SPELL_SPECIFIC_SEAL) + 932640-645 (JotC r1-6). Both carry a
+  # FREE family-10 word-C bit9 (flagsC 512) — every word-A bit is already taken by a stock paladin spell —
+  # so Improved Seal of the Crusader (node 18633) can bind BOTH via a single `affectsMask: {c: 512}` +
+  # op effect1 spellmod without over-binding any stock seal. These entries exist so the `affects:` lint
+  # + addon name-map resolve; the DBC bind is the affectsMask override, not this identity.
+  "Seal of the Crusader":       { id: 932634, flagsA: 0, flagsB: 0, flagsC: 512 }  # C bit9 (custom); seal r1 932634, chain 932634-639.
+  "Judgement of the Crusader":  { id: 932640, flagsA: 0, flagsB: 0, flagsC: 512 }  # C bit9 (custom); JotC r1 932640, chain 932640-645.
+  # --- Blessings -----------------------------------------------------------------------------------
+  "Blessing of Might":   { id: 19740, flagsA: 2,          flagsB: 0,         flagsC: 0 }  # A bit1. ranks 19740/19834-19838/25291/27140/48931/48932. (56520 = (268435458,0,0) = the Greater/Glyph variant, adds bit28)
+  "Blessing of Wisdom":  { id: 19742, flagsA: 65536,      flagsB: 0,         flagsC: 0 }  # A bit16. ranks 19742/19850/19852-19854/25290/27142/48935/48936. Improved BoW spellmod binds A bit16. (56521 = Greater/Glyph variant adds bits)
+  "Blessing of Kings":   { id: 20217, flagsA: 16777216,   flagsB: 0,         flagsC: 0 }  # A bit24. single rank, NOT [talent] in WotLK (trainer-baseline; see survival). (56525/58054 Greater variants = (285212672,0,0))
+  "Blessing of Sanctuary": { id: 20911, flagsA: 268435456, flagsB: 0,        flagsC: 0 }  # A bit28. [talent]. The triggered mana-return/stat sub-effects 57319/57320/57321/67480 are family=0 (see survival — WotLK rework).
+  "Blessing of Protection": { id: 41450, flagsA: 268435584, flagsB: 0,       flagsC: 0 }  # A bits(7,28). NB: 41450 is an NPC-cast variant; the PLAYER 3.3.5a spell was RENAMED "Hand of Protection" (1022). "Blessing of Protection" as a player name does NOT resolve — see survival.renamed.
+  "Hand of Protection":  { id: 1022,  flagsA: 128,        flagsB: 0,         flagsC: 0 }  # A bit7. the PLAYER 3.3.5a "Blessing of Protection" (ranks 1022/5599/10278). Guardian's Favor (18618) cooldown spellmod binds this. (dumped 2026-08-18)
+  "Hand of Freedom":     { id: 1044,  flagsA: 16,         flagsB: 0,         flagsC: 0 }  # A bit4. the PLAYER 3.3.5a "Blessing of Freedom". Guardian's Favor (18618) duration spellmod binds this. (dumped 2026-08-18)
+  # --- Auras (all carry C bit5 = 32, the shared "paladin aura" identity bit) ------------------------
+  "Devotion Aura":       { id: 465,   flagsA: 64,         flagsB: 0,         flagsC: 32 } # A bit6 + C bit5. ranks 465/643/1032/10290-10293/27149/48941/48942. (8258/17232/41452/52442/57740/58944 family=0 decoys)
+  "Retribution Aura":    { id: 7294,  flagsA: 8,          flagsB: 0,         flagsC: 32 } # A bit3 + C bit5. ranks 7294/10298-10301/27150/54043. (8990/13008 family=0)
+  "Concentration Aura":  { id: 19746, flagsA: 131072,     flagsB: 0,         flagsC: 32 } # A bit17 + C bit5. single rank.
+  # --- Misc actives / self-buffs -------------------------------------------------------------------
+  "Righteous Fury":      { id: 25780, flagsA: 1,          flagsB: 0,         flagsC: 0 }  # A bit0. (25781 = the threat sub-effect, family=10 EMPTY mask)
+  "Hammer of Justice":   { id: 853,   flagsA: 2048,       flagsB: 0,         flagsC: 0 }  # A bit11. ranks 853/5588/5589/10308. (13005/32416/37369/39077/41468/6600x family=0 decoys)
+  "Repentance":          { id: 20066, flagsA: 4,          flagsB: 0,         flagsC: 0 }  # A bit2. [talent]. (29511/32779/66008 family=10 EMPTY-mask or family=0 NPC variants)
+  "Holy Shield":         { id: 20925, flagsA: 0,          flagsB: 64,        flagsC: 0 }  # B bit6. [talent]. ranks 20925/20927/20928/27179/48951/48952. (9800/31904/32777 family=0 or EMPTY-mask decoys)
+
+  # --- family=10 but EMPTY mask, or family=0 (carry NO identity bit — NOT a SPELLMOD `affects:` target) --
+  # These are the talent PASSIVES / proc carriers themselves (the SPELLMOD carriers / granted auras,
+  # not targets). A family-10 "boost all paladin X" spellmod will NOT reach them — handle by direct id.
+  "Redoubt (passive)":   { id: 20127, flagsA: 0, flagsB: 0, flagsC: 0 }  # family=0. talent proc passive 20127/20130/20135 (see grants.redoubt)
+  "Reckoning (passive)": { id: 20177, flagsA: 0, flagsB: 0, flagsC: 0 }  # family=0. talent proc passive 20177/20179/20181/20182/20180 (see grants.reckoning)
+  "Vengeance (passive)": { id: 20049, flagsA: 0, flagsB: 0, flagsC: 0 }  # family=0. Ret talent proc passive 20049/20056/20057 (see grants.vengeance). NB: heavy name collision — 16909-16913 are SHAMAN (family=7); 31801/42463 Seal of Vengeance; dozens of zone/item "Vengeance".
+  "Vindication (passive)": { id: 9452, flagsA: 0, flagsB: 0, flagsC: 0 } # family=0. talent proc passive 9452/26016 → triggers 67/26017 (the debuff, family=10 mask (0,16384,0) B bit14). (see grants.vindication)
+  "Eye for an Eye (passive)": { id: 9799, flagsA: 0, flagsB: 0, flagsC: 0 } # family=0. talent proc passive 9799/25988 → reflects via 25997 (family=10 EMPTY mask). (see grants.eye_for_an_eye)
+  "Illumination (passive)": { id: 20210, flagsA: 0, flagsB: 0, flagsC: 0 } # family=10 EMPTY mask. talent proc passive 20210/20212-20215 (mana refund on Holy crit). NB: 31842 "Divine Illumination" is a DIFFERENT WotLK talent — do not confuse.
+
+grants:                  # stock WotLK ids a Bound node GRANTS (live-verified via `lookup spell`,
+                         # /tmp/claude-1000/pids.out). Rank-1 [talent] id unless noted. DEFAULT
+                         # DISPOSITION = single-rank grant of rank 1 (do NOT build a chain in Task 3).
+  # -- actives that are Vanilla talent-granted AND survive as [talent] (grant verbatim) --
+  divine_favor:      { 1: 20216 }   # "20216 - Divine Favor, rank 1 [talent]"; Effect6 aura107 ADD_FLAT_MODIFIER +99 (next HL/FoL guaranteed crit). Vanilla-faithful. single rank.
+  holy_shock:        { 1: 20473 }   # "20473 - Holy Shock, rank 1 [talent]"; Effect3 DUMMY (heal-or-damage branch). Vanilla-faithful shape. WotLK chain r1-r7 (Vanilla had 3 ranks — rank divergence for the owning tab).
+  holy_shield:       { 1: 20925 }   # "20925 - Holy Shield, rank 1 [talent]"; aura51 MOD_BLOCK_PERCENT +29 + aura43 PROC_TRIGGER_DAMAGE 78 + aura189 MOD_RATING. REWORKED vs Vanilla (Vanilla = charge-limited block+holy dmg) — see survival, likely CLONE.
+  repentance:        { 1: 20066 }   # "20066 - Repentance, rank 1 [talent]"; Effect6 aura12 MOD_STUN (incapacitate, DurationIndex 3). Vanilla-faithful. single rank.
+  seal_of_command:   { 1: 20375 }   # "20375 - Seal of Command, rank 1 [talent]"; aura42 PROC_TRIGGER_SPELL(20424) + Effect3 aura4 DUMMY. Ret talent in BOTH eras (NOT trainer-baseline). single rank in WotLK.
+  blessing_of_sanctuary: { 1: 20911 } # "20911 - Blessing of Sanctuary, rank 1 [talent]"; Effect6 aura4 DUMMY -4 (dmg reduction) + triggered 57319-57321 mana/stat. REWORKED vs Vanilla — see survival, CLONE candidate.
+  # -- proc passives that survive as [talent][passive] (grant the passive; it self-triggers) --
+  vengeance:         { 1: 20049 }   # "20049 - Vengeance, rank 1 [talent] [passive]"; aura42 PROC_TRIGGER_SPELL. Ret dmg-after-crit. chain 20049/20056/20057 (3 ranks). Vanilla-faithful shape (magnitude retuned).
+  vindication:       { 1: 9452 }    # "9452 - Vindication, rank 1 [talent] [passive]"; aura42 PROC_TRIGGER_SPELL → 67/26017 debuff. chain 9452/26016 (2 ranks). WotLK reduces target AP; Vanilla reduced stats — magnitude/effect retuned.
+  reckoning:         { 1: 20177 }   # "20177 - Reckoning, rank 1 [talent] [passive]"; aura42 PROC_TRIGGER_SPELL (extra attack on being hit). chain 20177/20179/20181/20182/20180 (5 ranks). Vanilla-faithful.
+  redoubt:           { 1: 20127 }   # "20127 - Redoubt, rank 1 [talent] [passive]"; aura42 PROC_TRIGGER_SPELL + aura150 MOD_SHIELD_BLOCKVALUE_PCT. chain 20127/20130/20135 (3 ranks). Vanilla-faithful shape.
+  eye_for_an_eye:    { 1: 9799 }    # "9799 - Eye for an Eye, rank 1 [talent] [passive]"; Effect6 aura4 DUMMY +4 (reflect % of spell crit dmg). chain 9799/25988 (2 ranks). Vanilla-faithful.
+  illumination:      { 1: 20210 }   # "20210 - Illumination, rank 1 [talent] [passive]"; mana refund on Holy crit. chain 20210/20212/20213/20214/20215 (5 ranks). Vanilla-faithful.
+  # -- Vanilla talent-only actives that became TRAINER-BASELINE in WotLK (grant the trainer spell) --
+  consecration:      { 1: 26573 }   # "26573 - Consecration, rank 1" (NOT [talent] — trainer-baseline in WotLK). Effect27 PERSISTENT_AREA_AURA aura3 PERIODIC_DAMAGE. Vanilla = Holy talent → grant 26573 as the talent active.
+  blessing_of_kings: { 1: 20217 }   # "20217 - Blessing of Kings, rank 1" (NOT [talent] — trainer-baseline in WotLK). aura137 MOD_TOTAL_STAT_PERCENTAGE +10 + aura166 MOD_ATTACK_POWER_PCT. Vanilla = Prot talent → grant 20217.
+
+triggers:                # stock ids a data-proc/trigger node's granted passive casts (recorded for the
+                         # owning-tab tasks; live-verified).
+  seal_of_command_proc: 20424       # what Seal of Command 20375's aura42 triggers (the on-swing holy dmg).
+  seal_of_righteousness_judge: 25742 # the Judgement-of-Righteousness proc (B bit29 only) — Improved SoR target.
+  vindication_debuff:   { 1: 67, 2: 26017 } # family=10 (0,16384,0) B bit14 — the stat/AP-reduction the passive applies.
+  eye_for_an_eye_reflect: 25997     # family=10 EMPTY mask — the reflected-damage payload 9799 casts.
+
+survival:                # THE PIVOTAL DELIVERABLE — per reconstruction target: does the Vanilla spell
+                         # SURVIVE in this 3.3.5a store, in what form, and the recommended Task 6-8
+                         # disposition (grant | spellmod | clone | reconstruct). Confirmed empirically
+                         # (pids.out), NOT assumed.
+  seal_of_the_crusader:
+    survives: false      # the player-castable SEAL is GONE (folded into Seal of Vengeance/Corruption in TBC).
+    stock_ids: [23300, 28852, 33557]  # only LEFTOVER passives remain: 23300 "Seal of the Crusader Judgement Increase" [passive], 28852/33557 "Improved Seal of the Crusader" [passive]. NO castable seal.
+    form: "active seal ABSENT; only orphan passive bonuses survive"
+    disposition: reconstruct  # if Vanilla Ret/Holy needs the +holy-damage/haste seal, author it as a CUSTOM spell in [920000,933000).
+  judgement_of_the_crusader:
+    survives: false      # `lookup spell Judgement of the Crusader` -> "No spells found!"
+    stock_ids: []
+    form: ABSENT
+    disposition: reconstruct  # the Seal-of-the-Crusader judgement debuff (holy-dmg-taken increase) must be authored if needed.
+  seal_of_command:
+    survives: true
+    stock_ids: [20375]   # "20375 - Seal of Command, rank 1 [talent]"
+    form: "Ret [talent], aura42 PROC_TRIGGER_SPELL(20424); same shape as Vanilla, damage magnitude retuned"
+    trainer_baseline_wotlk: false   # it is a TALENT in WotLK (and in Vanilla) — never trainer-taught.
+    disposition: grant   # grant 20375; retune magnitude only if strict Vanilla fidelity demanded.
+  sanctity_aura:
+    survives: false      # `lookup spell Sanctity Aura` -> "No spells found!" (removed in WotLK, replaced by Swift Retribution / Improved Devotion mechanics).
+    stock_ids: []
+    form: ABSENT
+    disposition: reconstruct  # the +Holy-damage party aura (C bit5 aura family) must be authored for a Vanilla Ret aura talent.
+  consecration:
+    survives: true
+    stock_ids: [26573]   # rank-1, NOT [talent]
+    form: "Effect27 PERSISTENT_AREA_AURA + aura3 PERIODIC_DAMAGE; behaviorally Vanilla-faithful"
+    trainer_baseline_wotlk: true    # became trainer-baseline in WotLK; Vanilla = Holy talent-only.
+    disposition: grant   # grant 26573 as the Holy talent's granted active.
+  blessing_of_kings:
+    survives: true
+    stock_ids: [20217]   # NOT [talent]
+    form: "aura137 MOD_TOTAL_STAT_PERCENTAGE +10 + aura166 MOD_ATTACK_POWER_PCT; Vanilla-faithful"
+    trainer_baseline_wotlk: true    # became trainer-baseline in WotLK; Vanilla = deep Prot talent.
+    disposition: grant   # grant 20217 as the Prot talent's granted active.
+  divine_favor:
+    survives: true
+    stock_ids: [20216]   # [talent]
+    form: "aura107 ADD_FLAT_MODIFIER +99 crit to next HL/FoL; Vanilla-faithful"
+    trainer_baseline_wotlk: false
+    disposition: grant
+  holy_shock:
+    survives: true
+    stock_ids: [20473]   # [talent], WotLK chain r1-r7
+    form: "Effect3 DUMMY heal-or-damage; Vanilla-faithful (Vanilla had 3 ranks, WotLK 7 — rank divergence only)"
+    trainer_baseline_wotlk: false
+    disposition: grant
+  holy_shield:
+    survives: true
+    stock_ids: [20925]   # [talent]
+    form: "aura51 MOD_BLOCK_PERCENT + aura43 PROC_TRIGGER_DAMAGE + aura189 MOD_RATING; REWORKED (Vanilla = charge-limited block+holy dmg on block)"
+    trainer_baseline_wotlk: false
+    disposition: clone   # clone + retune to Vanilla charge/damage model if fidelity wanted; else grant 20925 as-is.
+  repentance:
+    survives: true
+    stock_ids: [20066]   # [talent]
+    form: "aura12 MOD_STUN incapacitate; Vanilla-faithful"
+    trainer_baseline_wotlk: false
+    disposition: grant
+  blessing_of_sanctuary:
+    survives: true
+    stock_ids: [20911]   # [talent]
+    form: "aura4 DUMMY dmg-reduction + triggered 57319-57321 mana-return/stat buff; REWORKED (Vanilla = flat dmg reduction + damage-shield on block, no mana/stat)"
+    trainer_baseline_wotlk: false
+    disposition: clone   # clone + retune to Vanilla model if fidelity wanted; else grant 20911 as-is.
+  illumination:
+    survives: true
+    stock_ids: [20210]   # [talent][passive], 5 ranks
+    form: "mana refund on Holy crit; Vanilla-faithful"
+    disposition: grant   # grant the passive; it self-triggers.
+  eye_for_an_eye:
+    survives: true
+    stock_ids: [9799, 25988]   # [talent][passive], 2 ranks; reflect payload 25997
+    form: "aura4 DUMMY reflect % of spell crit dmg; Vanilla-faithful"
+    disposition: grant
+  vindication:
+    survives: true
+    stock_ids: [9452, 26016]   # [talent][passive], 2 ranks; debuff 67/26017
+    form: "aura42 PROC_TRIGGER_SPELL; WotLK reduces target AP, Vanilla reduced target stats — effect retuned"
+    disposition: grant   # grant the passive; clone the DEBUFF only if strict Vanilla stat-reduction wanted.
+  reckoning:
+    survives: true
+    stock_ids: [20177, 20179, 20181, 20182, 20180]   # [talent][passive], 5 ranks
+    form: "aura42 PROC_TRIGGER_SPELL extra-attack-on-being-hit; Vanilla-faithful"
+    disposition: grant
+  redoubt:
+    survives: true
+    stock_ids: [20127, 20130, 20135]   # [talent][passive], 3 ranks
+    form: "aura42 PROC_TRIGGER_SPELL + aura150 MOD_SHIELD_BLOCKVALUE_PCT; Vanilla-faithful shape"
+    disposition: grant
+  vengeance:
+    survives: true
+    stock_ids: [20049, 20056, 20057]   # PALADIN Ret [talent][passive], 3 ranks
+    form: "aura42 PROC_TRIGGER_SPELL, dmg increase after crit; Vanilla-faithful shape (magnitude retuned)"
+    note: "HEAVY name collision — SHAMAN Vengeance 16909-16913 (family=7), Seal of Vengeance 31801/42463, and dozens of zone/item spells. The paladin Ret talent is 20049 family=0."
+    disposition: grant
+
+  renamed:               # Vanilla names that RESOLVE ONLY under a WotLK rename (recorded so a later tab
+                         # author does not chase a false "removed" verdict).
+    blessing_of_freedom: "renamed Hand of Freedom (spell 1044) in 3.3.5a; 'Blessing of Freedom' returns nothing by name."
+    blessing_of_protection: "renamed Hand of Protection (spell 1022); the 41450 'Blessing of Protection' in the DBC is an NPC-cast variant, mask (268435584,0,0)."
+    blessing_of_salvation: "REMOVED as a self/party blessing in WotLK; only Hand of Salvation (1038) survives (a single-target threat drop)."

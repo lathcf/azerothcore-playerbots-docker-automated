@@ -1,0 +1,1973 @@
+era: 0
+class: 11
+eraName: Vanilla
+className: DRUID
+tabs:
+- key: 1
+  name: Balance
+  background: DruidBalance
+  nodes:
+  - id: 18700
+    slug: improved_wrath
+    name: Improved Wrath
+    tab: 1
+    tier: 0
+    col: 0
+    icon: spell_nature_abolishmagic
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Reduces the cast time of your Wrath spell by 0.1 sec.
+    - Reduces the cast time of your Wrath spell by 0.2 sec.
+    - Reduces the cast time of your Wrath spell by 0.3 sec.
+    - Reduces the cast time of your Wrath spell by 0.4 sec.
+    - Reduces the cast time of your Wrath spell by 0.5 sec.
+    # AUTHORED (spellmod, op=castTime). Vanilla Improved Wrath = -0.1..-0.5s Wrath cast time, 5 ranks.
+    # op=castTime SPELLMOD_CASTING_TIME(10), flat, ms. Wrath = word A bit0 (id 5176), single spell,
+    # no over-bind. (WotLK removed "Improved Wrath" as a named talent; authored as a plain spellmod.)
+    mechanic: spellmod
+    op: castTime
+    kind: flat
+    affects: [Wrath]
+    vals: [-100, -200, -300, -400, -500]
+  - id: 18701
+    slug: nature_s_grasp
+    name: Nature's Grasp
+    tab: 1
+    tier: 0
+    col: 1
+    icon: spell_nature_natureswrath
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - While active, any time an enemy strikes the caster they have a 35% chance to become
+      afflicted by Entangling Roots (Rank 1). Only useable outdoors. 1 charge. Lasts 45 sec.
+    # AUTHORED (grant CLONE 932505). Vanilla Nature's Grasp = 35% base chance, 1 charge. Stock WotLK
+    # 16689 DIVERGES: ProcChance 100 + ProcCharges 3 (dump 2026-08-20) — so a straight grant would be
+    # a guaranteed 3-root buff AND would leave Improved Nature's Grasp (18702, op=procChance) with no
+    # headroom. 932505 clones 16689 (inherits Effect_2 aura42 PROC_TRIGGER -> 19975 Entangling Roots +
+    # ProcTypeMask 40 = on-taken-hit + the 45s duration/1-min category cd) overriding ONLY procChance
+    # 35 + procCharges 1. 16689 is NOT script-bound (no spell_druid.cpp hit), so the DBC-driven proc
+    # clones cleanly. Improved NG's op=procChance spellmod then raises the DBC chance toward 100%.
+    grants:
+      1: [932505]
+  - id: 18702
+    slug: improved_nature_s_grasp
+    name: Improved Nature's Grasp
+    tab: 1
+    tier: 0
+    col: 2
+    icon: spell_nature_natureswrath
+    maxRank: 4
+    prereqTalentId: 18701
+    prereqPoints: 0
+    tooltip:
+    - Increases the chance for your Nature's Grasp to entangle an enemy by 15%.
+    - Increases the chance for your Nature's Grasp to entangle an enemy by 30%.
+    - Increases the chance for your Nature's Grasp to entangle an enemy by 45%.
+    - Increases the chance for your Nature's Grasp to entangle an enemy by 65%.
+    # AUTHORED (spellmod, op=procChance). Vanilla Improved Nature's Grasp = +15/30/45/65% chance for
+    # Nature's Grasp to entangle (35% base -> 50/65/80/100%), 4 ranks. op=procChance
+    # SPELLMOD_CHANCE_OF_SUCCESS(18), flat. The core adds it to the aura-42 proc's chance in
+    # Aura::CalcProcChance via GetSpellModOwner (same mechanism as Hunter Improved Aspect of the Hawk,
+    # node 18301). Binds the 932505 clone via its inherited Nature's Grasp identity (A 1048576 + C
+    # 4096). Requires the 35%-base clone (18701) for the headroom to matter.
+    mechanic: spellmod
+    op: procChance
+    kind: flat
+    affects: [Nature's Grasp]
+    vals: [15, 30, 45, 65]
+  - id: 18703
+    slug: improved_entangling_roots
+    name: Improved Entangling Roots
+    tab: 1
+    tier: 1
+    col: 0
+    icon: spell_nature_stranglevines
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Gives you a 40% chance to avoid interruption caused by damage while casting Entangling Roots.
+    - Gives you a 70% chance to avoid interruption caused by damage while casting Entangling Roots.
+    - Gives you a 100% chance to avoid interruption caused by damage while casting Entangling Roots.
+    # AUTHORED (spellmod, op=notLoseCastingTime). Vanilla Improved Entangling Roots = 40/70/100%
+    # chance to avoid pushback while casting Entangling Roots, 3 ranks. op=notLoseCastingTime
+    # SPELLMOD_NOT_LOSE_CASTING_TIME(9), pct = the % chance to not lose casting time on damage —
+    # confirmed vs stock Nature's Focus 17063 (aura108 misc 9, the same "avoid interruption" mechanic
+    # the Resto Nature's Focus node 18735 uses). Entangling Roots = word A bit9 (512), single spell.
+    mechanic: spellmod
+    op: notLoseCastingTime
+    kind: pct
+    affects: [Entangling Roots]
+    vals: [40, 70, 100]
+  - id: 18704
+    slug: improved_moonfire
+    name: Improved Moonfire
+    tab: 1
+    tier: 1
+    col: 1
+    icon: spell_nature_starfall
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases the damage and critical strike chance of your Moonfire spell by 2%.
+    - Increases the damage and critical strike chance of your Moonfire spell by 4%.
+    - Increases the damage and critical strike chance of your Moonfire spell by 6%.
+    - Increases the damage and critical strike chance of your Moonfire spell by 8%.
+    - Increases the damage and critical strike chance of your Moonfire spell by 10%.
+    # AUTHORED (multi: two spellmods). Vanilla Improved Moonfire = +2/4/6/8/10% Moonfire damage AND
+    # +2/4/6/8/10% Moonfire crit chance, 5 ranks. op=allEffects (misc 8) boosts BOTH Moonfire's direct
+    # hit AND its periodic (DoT) base value (op=damage would miss the DoT — SPELLMOD_DAMAGE only
+    # touches direct damage); op=crit (misc 7, flat) adds crit% (confirmed vs stock 16821 aura107
+    # misc7). Moonfire = word A bit1 (2), single spell, no over-bind.
+    mechanic: multi
+    effects:
+    - { type: spellmod, op: allEffects, kind: pct,  affects: [Moonfire], vals: [2, 4, 6, 8, 10] }
+    - { type: spellmod, op: crit,       kind: flat, affects: [Moonfire], vals: [2, 4, 6, 8, 10] }
+  - id: 18705
+    slug: natural_weapons
+    name: Natural Weapons
+    tab: 1
+    tier: 1
+    col: 2
+    icon: inv_staff_01
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases the damage you deal with physical attacks in all forms by 2%.
+    - Increases the damage you deal with physical attacks in all forms by 4%.
+    - Increases the damage you deal with physical attacks in all forms by 6%.
+    - Increases the damage you deal with physical attacks in all forms by 8%.
+    - Increases the damage you deal with physical attacks in all forms by 10%.
+    # AUTHORED (stat). Vanilla Natural Weapons = +2/4/6/8/10% physical damage done in all forms,
+    # 5 ranks. aura 79 MOD_DAMAGE_PERCENT_DONE (SpellAuraDefines.h:142) with school:1 = physical
+    # school mask — the core applies it to melee/physical damage via MeleeDamageBonusDone's
+    # GetTotalAuraMultiplierByMiscMask(79, schoolMask), so it boosts feral melee + physical spell
+    # damage in every form. NOT stances-gated (Vanilla applies in all forms). (WotLK removed the
+    # named talent; authored as a stat aura.)
+    mechanic: stat
+    aura: 79
+    school: 1
+    vals: [2, 4, 6, 8, 10]
+  - id: 18706
+    slug: natural_shapeshifter
+    name: Natural Shapeshifter
+    tab: 1
+    tier: 1
+    col: 3
+    icon: spell_nature_wispsplode
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Reduces the mana cost of shapeshifting by 10%
+    - Reduces the mana cost of shapeshifting by 20%
+    - Reduces the mana cost of shapeshifting by 30%
+    # AUTHORED (spellmod, op=cost). Vanilla Natural Shapeshifter = -10/20/30% shapeshift mana cost,
+    # 3 ranks. op=cost SPELLMOD_COST(14), pct (confirmed vs stock 16833 aura108 misc14). Binds the
+    # form spells: Cat Form (A bit31), Bear/Dire Bear Form (A bit30), Travel Form (B bit14),
+    # Aquatic Form (A bit29), Moonkin Form (B bit13) -> OR A=3758096384,B=24576 (the
+    # EffectSpellClassMask column is `int unsigned`, so bit31 is safe).
+    # DIVERGENCE CLOSED 2026-09-06 (final review G-50): Travel/Aquatic Form were missing from the
+    # _ref spells map and are now recorded there (783 B bit14 / 1066 A bit29, live-dumped), so ALL
+    # five shapeshifts are covered. Full-DBC family-7 sweep of the two added bits: the only other
+    # holder is 27546 "Faerie Dragon Form" (A bit29) — a PASSIVE, 0-mana NPC form, so a cost
+    # spellmod on it is inert; nothing non-shapeshift intersects.
+    mechanic: spellmod
+    op: cost
+    kind: pct
+    affects: [Cat Form, Bear Form, Dire Bear Form, Travel Form, Aquatic Form, Moonkin Form]
+    vals: [-10, -20, -30]
+  - id: 18707
+    slug: improved_thorns
+    name: Improved Thorns
+    tab: 1
+    tier: 2
+    col: 0
+    icon: spell_nature_thorns
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Increases damage caused by your Thorns spell by 25%
+    - Increases damage caused by your Thorns spell by 50%
+    - Increases damage caused by your Thorns spell by 75%
+    # AUTHORED (spellmod, op=allEffects). Vanilla Improved Thorns = +25/50/75% Thorns damage, 3 ranks.
+    # Thorns (467) is a DAMAGE_SHIELD (Effect_1 aura 15); its per-hit damage = the aura effect amount
+    # computed at cast (Unit.cpp:2155 reads GetAmount()). op=allEffects (misc 8) boosts that effect's
+    # base value at apply time (op=damage/SPELLMOD_DAMAGE does NOT reach an APPLY_AURA damage-shield
+    # effect — which is why WotLK's "Brambles" 16836 scripts it via a DUMMY instead). Thorns = word A
+    # bit8 (256), single spell. NB whether the shield amount picks up the spellmod is real-client /
+    # headless-cast verification (Task 11) — headless proves only the passive/mask.
+    mechanic: spellmod
+    op: allEffects
+    kind: pct
+    affects: [Thorns]
+    vals: [25, 50, 75]
+  - id: 18708
+    slug: omen_of_clarity
+    name: Omen of Clarity
+    tab: 1
+    tier: 2
+    col: 2
+    icon: spell_nature_crystalball
+    maxRank: 1
+    prereqTalentId: 18705
+    prereqPoints: 10
+    tooltip:
+    - Imbues the Druid with natural energy. Each of the druid's melee attacks has a chance of causing
+      the caster to enter a Clearcasting state. The Clearcasting state reduces the Mana, Rage or Energy cost of your next
+      damage or healing spell or offensive ability by 100%. Lasts 10 min.
+    # AUTHORED (grant CLONE 932512). FIX ROUND (2026-08-21, issue 3): stock 3.3.5a 16864 is a HIDDEN
+    # PASSIVE (Attributes 192 = PASSIVE|DO_NOT_DISPLAY, DurationIndex 0) — always-on, "does not give a
+    # spell" (no castable button), the user's report. 1.12 Omen of Clarity is a CASTABLE activated buff
+    # (Mana 120, instant, 10-min duration). spell_dbc is global, so we cannot un-passive 16864 in place
+    # (it would change the spell for WotLK-stage chars); instead grant the custom Vanilla castable clone
+    # 932512 (the priest/warlock castable-clone precedent 920920/921152). 932512 clones 16864 keeping the
+    # family-7 identity + Effect_1 aura42 PROC_TRIGGER -> 16870 Clearcasting + the inherited ProcTypeMask
+    # 81924 (melee/ranged/spellcast) so Clearcasting still procs, but overrides Attributes->0 (castable,
+    # not passive/hidden), DurationIndex 6 (=600000ms=10 min, confirmed via a stock 10-min buff dump),
+    # ManaCost 120, instant. Stock 16864 is stripped from a Vanilla druid in EraTalents.cpp (it is a
+    # hidden passive the core can auto-apply). NB in WotLK the tree grants stock 16864 (untouched).
+    grants:
+      1: [932512]
+  - id: 18709
+    slug: nature_s_reach
+    name: Nature's Reach
+    tab: 1
+    tier: 2
+    col: 3
+    icon: spell_nature_naturetouchgrow
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Increases the range of your Wrath, Entangling Roots, Faerie Fire, Moonfire, Starfire, and Hurricane spells by 10%.
+    - Increases the range of your Wrath, Entangling Roots, Faerie Fire, Moonfire, Starfire, and Hurricane spells by 20%.
+    # AUTHORED (spellmod, op=range). Vanilla Nature's Reach = +10/20% range on Wrath/Entangling Roots/
+    # Faerie Fire/Moonfire/Starfire/Hurricane, 2 ranks. op=range SPELLMOD_RANGE(5), pct (confirmed vs
+    # stock 16819 Effect_1 aura108 misc5 +10%; the stock Effect_2 threat-reduction is a WotLK addition,
+    # dropped). Faerie Fire binds word A bit10, shared by Faerie Fire (770) + Faerie Fire (Feral)
+    # (16857) — a range bump on both debuffs is harmless/expected.
+    mechanic: spellmod
+    op: range
+    kind: pct
+    affects: [Wrath, Entangling Roots, Faerie Fire, Moonfire, Starfire, Hurricane]
+    vals: [10, 20]
+  - id: 18710
+    slug: vengeance
+    name: Vengeance
+    tab: 1
+    tier: 3
+    col: 1
+    icon: spell_nature_purge
+    maxRank: 5
+    prereqTalentId: 18704
+    prereqPoints: 15
+    tooltip:
+    - Increases the critical strike damage bonus of your Starfire, Moonfire, and Wrath spells by 20%.
+    - Increases the critical strike damage bonus of your Starfire, Moonfire, and Wrath spells by 40%.
+    - Increases the critical strike damage bonus of your Starfire, Moonfire, and Wrath spells by 60%.
+    - Increases the critical strike damage bonus of your Starfire, Moonfire, and Wrath spells by 80%.
+    - Increases the critical strike damage bonus of your Starfire, Moonfire, and Wrath spells by 100%.
+    # AUTHORED (grant 16909-16913). _ref survival: fully Vanilla-faithful — stock Vengeance is a self-
+    # contained spellmod-carrier passive (aura108 misc15 = critDamage on its OWN EffectSpellClassMaskA=7
+    # = Wrath+Moonfire+Starfire, basepoints 19/39/59/79/99 -> +20/40/60/80/100%), 5 ranks, no
+    # HasTalent gate and no core script, so granting works for an era druid. WotLK druid Vengeance is
+    # identical, so grant (not clone).
+    grants:
+      1: [16909]
+      2: [16910]
+      3: [16911]
+      4: [16912]
+      5: [16913]
+  - id: 18711
+    slug: improved_starfire
+    name: Improved Starfire
+    tab: 1
+    tier: 3
+    col: 2
+    icon: spell_arcane_starfire
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Reduces the cast time of Starfire by .1 sec and has a 3% chance to stun the target for 3 sec.
+    - Reduces the cast time of Starfire by .2 sec and has a 6% chance to stun the target for 3 sec.
+    - Reduces the cast time of Starfire by .3 sec and has a 9% chance to stun the target for 3 sec.
+    - Reduces the cast time of Starfire by .4 sec and has a 12% chance to stun the target for 3 sec.
+    - Reduces the cast time of Starfire by .5 sec and has a 15% chance to stun the target for 3 sec.
+    # AUTHORED (spellmod op=castTime + procPassive stun). Vanilla Improved Starfire = -0.1..-0.5s
+    # Starfire cast time AND 3/6/9/12/15% chance to stun the target 3s, 5 ranks. The ONE granted
+    # passive per rank carries Effect_1 = the castTime spellmod (masked to Starfire, word A bit2) AND
+    # Effect_2 = aura42 PROC_TRIGGER -> 16922 (via `procPassive:`). 16922 "Celestial Focus" is the
+    # STOCK 3s stun (aura12 MOD_STUN, DurationIndex 27 = 3000ms confirmed) — already client-visible,
+    # so no clone needed. proc: flags 65536 (DONE_SPELL_MAGIC_DMG_CLASS_NEG) scoped to Starfire
+    # (family7 + A=4), typeMask 1 (damage), hitMask 0 (any hit — Vanilla stun is not crit-gated),
+    # chance per rank. (Stock WotLK renamed this to "Celestial Focus" 16850 with a different shape;
+    # authored to the Vanilla castTime+stun.)
+    # EFFECT ORDER (925688-692): the generator puts the spellmod at Effect_1 and the proc at Effect_2,
+    # the REVERSE of stock 16850/16923/16924 (proc at e1, spellmod at e2). Inert — nothing in either
+    # era's data binds a SPELLMOD_EFFECT2/EFFECT3 to these passives, and both the SPELLMOD registry
+    # and the proc engine key off the aura, not its slot. Do NOT "fix" it by reordering.
+    mechanic: spellmod
+    op: castTime
+    kind: flat
+    affects: [Starfire]
+    vals: [-100, -200, -300, -400, -500]
+    procPassive:
+      flags: 65536            # PROC_FLAG_DONE_SPELL_MAGIC_DMG_CLASS_NEG
+      affects: [Starfire]     # family 7 + word A bit2 (4)
+      typeMask: 1             # SPELL_TYPE_MASK_DAMAGE
+      hitMask: 0              # any hit (NORMAL|CRIT) — Vanilla Improved Starfire stun is not crit-only
+      chance: [3, 6, 9, 12, 15]
+      trigger: 16922          # stock Celestial Focus 3s stun (client-visible)
+  - id: 18712
+    slug: nature_s_grace
+    name: Nature's Grace
+    tab: 1
+    tier: 4
+    col: 1
+    icon: spell_nature_naturesblessing
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - All spell criticals grace you with a blessing of nature, reducing the casting time of your next spell by 0.5 sec.
+    # AUTHORED (proc -> clone 932504). RECONSTRUCTION: Vanilla Nature's Grace (1 rank) = ANY spell
+    # crit gives a buff that reduces your NEXT spell's cast time by a FLAT 0.5s, 100% proc. Stock WotLK
+    # 16880 DIVERGES (3 ranks, 33/66/100% chance, and its buff 16886 is a %-cast-SPEED haste scoped to
+    # Nature spells via aura65) — a straight grant can't express the flat/any-spell/always shape, so
+    # reconstruct. 16880/16886 are NOT script-bound (DBC-only), so cloning is clean. This node is the
+    # proc passive: aura42 PROC_TRIGGER at 100% on any magic-class spell CRIT (flags 81920 =
+    # DONE_SPELL_MAGIC_DMG_CLASS pos+neg, typeMask 3 = DAMAGE|HEAL, hitMask 2 = crit-only, no
+    # family/school = "all spell criticals") -> 932504 the flat -0.5s next-cast buff.
+    mechanic: proc
+    proc:
+      # DONE_SPELL_MAGIC_DMG_CLASS_NEG(0x10000=65536)|POS(0x4000=16384) = damage + heal spells.
+      # NOT 327680: that is NEG|DONE_PERIODIC(0x40000) — it drops heal crits entirely.
+      flags: 81920
+      typeMask: 3             # SPELL_TYPE_MASK_DAMAGE|HEAL (fire on nuke OR heal crits)
+      hitMask: 2              # crit only
+      chance: [100]
+      trigger: 932504         # the flat -0.5s next-spell buff clone (helpers below)
+  - id: 18713
+    slug: moonglow
+    name: Moonglow
+    tab: 1
+    tier: 4
+    col: 2
+    icon: spell_nature_sentinal
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Reduces the Mana cost of your Moonfire, Starfire, Wrath, Healing Touch, Regrowth and Rejuvenation spells by 3%.
+    - Reduces the Mana cost of your Moonfire, Starfire, Wrath, Healing Touch, Regrowth and Rejuvenation spells by 6%.
+    - Reduces the Mana cost of your Moonfire, Starfire, Wrath, Healing Touch, Regrowth and Rejuvenation spells by 9%.
+    # AUTHORED (spellmod, op=cost). Vanilla Moonglow = -3/6/9% mana on Moonfire/Starfire/Wrath/Healing
+    # Touch/Regrowth/Rejuvenation, 3 ranks. op=cost SPELLMOD_COST(14), pct. The 6-spell set ORs to
+    # word A = 119 (bits 0,1,2,4,5,6) — an EXACT match to stock Moonglow 16845's EffectSpellClassMaskA
+    # (dump 2026-08-20), so the mask is verified faithful.
+    mechanic: spellmod
+    op: cost
+    kind: pct
+    affects: [Wrath, Moonfire, Starfire, Healing Touch, Regrowth, Rejuvenation]
+    vals: [-3, -6, -9]
+  - id: 18714
+    slug: moonfury
+    name: Moonfury
+    tab: 1
+    tier: 5
+    col: 1
+    icon: spell_nature_moonglow
+    maxRank: 5
+    prereqTalentId: 18712
+    prereqPoints: 25
+    tooltip:
+    - Increases the damage done by your Starfire, Moonfire and Wrath spells by 2%.
+    - Increases the damage done by your Starfire, Moonfire and Wrath spells by 4%.
+    - Increases the damage done by your Starfire, Moonfire and Wrath spells by 6%.
+    - Increases the damage done by your Starfire, Moonfire and Wrath spells by 8%.
+    - Increases the damage done by your Starfire, Moonfire and Wrath spells by 10%.
+    # AUTHORED (spellmod, op=allEffects). Vanilla Moonfury = +2/4/6/8/10% damage on Starfire/Moonfire/
+    # Wrath, 5 ranks. op=allEffects (misc 8) boosts every effect's base value — for Moonfire that
+    # covers BOTH its direct hit and its DoT (a plain op=damage would miss the DoT); Wrath/Starfire
+    # have only direct damage. Confirmed vs stock Moonfury 16896 (which splits into damage(misc0) +
+    # dot(misc22) effects over the same {Wrath,Moonfire,Starfire} A=7 set — allEffects expresses both
+    # in one). No over-bind (bits 0,1,2 are Wrath/Moonfire/Starfire only).
+    mechanic: spellmod
+    op: allEffects
+    kind: pct
+    affects: [Wrath, Moonfire, Starfire]
+    vals: [2, 4, 6, 8, 10]
+  - id: 18715
+    slug: moonkin_form
+    name: Moonkin Form
+    tab: 1
+    tier: 6
+    col: 1
+    icon: spell_nature_forceofnature
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 30
+    tooltip:
+    - Transforms the druid into Moonkin Form. While in this form armor is increased by 360% and all
+      party members within 30 yards have their spell critical chance increased by 3%. The Moonkin can only cast Balance spells
+      while shapeshifted. The act of shapeshifting frees the caster of Polymorph and Movement Impairing effects.
+    # AUTHORED (grant stock 24858). The FORM itself is Vanilla-faithful (Effect_1 aura36 MOD_SHAPESHIFT
+    # misc31 FORM_MOONKIN + Effect_2 aura77 MECHANIC_IMMUNITY misc17; the +360% armor + caster-lock are
+    # keyed by FORM id 31 in SpellShapeshiftForm.dbc / StatSystem.cpp:476, not the spell id, so a grant
+    # gets them) and 24858 is NOT HasTalent-gated (normal cast).
+    # Moonkin AURA = an ACCEPTED, documented baseline gap (per explicit user decision 2026-08-20; Task 10
+    # harvests it into the baseline-gap appendix). Vanilla Moonkin Aura = +3% PARTY spell crit (no haste);
+    # WotLK stock 24907 = +5% RAID spell crit + haste rating — a BENEFICIAL divergence (it over-delivers).
+    # It CANNOT be fixed by a data clone: the core HARDCASTS 24907 on FORM_MOONKIN entry
+    # (SpellAuraEffects.cpp:1577 "// Always cast Moonkin Aura"), keyed by the FORM id (31), NOT by the
+    # granted spell or a talent — so whatever spell enters form 31 still triggers stock 24907, and a
+    # form/aura clone can't reroute it. Full Vanilla fidelity would require a CORE PATCH, which is out of
+    # this phase's zero-core-patch scope; hence grant stock 24858 and accept the stronger aura.
+    grants:
+      1: [24858]
+- key: 2
+  name: Feral Combat
+  background: DruidFeralCombat
+  nodes:
+  - id: 18716
+    slug: ferocity
+    name: Ferocity
+    tab: 2
+    tier: 0
+    col: 1
+    icon: ability_hunter_pet_hyena
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Reduces the cost of your Maul, Swipe, Claw, and Rake abilities by 1 Rage or Energy.
+    - Reduces the cost of your Maul, Swipe, Claw, and Rake abilities by 2 Rage or Energy.
+    - Reduces the cost of your Maul, Swipe, Claw, and Rake abilities by 3 Rage or Energy.
+    - Reduces the cost of your Maul, Swipe, Claw, and Rake abilities by 4 Rage or Energy.
+    - Reduces the cost of your Maul, Swipe, Claw, and Rake abilities by 5 Rage or Energy.
+    # AUTHORED (spellmod, op=cost). Vanilla Ferocity = -1..-5 Rage/Energy on Maul/Swipe(Bear)/
+    # Claw/Rake, 5 ranks. op=cost is SPELLMOD_COST(14) — confirmed vs stock WotLK Ferocity 16934
+    # (Effect_1 aura 107 flat, misc 14). Masks OR to A=6144 (Maul 2048|Rake 4096)+B=1048576
+    # (Swipe Bear)+C=262144 (Claw) — no real player over-bind (the shared-bit decoys are NPCs,
+    # not player casts; a spellmod only touches the caster's own abilities). Swipe(Cat) 62078 is
+    # a post-Vanilla addition and is deliberately NOT in the set (Vanilla Cat had no Swipe).
+    mechanic: spellmod
+    op: cost
+    kind: flat
+    affects: [Maul, "Swipe (Bear)", Claw, Rake]
+    vals: [-1, -2, -3, -4, -5]
+  - id: 18717
+    slug: feral_aggression
+    name: Feral Aggression
+    tab: 2
+    tier: 0
+    col: 2
+    icon: ability_druid_demoralizingroar
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Increases the Attack Power reduction of your Demoralizing Roar by 8% and the damage caused by your Ferocious Bite by
+      3%.
+    - Increases the Attack Power reduction of your Demoralizing Roar by 16% and the damage caused by your Ferocious Bite by
+      6%.
+    - Increases the Attack Power reduction of your Demoralizing Roar by 24% and the damage caused by your Ferocious Bite by
+      9%.
+    - Increases the Attack Power reduction of your Demoralizing Roar by 32% and the damage caused by your Ferocious Bite by
+      12%.
+    - Increases the Attack Power reduction of your Demoralizing Roar by 40% and the damage caused by your Ferocious Bite by
+      15%.
+    # AUTHORED (multi: two spellmods). Vanilla Feral Aggression = +8/16/24/32/40% Demoralizing
+    # Roar AP-reduction AND +3/6/9/12/15% Ferocious Bite damage. Mirrors stock WotLK 16858 EXACTLY
+    # (dump 2026-08-20): Effect_1 aura108 misc 8 (allEffects) maskA=8 (Demo Roar); Effect_2 aura108
+    # misc 0 (damage) maskB=8388608 (Ferocious Bite, word A bit23).
+    # CONCERN-2 (Rip/Ferocious Bite share word-A bit23) RESOLVED WITHOUT affectsMask: FB has NO
+    # bit that Rip lacks, so no mask can separate them. But op=damage (SPELLMOD_DAMAGE) only touches
+    # DIRECT damage — core Unit.cpp:8934 routes a DOT through SPELLMOD_DOT, not SPELLMOD_DAMAGE — and
+    # Rip is a PURE periodic bleed with no direct-damage effect, so op=damage cleanly boosts ONLY
+    # Ferocious Bite. This is exactly how stock 16858 avoids boosting Rip (identical mask+op).
+    mechanic: multi
+    effects:
+    - { type: spellmod, op: allEffects, kind: pct, affects: [Demoralizing Roar], vals: [8, 16, 24, 32, 40] }
+    - { type: spellmod, op: damage,     kind: pct, affects: [Ferocious Bite],    vals: [3, 6, 9, 12, 15] }
+  - id: 18718
+    slug: feral_instinct
+    name: Feral Instinct
+    tab: 2
+    tier: 1
+    col: 0
+    icon: ability_ambush
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases threat caused in Bear and Dire Bear Form by 3% and reduces the chance enemies have to detect you while Prowling.
+    - Increases threat caused in Bear and Dire Bear Form by 6% and reduces the chance enemies have to detect you while Prowling.
+    - Increases threat caused in Bear and Dire Bear Form by 9% and reduces the chance enemies have to detect you while Prowling.
+    - Increases threat caused in Bear and Dire Bear Form by 12% and reduces the chance enemies have to detect you while Prowling.
+    - Increases threat caused in Bear and Dire Bear Form by 15% and reduces the chance enemies have to detect you while Prowling.
+    # AUTHORED (multi: threat stat + stealth-level stat). Vanilla Feral Instinct = +3/6/9/12/15%
+    # threat (Bear-form) + reduced detection while Prowling (Cat-form). aura 10 MOD_THREAT misc 127
+    # (all schools) mirrors warrior Defiance's precedent; aura 154 MOD_STEALTH_LEVEL raises the
+    # druid's stealth level so enemies detect at shorter range (only matters while Prowling).
+    # DIVERGENCE (documented, Task 10 gap): the two halves want DIFFERENT forms (threat=bear,
+    # stealth=cat) but `stances:` gates the whole passive — so this ships UN-gated, following the
+    # warrior Defiance precedent (always-on MOD_THREAT). The stealth-level magnitude 1..5 is an
+    # approximation (Vanilla per-rank value is undocumented; the effect is minor).
+    mechanic: multi
+    effects:
+    - { type: stat, aura: 10,  misc: 127, vals: [3, 6, 9, 12, 15] }
+    - { type: stat, aura: 154, misc: 0,   vals: [1, 2, 3, 4, 5] }
+  - id: 18719
+    slug: brutal_impact
+    name: Brutal Impact
+    tab: 2
+    tier: 1
+    col: 1
+    icon: ability_druid_bash
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases the stun duration of your Bash and Pounce abilities by 0.5 sec.
+    - Increases the stun duration of your Bash and Pounce abilities by 1 sec.
+    # AUTHORED (spellmod, op=duration). Vanilla Brutal Impact = +0.5/1.0s stun duration on Bash +
+    # Pounce, 2 ranks. op=duration is SPELLMOD_DURATION(1) — confirmed vs stock WotLK 16940 (Effect_1
+    # aura107 flat basePoints 499 misc 1 = +500ms). Vanilla is duration-ONLY; stock 16940 ALSO
+    # adds a cooldown reduction (Effect_2 misc 11) which is dropped here. Masks: Bash A8192, Pounce
+    # A131072 (no real over-bind). Values in ms.
+    mechanic: spellmod
+    op: duration
+    kind: flat
+    affects: [Bash, Pounce]
+    vals: [500, 1000]
+  - id: 18720
+    slug: thick_hide
+    name: Thick Hide
+    tab: 2
+    tier: 1
+    col: 2
+    icon: inv_misc_pelt_bear_03
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases your Armor contribution from items by 2%.
+    - Increases your Armor contribution from items by 4%.
+    - Increases your Armor contribution from items by 6%.
+    - Increases your Armor contribution from items by 8%.
+    - Increases your Armor contribution from items by 10%.
+    # AUTHORED (stat). Vanilla Thick Hide = +2/4/6/8/10% armor-from-items, 5 ranks (skeleton). aura
+    # 142 MOD_BASE_RESISTANCE_PCT, misc 1 (armor school) — confirmed vs stock WotLK Thick Hide 16929
+    # (Effect_1 aura 142 misc 1). NOT stances-gated: Vanilla Thick Hide applies in all forms. (Stock
+    # is a 3-rank chain 16929-31; the 5-rank skeleton can't grant it, so authored as a stat aura.)
+    mechanic: stat
+    aura: 142
+    school: 1
+    vals: [2, 4, 6, 8, 10]
+  - id: 18721
+    slug: feline_swiftness
+    name: Feline Swiftness
+    tab: 2
+    tier: 2
+    col: 0
+    icon: spell_nature_spiritwolf
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Increases your movement speed by 15% while outdoors in Cat Form and increases your chance to dodge while in Cat Form
+      by 2%.
+    - Increases your movement speed by 30% while outdoors in Cat Form and increases your chance to dodge while in Cat Form
+      by 4%.
+    # AUTHORED (multi: speed + dodge, Cat-form). Vanilla Feline Swiftness = +15/30% movement speed
+    # (outdoors, Cat) + 2/4% dodge (Cat), 2 ranks. stances:[cat] gates the whole passive to Cat
+    # Form. aura 31 MOD_INCREASE_SPEED (run speed %) + aura 49 MOD_DODGE_PERCENT. No WotLK stock id
+    # (WotLK removed the talent). DIVERGENCE (Task 10 gap): the "while outdoors" restriction is not
+    # expressible, so the speed applies indoors in Cat too (minor).
+    mechanic: multi
+    stances: [cat]
+    effects:
+    - { type: stat, aura: 31, misc: 0, vals: [15, 30] }
+    - { type: stat, aura: 49, misc: 0, vals: [2, 4] }
+  - id: 18722
+    slug: feral_charge
+    name: Feral Charge
+    tab: 2
+    tier: 2
+    col: 1
+    icon: ability_hunter_pet_bear
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Causes you to charge an enemy, immobilizing
+      and interrupting any spell being cast for 4 sec.
+    # AUTHORED (grant 16979 "Feral Charge - Bear"). Vanilla-faithful single rank (5 rage, 8-25yd,
+    # instant, 15s cd, Bear/Dire Bear only — _ref survival, RecoveryTime 15000 / RangeIndex 95
+    # confirmed). NB the WotLK Cat-form "Feral Charge - Cat" (49376) is a SEPARATE 3.1+ talent and
+    # is deliberately NOT granted here.
+    grants:
+      1: [16979]
+  - id: 18723
+    slug: sharpened_claws
+    name: Sharpened Claws
+    tab: 2
+    tier: 2
+    col: 2
+    icon: inv_misc_monsterclaw_04
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Increases your critical strike chance while in Bear, Dire Bear or Cat Form by 2%.
+    - Increases your critical strike chance while in Bear, Dire Bear or Cat Form by 4%.
+    - Increases your critical strike chance while in Bear, Dire Bear or Cat Form by 6%.
+    # AUTHORED (stat, form-gated). Vanilla Sharpened Claws = +2/4/6% crit in Cat/Bear/Dire Bear,
+    # 3 ranks. aura 52 MOD_WEAPON_CRIT_PERCENT (confirmed vs stock 16942 aura 52 basePoints 1 =
+    # +2%, ShapeshiftMask 145). Authored as a `stat` with stances (not a grant of the 16942 chain)
+    # so the passive carries ShapeshiftMask 145 = cat|bear|direbear = the headless-test target.
+    # school:0 mirrors stock 16942's misc 0 (avoid the stat default 127).
+    mechanic: stat
+    aura: 52
+    school: 0
+    stances: [cat, bear, direbear]
+    vals: [2, 4, 6]
+  - id: 18724
+    slug: improved_shred
+    name: Improved Shred
+    tab: 2
+    tier: 3
+    col: 0
+    icon: spell_shadow_vampiricaura
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Reduces the Energy cost of your Shred ability by 6.
+    - Reduces the Energy cost of your Shred ability by 12.
+    # AUTHORED (spellmod, op=cost). Vanilla Improved Shred = -6/-12 energy on Shred, 2 ranks.
+    # op=cost SPELLMOD_COST(14). Shred = word A bit15 (32768), single spell, no over-bind.
+    mechanic: spellmod
+    op: cost
+    kind: flat
+    affects: [Shred]
+    vals: [-6, -12]
+  - id: 18725
+    slug: predatory_strikes
+    name: Predatory Strikes
+    tab: 2
+    tier: 3
+    col: 1
+    icon: ability_hunter_pet_cat
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Increases your Attack Power in Cat, Bear and Dire Bear Forms by 50% of your level.
+    - Increases your Attack Power in Cat, Bear and Dire Bear Forms by 100% of your level.
+    - Increases your Attack Power in Cat, Bear and Dire Bear Forms by 150% of your level.
+    # AUTHORED (grant CLONES 932500-502). Vanilla Predatory Strikes = +50/100/150% of LEVEL as
+    # feral AP, 3 ranks. The core's feral-AP formula (StatSystem.cpp:405-478) reads a DUMMY aura by
+    # SpellIconID==1563 at EFFECT 0 as the "% of level" mult (mLevelMult = amount/100) — it keys on
+    # the ICON, not the spell id, so a clone that KEEPS icon 1563 (inherited from template 16972)
+    # with ONLY effect-0 DUMMY = 50/100/150 reproduces Vanilla exactly. The clones DROP the WotLK
+    # additions (effect-1 weapon-AP% and effect-2 aura-109 Ravage/Pounce proc). Core gates on
+    # IsInFeralForm(), so no stances needed (stock 16972 also ShapeshiftMask 0). Hidden passive
+    # (no client row).
+    grants:
+      1: [932500]
+      2: [932501]
+      3: [932502]
+  - id: 18726
+    slug: blood_frenzy
+    name: Blood Frenzy
+    tab: 2
+    tier: 3
+    col: 2
+    icon: ability_ghoulfrenzy
+    maxRank: 2
+    prereqTalentId: 18723
+    prereqPoints: 15
+    tooltip:
+    - Your critical strikes from Cat Form abilities that add combo points have a 50% chance to add an additional combo point.
+    - Your critical strikes from Cat Form abilities that add combo points have a 100% chance to add an additional combo point.
+    # AUTHORED (grant 16952/16954). CONCERN-1 RESOLVED — Blood Frenzy and Primal Fury ARE cleanly
+    # separable stock spells (the _ref survival block had the two trigger-spells SWAPPED). Live DBC
+    # dump 2026-08-20: 16952(R1,50%)/16954(R2,100%) carry ShapeshiftMask 1 = CAT and PROC_TRIGGER ->
+    # 16953 = SPELL_EFFECT_ADD_COMBO_POINTS (+1 combo) = Vanilla Blood Frenzy (cat combo-on-crit).
+    # ProcFlags 87376 EXCLUDES melee auto-attack (bit 0x4) = "abilities" only, matching Vanilla's
+    # "abilities that add combo points". These are passive proc-auras (Attributes 464); the core
+    # auto-generates the proc from DBC flags (SpellMgr.cpp:2159), and the ShapeshiftMask gates the
+    # aura to Cat form — so granting them reproduces the Vanilla mechanic + magnitude exactly.
+    grants:
+      1: [16952]
+      2: [16954]
+  - id: 18727
+    slug: primal_fury
+    name: Primal Fury
+    tab: 2
+    tier: 3
+    col: 3
+    icon: ability_racial_cannibalize
+    maxRank: 2
+    prereqTalentId: 18723
+    prereqPoints: 15
+    tooltip:
+    - Gives you a 50% chance to gain an additional 5 Rage anytime you get a critical strike while in Bear and Dire Bear Form.
+    - Gives you a 100% chance to gain an additional 5 Rage anytime you get a critical strike while in Bear and Dire Bear Form.
+    # AUTHORED (grant 16958/16961). See Blood Frenzy (18726) for the CONCERN-1 resolution. Live DBC
+    # dump 2026-08-20: 16958(R1,50%)/16961(R2,100%) carry ShapeshiftMask 144 = BEAR|DIRE BEAR and
+    # PROC_TRIGGER -> 16959 = SPELL_EFFECT_ENERGIZE misc 1 (POWER_RAGE) basePoints 49 = 50 rage-points
+    # = 5 Rage (rage is stored x10) = Vanilla Primal Fury (bear rage-on-crit). ProcFlags 87380
+    # INCLUDES auto-attack crits (bit 0x4), matching Vanilla's "any critical strike". Passive proc-
+    # auras (auto-proc from DBC flags), ShapeshiftMask gates to Bear/Dire Bear. Grant reproduces
+    # Vanilla exactly. (These are the same stock spells WotLK's merged Primal Fury 37116 learns; the
+    # two halves survive as distinct spells, so the era grants them as two separate talents.)
+    grants:
+      1: [16958]
+      2: [16961]
+  - id: 18728
+    slug: savage_fury
+    name: Savage Fury
+    tab: 2
+    tier: 4
+    col: 0
+    icon: ability_druid_ravage
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Increases the damage caused by your Claw, Rake, Maul and Swipe abilities by 10%.
+    - Increases the damage caused by your Claw, Rake, Maul and Swipe abilities by 20%.
+    # AUTHORED (grant 16998/16999). Vanilla-exact: stock WotLK Savage Fury = +10/20% on Claw/Rake/
+    # Maul/Swipe (dump 2026-08-20: aura108 op=damage, maskA=6144 Maul|Rake + maskC=262144 Claw +
+    # a 2nd effect for Swipe), 2 ranks — same %, ranks, and set as Vanilla. Self-contained family-7
+    # passive (no HasTalent dependency), so granting works for an era druid. op=damage doesn't touch
+    # Rip (a pure DoT, same reasoning as Feral Aggression). WotLK-added Mangle bits are irrelevant
+    # (era druids have no Mangle).
+    grants:
+      1: [16998]
+      2: [16999]
+  - id: 18729
+    slug: faerie_fire_feral
+    name: Faerie Fire (Feral)
+    tab: 2
+    tier: 4
+    col: 2
+    icon: spell_nature_faeriefire
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Decrease the armor of the target by
+      175 for 40 sec. While affected, the target cannot stealth or turn invisible.
+    # AUTHORED (grant 16857 "Faerie Fire (Feral)"). Single-rank castable armor debuff + stealth/
+    # invisibility prevention, Cat/Bear/Dire Bear form (ShapeshiftMask 145). The stealth-prevention
+    # + castability are the primary mechanics and work via the stock spell/core.
+    # DIVERGENCE (Task 10 gap): 3.3.5a 16857 reduces armor by a PERCENT (aura 101 MOD_RESISTANCE_PCT,
+    # -5%; dump 2026-08-20) whereas Vanilla reduced a FLAT 175 armor. Granted as-is (percent) rather
+    # than cloned — a flat-armor clone risks losing the core's Faerie-Fire stealth-prevention hook,
+    # and both forms "reduce armor". Recorded as a baseline gap.
+    grants:
+      1: [16857]
+  - id: 18730
+    slug: heart_of_the_wild
+    name: Heart of the Wild
+    tab: 2
+    tier: 5
+    col: 1
+    icon: spell_holy_blessingofagility
+    maxRank: 5
+    prereqTalentId: 18725
+    prereqPoints: 25
+    tooltip:
+    - Increases your Intellect by 4%. In addition, while in Bear or Dire Bear Form your Stamina is increased by 2% and while
+      in Cat Form your Attack Power is increased by 2%.
+    - Increases your Intellect by 8%. In addition, while in Bear or Dire Bear Form your Stamina is increased by 4% and while
+      in Cat Form your Attack Power is increased by 4%.
+    - Increases your Intellect by 12%. In addition, while in Bear or Dire Bear Form your Stamina is increased by 6% and while
+      in Cat Form your Attack Power is increased by 6%.
+    - Increases your Intellect by 16%. In addition, while in Bear or Dire Bear Form your Stamina is increased by 8% and while
+      in Cat Form your Attack Power is increased by 8%.
+    - Increases your Intellect by 20%. In addition, while in Bear or Dire Bear Form your Stamina is increased by 10% and while
+      in Cat Form your Attack Power is increased by 10%.
+    # AUTHORED (grant 17003/17004/17005/17006/24894). CONCERN-3 VERIFIED. The +4/8/12/16/20% Intellect
+    # (Effect_1 aura 137 misc 3, icon 240) is Vanilla-exact and applies directly. The per-form stat
+    # DOES apply (not inert): the core's shapeshift handler (SpellAuraEffects.cpp:1509) detects ANY
+    # MOD_TOTAL_STAT_PERCENTAGE aura with SpellIconID==240 + INTELLECT (which the granted stock 17003
+    # is) and casts a per-form spell (24899 bear stamina / 24900 cat AP) — keyed on the aura+form,
+    # NOT HasTalent, so our grant triggers it.
+    # DIVERGENCE (Task 10 gap, ACCEPTED 2026-08-20): the core applies the WotLK formula (Int%/2 stamina
+    # in bear, Int%/2 ATTACK POWER in cat) whereas Vanilla gave the FULL Int% as Stamina (bear) /
+    # STRENGTH (cat). So the per-form bonus is present but at half rate + AP-instead-of-Str for cat. A
+    # faithful fix is a non-trivial form-change script; the primary (+Int) component is fully correct,
+    # so grant + gap was chosen over a script for a secondary component.
+    # FIX ROUND (2026-08-21, issue 5/8): the per-rank tooltip above is REWRITTEN to match the shipped
+    # WotLK behavior (Int% + Bear Stamina Int%/2 + Cat Attack Power Int%/2) instead of the Vanilla
+    # ideal — the mechanic is unchanged (still the accepted gap), only the tooltip now describes what
+    # the spell actually does so the client display is truthful.
+    grants:
+      1: [17003]
+      2: [17004]
+      3: [17005]
+      4: [17006]
+      5: [24894]
+  - id: 18731
+    slug: leader_of_the_pack
+    name: Leader of the Pack
+    tab: 2
+    tier: 6
+    col: 1
+    icon: spell_nature_unyeildingstamina
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 30
+    tooltip:
+    - While in Cat, Bear or Dire Bear Form, the Leader of the Pack increases ranged and melee critical chance of all party
+      members within 45 yards by 3%.
+    # AUTHORED (grant CLONE 932503). Vanilla LotP = +3% PARTY melee/ranged crit while in Cat/Bear/
+    # Dire Bear Form, NO heal/mana. CLONE required: the core's LotP handler (SpellAuraEffects.cpp:
+    # 1496) is gated on HasTalent(17007) — the CORE talent system, which era chars have pinned to 0
+    # — so granting stock 17007/24932 would never fire. 932503 is a self-contained passive area-aura
+    # (template 17007 for the passive attrs + icon; stances:[cat,bear,direbear] -> ShapeshiftMask 145
+    # so the core's shapeshift passive-loop auto-applies it in-form) that radiates +3% crit to the
+    # party (APPLY_AREA_AURA_PARTY aura 52). Drops the WotLK on-crit heal (24932's 34299) + mana
+    # (68285). Data-only.
+    # FIX ROUND (2026-08-21, issue 6): the +3% crit applied but the buff was INVISIBLE — 932503 inherits
+    # template 17007's Attributes 464 (PASSIVE|DO_NOT_DISPLAY), so no buff icon shows on the druid or the
+    # party. The catch-22: HandleShapeshiftBoosts only reapplies a form-passive that carries BOTH
+    # PASSIVE and DO_NOT_DISPLAY, so we cannot simply un-hide 932503. Two-spell split (data-only): 932503
+    # stays the hidden form-passive but its Effect_1 is now SPELL_EFFECT_TRIGGER_SPELL -> 932506; 932506
+    # is the VISIBLE party area-aura (Attributes 0, ShapeshiftMask 145 so it auto-strips on leaving form).
+    # On form entry the loop casts 932503 -> triggers 932506 (visible, radiates +3% crit to party).
+    grants:
+      1: [932503]
+- key: 3
+  name: Restoration
+  background: DruidRestoration
+  nodes:
+  - id: 18732
+    slug: improved_mark_of_the_wild
+    name: Improved Mark of the Wild
+    tab: 3
+    tier: 0
+    col: 1
+    icon: spell_nature_regeneration
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Increases the effects of your Mark of the Wild and Gift of the Wild spells by 7%.
+    - Increases the effects of your Mark of the Wild and Gift of the Wild spells by 14%.
+    - Increases the effects of your Mark of the Wild and Gift of the Wild spells by 21%.
+    - Increases the effects of your Mark of the Wild and Gift of the Wild spells by 28%.
+    - Increases the effects of your Mark of the Wild and Gift of the Wild spells by 35%.
+    # AUTHORED (spellmod, op=allEffects). Vanilla Improved Mark of the Wild = +7/14/21/28/35% to Mark of
+    # the Wild's stat/resistance bonuses, 5 ranks. op=allEffects (misc 8) boosts every effect's base value
+    # — confirmed vs stock WotLK Improved MotW 17050/17051 (aura108 misc8, maskA=262144), a 2-rank
+    # +20/40% chain; authored here as the 5-rank Vanilla chain. Mark of the Wild = word A bit18 (262144);
+    # Gift of the Wild (the party-cast variant) shares the SAME id/family/mask (_ref), so one spellmod
+    # covers both — matching the tooltip's "Mark of the Wild and Gift of the Wild".
+    mechanic: spellmod
+    op: allEffects
+    kind: pct
+    affects: [Mark of the Wild]
+    vals: [7, 14, 21, 28, 35]
+  - id: 18733
+    slug: furor
+    name: Furor
+    tab: 3
+    tier: 0
+    col: 2
+    icon: spell_nature_unyeildingstamina
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Gives you a 20% chance to gain 10 Rage when you shapeshift into Bear and Dire Bear Form or 40 Energy when you shapeshift
+      into Cat Form.
+    - Gives you a 40% chance to gain 10 Rage when you shapeshift into Bear and Dire Bear Form or 40 Energy when you shapeshift
+      into Cat Form.
+    - Gives you a 60% chance to gain 10 Rage when you shapeshift into Bear and Dire Bear Form or 40 Energy when you shapeshift
+      into Cat Form.
+    - Gives you a 80% chance to gain 10 Rage when you shapeshift into Bear and Dire Bear Form or 40 Energy when you shapeshift
+      into Cat Form.
+    - Gives you a 100% chance to gain 10 Rage when you shapeshift into Bear and Dire Bear Form or 40 Energy when you shapeshift
+      into Cat Form.
+    # AUTHORED (grant 17056/17058-17061). NOT HasTalent-gated: the core's shapeshift handler reads the
+    # Furor chance via GetDummyAuraEffect(SPELLFAMILY_DRUID, 238, 0) (SpellAuraEffects.cpp:2100) — keyed on
+    # family 7 + SpellIconID 238 + effect-0 DUMMY, NOT HasTalent — so a straight grant of the stock passive
+    # fires (verified icon 238, aura4 DUMMY basePoints 19/39/59/79/99 = 20/40/60/80/100%, 5 ranks,
+    # AcquireMethod 0, no trainer/leak). Bear/Dire Bear branch = FurorChance% chance to gain 10 Rage
+    # (casts 17057) = Vanilla-faithful. DIVERGENCE (Task 10 gap): the CAT branch uses the WotLK "retain up
+    # to FurorChance energy on shift" mechanic (SpellAuraEffects.cpp:2105-2110) rather than Vanilla's "X%
+    # chance to gain 40 Energy" — benign, cat-half only; stored chance/amounts are identical.
+    grants:
+      1: [17056]
+      2: [17058]
+      3: [17059]
+      4: [17060]
+      5: [17061]
+  - id: 18734
+    slug: improved_healing_touch
+    name: Improved Healing Touch
+    tab: 3
+    tier: 1
+    col: 0
+    icon: spell_nature_healingtouch
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Reduces the cast time of your Healing Touch spell by 0.1 sec.
+    - Reduces the cast time of your Healing Touch spell by 0.2 sec.
+    - Reduces the cast time of your Healing Touch spell by 0.3 sec.
+    - Reduces the cast time of your Healing Touch spell by 0.4 sec.
+    - Reduces the cast time of your Healing Touch spell by 0.5 sec.
+    # AUTHORED (spellmod, op=castTime). Vanilla Improved Healing Touch = -0.1..-0.5s Healing Touch cast
+    # time, 5 ranks. op=castTime SPELLMOD_CASTING_TIME(10), flat, ms. Healing Touch = word A bit5 (32),
+    # single spell, no over-bind.
+    mechanic: spellmod
+    op: castTime
+    kind: flat
+    affects: [Healing Touch]
+    vals: [-100, -200, -300, -400, -500]
+  - id: 18735
+    slug: nature_s_focus
+    name: Nature's Focus
+    tab: 3
+    tier: 1
+    col: 1
+    icon: spell_nature_healingwavegreater
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Gives you a 14% chance to avoid interruption caused by damage while casting the Healing Touch, Regrowth and Tranquility
+      spells.
+    - Gives you a 28% chance to avoid interruption caused by damage while casting the Healing Touch, Regrowth and Tranquility
+      spells.
+    - Gives you a 42% chance to avoid interruption caused by damage while casting the Healing Touch, Regrowth and Tranquility
+      spells.
+    - Gives you a 56% chance to avoid interruption caused by damage while casting the Healing Touch, Regrowth and Tranquility
+      spells.
+    - Gives you a 70% chance to avoid interruption caused by damage while casting the Healing Touch, Regrowth and Tranquility
+      spells.
+    # AUTHORED (spellmod, op=notLoseCastingTime). Vanilla Nature's Focus = 14/28/42/56/70% chance to avoid
+    # pushback while casting Healing Touch/Regrowth/Tranquility, 5 ranks. op=notLoseCastingTime
+    # SPELLMOD_NOT_LOSE_CASTING_TIME(9), pct — confirmed vs stock Nature's Focus 17063 (aura108 misc9).
+    # Vanilla scope is HT/Regrowth/Tranquility (maskA = 32|64|128 = 224); stock WotLK 17063 also covers
+    # Wrath + Entangling Roots (maskA 737), deliberately narrowed to the Vanilla heal set here.
+    mechanic: spellmod
+    op: notLoseCastingTime
+    kind: pct
+    affects: [Healing Touch, Regrowth, Tranquility]
+    vals: [14, 28, 42, 56, 70]
+  - id: 18736
+    slug: improved_enrage
+    name: Improved Enrage
+    tab: 3
+    tier: 1
+    col: 2
+    icon: ability_druid_enrage
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - The Enrage ability now instantly generates 5 Rage
+    - The Enrage ability now instantly generates 10 Rage
+    # AUTHORED (spellmod, op=effect2). Vanilla Improved Enrage = Enrage instantly generates +5/+10 Rage,
+    # 2 ranks. op=effect2 SPELLMOD_EFFECT2(12) flat adds to Effect_2's value at cast (Unit::ApplyEffectModifiers
+    # maps effIndex 1 -> SPELLMOD_EFFECT2, applied inside CalcValue). Rage is stored x10, so +50/+100 base
+    # = +5/+10 Rage instant. Binds by the Enrage identity (family-7 word-A bit19 = 524288), a SINGLE hit
+    # for that name (_ref), so no over-bind.
+    # FIX ROUND (2026-08-21, issue 7): base Enrage is now the CUSTOM Vanilla clone 932513 (version-swap;
+    # stock 5229 is stripped in Vanilla / auto-granted in WotLK — see EraTalents.cpp CLASS_DRUID block).
+    # 932513's Effect_1 = 20 Rage over 10s (periodic energize 2 rage/tick) and its Effect_2 = ENERGIZE
+    # with basePoints 0 (NO instant at base). So Improved Enrage's +50/+100 is the ONLY instant rage:
+    # total = 20 over-time + 5/10 instant = 25/30 Rage (NOT the old 40 that stacked on stock 5229's built-in
+    # 20-instant chunk). op=effect2 binds 932513 identically (it inherits 5229's word-A bit19).
+    mechanic: spellmod
+    op: effect2
+    kind: flat
+    affects: [Enrage]
+    vals: [50, 100]
+  - id: 18737
+    slug: reflection
+    name: Reflection
+    tab: 3
+    tier: 2
+    col: 1
+    icon: spell_frost_windwalkon
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Allows 5% of your Mana regeneration to continue while casting
+    - Allows 10% of your Mana regeneration to continue while casting
+    - Allows 15% of your Mana regeneration to continue while casting
+    # AUTHORED (stat, aura 134). Vanilla Reflection = 5/10/15% of mana regeneration continues while
+    # casting, 3 ranks. aura 134 SPELL_AURA_MOD_MANA_REGEN_INTERRUPT — the core reads it as the % of base
+    # mana-regen retained during the casting (5-second-rule) window (StatSystem.cpp:965,
+    # GetTotalAuraModifier(134), no misc filter). school:0 (misc 0, unfiltered) avoids the stat builder's
+    # default 127. (WotLK folded this into "Intensity"; authored here as the Vanilla stat aura.)
+    mechanic: stat
+    aura: 134
+    school: 0
+    vals: [5, 10, 15]
+  - id: 18738
+    slug: insect_swarm
+    name: Insect Swarm
+    tab: 3
+    tier: 2
+    col: 2
+    icon: spell_nature_insectswarm
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - The enemy target is swarmed by insects, decreasing their chance to hit by 2% and causing
+      66 Nature damage over 12 sec.
+    # AUTHORED (grant CLONE 932514). Final review deferred-gaps round (2026-09-07, G-51): the old
+    # stock grant 5570 ticked WotLK's 24/tick and -3% hit against the 1.12 tooltip's 66/12 s and -2%.
+    # Now a 5-rank Vanilla clone chain 932514-932518 (r1 node-granted, r2-r5 trainer-taught behind a
+    # ReqAbility1 chain rooted at 932514 + spell_ranks, hand SQL 2026_09_07_01). NO stock trainer
+    # deletion: the stock chain self-gates on 5570, which a Vanilla druid no longer receives; the
+    # CLASS_DRUID reconcile arm (9) strips stock 5570/24974-24977/27013/48468 from an existing
+    # Vanilla character (readiness-gated on this node granting a non-stock id). Values are wowhead
+    # Classic (the era-wow 1.12.1 Spell.dbc extract stops at id 21184 and has no Insect Swarm).
+    grants:
+      1: [932514]
+  - id: 18739
+    slug: subtlety
+    name: Subtlety
+    tab: 3
+    tier: 2
+    col: 3
+    icon: ability_eyeoftheowl
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Reduces the threat generated by your Healing spells by 4%.
+    - Reduces the threat generated by your Healing spells by 8%.
+    - Reduces the threat generated by your Healing spells by 12%.
+    - Reduces the threat generated by your Healing spells by 16%.
+    - Reduces the threat generated by your Healing spells by 20%.
+    # AUTHORED (spellmod, op=threat). Vanilla Subtlety = -4/8/12/16/20% threat from your healing spells,
+    # 5 ranks. op=threat SPELLMOD_THREAT(2), pct (negative = reduction) — the exact mechanism of stock
+    # druid Subtlety 17118-17120 (aura108 misc2, 3 ranks -11/-21/-31%), which the core applies to healing
+    # threat via ThreatManager (ApplySpellMod SPELLMOD_THREAT, ThreatManager.cpp:709). Bound to the era
+    # heal set Healing Touch/Regrowth/Rejuvenation/Tranquility/Swiftmend (maskA 240 + maskB 2); stock 17118
+    # additionally masks Mark of the Wild + WotLK-only heals, harmless/irrelevant to a Vanilla druid.
+    mechanic: spellmod
+    op: threat
+    kind: pct
+    affects: [Healing Touch, Regrowth, Rejuvenation, Tranquility, Swiftmend]
+    vals: [-4, -8, -12, -16, -20]
+  - id: 18740
+    slug: tranquil_spirit
+    name: Tranquil Spirit
+    tab: 3
+    tier: 3
+    col: 1
+    icon: spell_holy_elunesgrace
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Reduces the mana cost of your Healing Touch and Tranquility spells by 2%.
+    - Reduces the mana cost of your Healing Touch and Tranquility spells by 4%.
+    - Reduces the mana cost of your Healing Touch and Tranquility spells by 6%.
+    - Reduces the mana cost of your Healing Touch and Tranquility spells by 8%.
+    - Reduces the mana cost of your Healing Touch and Tranquility spells by 10%.
+    # AUTHORED (spellmod, op=cost). Vanilla Tranquil Spirit = -2/4/6/8/10% mana cost of Healing Touch and
+    # Tranquility, 5 ranks. op=cost SPELLMOD_COST(14), pct. Healing Touch = word A bit5 (32), Tranquility =
+    # word A bit7 (128) -> maskA 160, no over-bind. (Stock WotLK Tranquil Spirit 24968-24972 same shape.)
+    mechanic: spellmod
+    op: cost
+    kind: pct
+    affects: [Healing Touch, Tranquility]
+    vals: [-2, -4, -6, -8, -10]
+  - id: 18741
+    slug: improved_rejuvenation
+    name: Improved Rejuvenation
+    tab: 3
+    tier: 3
+    col: 3
+    icon: spell_nature_rejuvenation
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Increases the effect of your Rejuvenation spell by 5%.
+    - Increases the effect of your Rejuvenation spell by 10%.
+    - Increases the effect of your Rejuvenation spell by 15%.
+    # AUTHORED (spellmod, op=allEffects). Vanilla Improved Rejuvenation = +5/10/15% Rejuvenation healing,
+    # 3 ranks. op=allEffects (misc 8) boosts the periodic-heal effect's base value (op=damage/SPELLMOD_
+    # DAMAGE would miss a periodic effect; allEffects reaches it). Rejuvenation = word A bit4 (16), single
+    # spell, no over-bind. (Stock WotLK Improved Rejuvenation 17111-17113 uses the same shape.)
+    mechanic: spellmod
+    op: allEffects
+    kind: pct
+    affects: [Rejuvenation]
+    vals: [5, 10, 15]
+  - id: 18742
+    slug: nature_s_swiftness
+    name: Nature's Swiftness
+    tab: 3
+    tier: 4
+    col: 0
+    icon: spell_nature_ravenform
+    maxRank: 1
+    prereqTalentId: 18734
+    prereqPoints: 20
+    tooltip:
+    - When activated, your next Nature spell becomes an instant cast spell.
+    # AUTHORED (grant 17116). _ref survival: Vanilla-faithful (single rank both eras; aura108 ADD_PCT_
+    # MODIFIER -100% cast time on the next Nature spell, ProcCharges 1, 3-min cd). NOT HasTalent-gated (no
+    # spell_druid.cpp reference; a self-contained DBC spellmod-carrier); AcquireMethod 0, no trainer row ->
+    # no leak. WARNING (_ref): do NOT confuse with SHAMAN's Nature's Swiftness 16188 (different class/id).
+    grants:
+      1: [17116]
+  - id: 18743
+    slug: gift_of_nature
+    name: Gift of Nature
+    tab: 3
+    tier: 4
+    col: 2
+    icon: spell_nature_protectionformnature
+    maxRank: 5
+    prereqTalentId: 18738
+    prereqPoints: 20
+    tooltip:
+    - Increases the effect of all healing spells by 2%
+    - Increases the effect of all healing spells by 4%
+    - Increases the effect of all healing spells by 6%
+    - Increases the effect of all healing spells by 8%
+    - Increases the effect of all healing spells by 10%
+    # AUTHORED (stat, aura 136). Vanilla Gift of Nature = +2/4/6/8/10% to the effect of ALL healing
+    # spells, 5 ranks. Authored as aura 136 SPELL_AURA_MOD_HEALING_DONE_PERCENT (a flat % multiplier on
+    # all healing done — Unit.cpp:9538 SpellHealingBonusDone, applied to direct AND periodic heals with no
+    # misc/school filter) rather than granting stock 17104/24943-46: the stock chain is a spellmod scoped
+    # to maskA 224 (Healing Touch/Regrowth/Tranquility only) + maskB 80 and does NOT reach Rejuvenation/
+    # Swiftmend, so it under-covers the Vanilla "all healing spells" tooltip. The stat aura covers every
+    # heal faithfully. school:0 (misc 0, unfiltered) avoids the stat builder's default 127.
+    mechanic: stat
+    aura: 136
+    school: 0
+    vals: [2, 4, 6, 8, 10]
+  - id: 18744
+    slug: improved_tranquility
+    name: Improved Tranquility
+    tab: 3
+    tier: 4
+    col: 3
+    icon: spell_nature_tranquility
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Reduces threat caused by Tranquility by 50%
+    - Reduces threat caused by Tranquility by 100%
+    # AUTHORED (spellmod, op=threat). Vanilla Improved Tranquility = -50/-100% threat caused by Tranquility,
+    # 2 ranks. op=threat SPELLMOD_THREAT(2), pct (negative = reduction), same proven mechanism as Subtlety
+    # (18739). Values confirmed against stock Spell.dbc 17123/17124 (EffectBasePoints_1 -51/-101 =
+    # -50/-100%; unchanged Vanilla->WotLK) + warcraft.wiki. Tranquility = word A bit7 (128), single spell.
+    mechanic: spellmod
+    op: threat
+    kind: pct
+    affects: [Tranquility]
+    vals: [-50, -100]
+  - id: 18745
+    slug: improved_regrowth
+    name: Improved Regrowth
+    tab: 3
+    tier: 5
+    col: 2
+    icon: spell_nature_resistnature
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 25
+    tooltip:
+    - Increases the critical effect chance of your Regrowth spell by 10%.
+    - Increases the critical effect chance of your Regrowth spell by 20%.
+    - Increases the critical effect chance of your Regrowth spell by 30%.
+    - Increases the critical effect chance of your Regrowth spell by 40%.
+    - Increases the critical effect chance of your Regrowth spell by 50%.
+    # AUTHORED (spellmod, op=crit). Vanilla Improved Regrowth = +10/20/30/40/50% critical effect chance of
+    # Regrowth, 5 ranks. op=crit SPELLMOD_CRITICAL_CHANCE(7), flat (same op as Balance Improved Moonfire's
+    # crit half). Regrowth = word A bit6 (64), single spell, no over-bind.
+    mechanic: spellmod
+    op: crit
+    kind: flat
+    affects: [Regrowth]
+    vals: [10, 20, 30, 40, 50]
+  - id: 18746
+    slug: swiftmend
+    name: Swiftmend
+    tab: 3
+    tier: 6
+    col: 1
+    icon: inv_relics_idolofrejuvenation
+    maxRank: 1
+    prereqTalentId: 18740
+    prereqPoints: 30
+    tooltip:
+    - Consumes a Rejuvenation or Regrowth effect on the target to instantly heal them for the amount that effect would otherwise
+      have healed over its remaining duration.
+    # AUTHORED (grant 18562). _ref survival: Vanilla-faithful capstone (single rank both eras; Effect_1
+    # HEAL that consumes a Rejuvenation/Regrowth, 15s cd, 16% mana). NOT HasTalent-gated: the core
+    # implements it purely via TargetAuraState == AURA_STATE_SWIFTMEND (SpellEffects.cpp:1502), no
+    # spell_druid.cpp reference; AcquireMethod 0, no trainer row -> no leak. Granted as-is (the stock
+    # client tooltip is global and already correct for the Vanilla behavior).
+    grants:
+      1: [18562]
+
+# ---- Feral Combat helper clones (Druid band 932500-932599) --------------------------------------
+# 932500-502: Predatory Strikes % of level (node 18725). Clone of stock 16972/16974/16975 keeping
+#   SpellIconID 1563 (inherited from the template) — the core's feral-AP formula (StatSystem.cpp)
+#   detects the DUMMY aura BY ICON 1563 at effect index 0 and reads its amount as the "% of level"
+#   multiplier. Only effect-0 authored (DUMMY 50/100/150); the templated clone 0-fills effects 2/3,
+#   dropping the WotLK weapon-AP% (effect 1) and the aura-109 Ravage proc (effect 2). Hidden passive
+#   (no client block); core gates use via IsInFeralForm(), so no stances needed.
+# 932503: Leader of the Pack +3% party crit (node 18731). Clone of the passive spellbook entry 17007
+#   (inherits its passive Attributes 464 + icon 312); stances -> ShapeshiftMask 145 so the core's
+#   shapeshift passive-loop applies it only in Cat/Bear/Dire Bear form; effect 35 APPLY_AREA_AURA_
+#   PARTY aura 52 MOD_WEAPON_CRIT_PERCENT +3% (radius index 12 = 100yd, as stock 24932). No heal/mana.
+# ---- Balance helper clones (Druid band 932500-932599) -------------------------------------------
+# 932504: Nature's Grace flat -0.5s next-spell buff (node 18712, RECONSTRUCTION). Clone of stock
+#   16886 (WotLK's %-cast-SPEED haste buff) reshaped to Vanilla: Effect_1 aura 107 ADD_FLAT_MODIFIER
+#   misc 10 (SPELLMOD_CASTING_TIME) basePoints -500 = flat -0.5s, ProcCharges 1 (consumed by the next
+#   spell), DurationIndex 21 (-1 = persists until consumed, matching "your next spell", like Nature's
+#   Swiftness 17116). Per-effect mask AUTHORED ALL-ONES (maskA/B/C = 0xFFFFFFFF) so the SPELLMOD binds
+#   EVERY druid spell — 1.12 Nature's Grace was unrestricted ("your next spell"). All-ones is safe
+#   because the family gate comes FIRST: SpellInfo::IsAffected (SpellInfo.cpp:1331) returns false on a
+#   family mismatch before it ever looks at the flags, and this clone's family is 7 (inherited from
+#   16886), so a non-druid spell can never bind no matter how wide the mask is.
+#   The templated clone would otherwise INHERIT 16886's WotLK EffectSpellClassMask, whose EFFECT-1
+#   words are (16777831, 58720288, 512) — the nature-caster set. (The often-quoted "B=1" is
+#   EffectSpellClassMaskB_1, i.e. EFFECT 2's word A, not part of effect 1's mask at all.)
+#   PRACTICAL DELTA of the widening is small and deliberately so: Moonfire, Rebirth and Hibernate were
+#   already inside the WotLK mask, so what all-ones actually adds is Gift of the Wild (and
+#   "Empowerment"). It does NOT make instants consume the charge: Player::ApplySpellMod
+#   (Player.cpp:10020-10023) skips a SPELLMOD_CASTING_TIME mod outright when the base cast time is
+#   already 0, and that skip happens BEFORE the charge is registered — so on this core an instant can
+#   never eat a Nature's Grace charge, whatever the mask says.
+#   Triggered by node 18712's proc; visible buff -> client name/icon/auraDescription,
+#   NO skillLine (not learnable). The 1-charge consume is unchanged.
+# 932505: Nature's Grasp 35%-base clone (node 18701). Clone of stock 16689 overriding ONLY procChance
+#   35 + procCharges 1 (Vanilla) vs stock 100%/3; inherits Effect_2 aura42 PROC_TRIGGER -> 19975
+#   (Entangling Roots), ProcTypeMask 40 (on-taken-hit), the 45s duration + 1-min category cd, AND the
+#   Nature's Grasp identity mask (A 1048576 + C 4096) so Improved Nature's Grasp (18702) binds it.
+#   Castable self-buff granted by 18701 -> client name/icon/description/auraDescription + skillLine 574.
+helpers:
+- id: 932500
+  name: Predatory Strikes
+  template: 16972
+  effects:
+  - { effect: 6, aura: 4, basePoints: 50, dieSides: 0, targetA: 1 }   # APPLY_AURA(DUMMY) self; icon 1563 core-read as 50% of level
+- id: 932501
+  name: Predatory Strikes
+  template: 16974
+  effects:
+  - { effect: 6, aura: 4, basePoints: 100, dieSides: 0, targetA: 1 }
+- id: 932502
+  name: Predatory Strikes
+  template: 16975
+  effects:
+  - { effect: 6, aura: 4, basePoints: 150, dieSides: 0, targetA: 1 }
+- id: 932503
+  name: Leader of the Pack
+  template: 17007
+  stances: [cat, bear, direbear]              # ShapeshiftMask 145 = cat(1)|bear(16)|direbear(128)
+  effects:                                     # FIX ROUND: hidden form-passive now TRIGGERS the visible 932506
+  - { effect: 64, aura: 0, basePoints: 0, dieSides: 0, targetA: 1, trigger: 932506 }  # SPELL_EFFECT_TRIGGER_SPELL -> 932506 (self)
+  client:
+    name: Leader of the Pack
+    icon: 312
+    auraDescription: "Melee and ranged critical strike chance of nearby party members increased by 3%."
+    skillLine: 134            # Feral Combat spellbook tab (the passive spellbook entry; the visible buff is 932506)
+- id: 932506
+  name: Leader of the Pack
+  template: 17007             # inherit family-7 identity + icon base
+  attributes: 0              # NO PASSIVE/DO_NOT_DISPLAY -> a VISIBLE buff (stock visible LotP 24932 is also Attributes 0)
+  durationIndex: 21          # -1 (persists) — matches stock 24932; ShapeshiftMask gates it off on form exit
+  stances: [cat, bear, direbear]              # ShapeshiftMask 145 -> core strips it when leaving Cat/Bear/Dire Bear
+  effects:
+  - { effect: 35, aura: 52, basePoints: 3, dieSides: 0, targetA: 1, radius: 12 }  # APPLY_AREA_AURA_PARTY, +3% weapon crit, 100yd
+  client:
+    name: Leader of the Pack
+    icon: 312
+    auraDescription: "Melee and ranged critical strike chance of nearby party members increased by 3%."
+    # no skillLine: triggered only (never learnable/trainable) — it must not appear as its own spellbook entry
+- id: 932504
+  name: Nature's Grace
+  template: 16886
+  durationIndex: 21           # -1 = persists until the next spell consumes it (as Nature's Swiftness)
+  procCharges: 1              # consumed by the next spell cast
+  effects:
+  - { effect: 6, aura: 107, basePoints: -500, dieSides: 0, misc: 10, targetA: 1,
+      maskA: 4294967295, maskB: 4294967295, maskC: 4294967295 }  # flat -0.5s cast-time SPELLMOD; ALL-ONES per-effect mask = every family-7 spell
+  client:
+    name: Nature's Grace
+    icon: 10
+    auraDescription: "Reduces the casting time of your next spell by 0.5 sec."
+- id: 932505
+  name: Nature's Grasp
+  template: 16689
+  attributes: 98304           # inherited 0x10000 + SPELL_ATTR0_ONLY_OUTDOORS(0x8000): Vanilla NG is outdoor-only (WotLK dropped the restriction)
+  powerCost: 50               # Vanilla rank-1 mana (WotLK stock 16689 is free)
+  procChance: 35              # Vanilla base (stock 16689 is 100%); Improved Nature's Grasp raises it
+  procCharges: 1              # Vanilla single charge (stock 16689 is 3)
+  effects:                    # replicate stock 16689's layout (Effect_1 empty, Effect_2 = the proc)
+  - { effect: 0, targetA: 0 }
+  - { effect: 6, aura: 42, basePoints: 0, dieSides: 0, targetA: 1, trigger: 19975 }  # PROC_TRIGGER -> Entangling Roots 19975 on attacker
+  client:
+    name: Nature's Grasp
+    icon: 168
+    description: "While active, any time an enemy strikes the caster they have a chance to become afflicted by Entangling Roots (Rank 1). Only useable outdoors. 1 charge. Lasts 45 sec."
+    auraDescription: "Any time an enemy strikes you they have a chance to become afflicted by Entangling Roots."
+    skillLine: 574            # Balance spellbook tab
+# 932507-511: Nature's Grasp ranks 2-6 (node 18701, FIX ROUND 2026-08-21 issue 1). R1 = 932505 is
+#   talent-granted; R2-R6 are TRAINER-taught (druid trainer.Id 33) behind a ReqAbility1 chain off 932505
+#   + a spell_ranks chain 932505->507->...->511 (SQL 2026_08_21_00_era_talent_druid_ng_trainer.sql). Each
+#   clones the matching stock rank (16810/16811/16812/16813/17329) so it inherits the correct
+#   EffectTriggerSpell_2 (Entangling Roots 19974/19973/19972/19971/19970), the 45s duration (DurationIndex
+#   22) + 1-min category cd, and the Nature's Grasp identity (A 1048576 + C 4096) so Improved Nature's
+#   Grasp (18702, op=procChance) binds every rank. Override ONLY procChance 35 + procCharges 1 (Vanilla)
+#   like R1. Stock NG (16689/16810/.../53312) is version-swapped in EraTalents.cpp (stripped in Vanilla,
+#   auto-granted by level in WotLK — its trainer rows are deleted globally). Levels R2-R6 = 18/28/38/48/58.
+- id: 932507
+  name: Nature's Grasp
+  template: 16810
+  attributes: 98304           # +SPELL_ATTR0_ONLY_OUTDOORS(0x8000): Vanilla NG is outdoor-only
+  powerCost: 65               # Vanilla rank-2 mana
+  procChance: 35
+  procCharges: 1
+  effects:
+  - { effect: 0, targetA: 0 }
+  - { effect: 6, aura: 42, basePoints: 0, dieSides: 0, targetA: 1, trigger: 19974 }  # PROC_TRIGGER -> Entangling Roots (Rank 2)
+  client:
+    name: Nature's Grasp
+    icon: 168
+    rank: 2
+    description: "While active, any time an enemy strikes the caster they have a chance to become afflicted by Entangling Roots (Rank 2). Only useable outdoors. 1 charge. Lasts 45 sec."
+    auraDescription: "Any time an enemy strikes you they have a chance to become afflicted by Entangling Roots."
+    skillLine: 574
+- id: 932508
+  name: Nature's Grasp
+  template: 16811
+  attributes: 98304           # +SPELL_ATTR0_ONLY_OUTDOORS(0x8000): Vanilla NG is outdoor-only
+  powerCost: 80               # Vanilla rank-3 mana
+  procChance: 35
+  procCharges: 1
+  effects:
+  - { effect: 0, targetA: 0 }
+  - { effect: 6, aura: 42, basePoints: 0, dieSides: 0, targetA: 1, trigger: 19973 }  # PROC_TRIGGER -> Entangling Roots (Rank 3)
+  client:
+    name: Nature's Grasp
+    icon: 168
+    rank: 3
+    description: "While active, any time an enemy strikes the caster they have a chance to become afflicted by Entangling Roots (Rank 3). Only useable outdoors. 1 charge. Lasts 45 sec."
+    auraDescription: "Any time an enemy strikes you they have a chance to become afflicted by Entangling Roots."
+    skillLine: 574
+- id: 932509
+  name: Nature's Grasp
+  template: 16812
+  attributes: 98304           # +SPELL_ATTR0_ONLY_OUTDOORS(0x8000): Vanilla NG is outdoor-only
+  powerCost: 95               # Vanilla rank-4 mana
+  procChance: 35
+  procCharges: 1
+  effects:
+  - { effect: 0, targetA: 0 }
+  - { effect: 6, aura: 42, basePoints: 0, dieSides: 0, targetA: 1, trigger: 19972 }  # PROC_TRIGGER -> Entangling Roots (Rank 4)
+  client:
+    name: Nature's Grasp
+    icon: 168
+    rank: 4
+    description: "While active, any time an enemy strikes the caster they have a chance to become afflicted by Entangling Roots (Rank 4). Only useable outdoors. 1 charge. Lasts 45 sec."
+    auraDescription: "Any time an enemy strikes you they have a chance to become afflicted by Entangling Roots."
+    skillLine: 574
+- id: 932510
+  name: Nature's Grasp
+  template: 16813
+  attributes: 98304           # +SPELL_ATTR0_ONLY_OUTDOORS(0x8000): Vanilla NG is outdoor-only
+  powerCost: 110              # Vanilla rank-5 mana
+  procChance: 35
+  procCharges: 1
+  effects:
+  - { effect: 0, targetA: 0 }
+  - { effect: 6, aura: 42, basePoints: 0, dieSides: 0, targetA: 1, trigger: 19971 }  # PROC_TRIGGER -> Entangling Roots (Rank 5)
+  client:
+    name: Nature's Grasp
+    icon: 168
+    rank: 5
+    description: "While active, any time an enemy strikes the caster they have a chance to become afflicted by Entangling Roots (Rank 5). Only useable outdoors. 1 charge. Lasts 45 sec."
+    auraDescription: "Any time an enemy strikes you they have a chance to become afflicted by Entangling Roots."
+    skillLine: 574
+- id: 932511
+  name: Nature's Grasp
+  template: 17329
+  attributes: 98304           # +SPELL_ATTR0_ONLY_OUTDOORS(0x8000): Vanilla NG is outdoor-only
+  powerCost: 125              # Vanilla rank-6 mana
+  procChance: 35
+  procCharges: 1
+  effects:
+  - { effect: 0, targetA: 0 }
+  - { effect: 6, aura: 42, basePoints: 0, dieSides: 0, targetA: 1, trigger: 19970 }  # PROC_TRIGGER -> Entangling Roots (Rank 6)
+  client:
+    name: Nature's Grasp
+    icon: 168
+    rank: 6
+    description: "While active, any time an enemy strikes the caster they have a chance to become afflicted by Entangling Roots (Rank 6). Only useable outdoors. 1 charge. Lasts 45 sec."
+    auraDescription: "Any time an enemy strikes you they have a chance to become afflicted by Entangling Roots."
+    skillLine: 574
+# 932512: Omen of Clarity castable Vanilla clone (node 18708, FIX ROUND 2026-08-21 issue 3). Clone of
+#   stock 16864 (WotLK hidden passive, Attributes 192 = PASSIVE|DO_NOT_DISPLAY, DurationIndex 0) reshaped
+#   to the 1.12 CASTABLE activated buff: Attributes 0 (a normal self-cast button), CastingTimeIndex 1
+#   (instant), DurationIndex 6 (=600000ms=10 min, confirmed via Dampen/Amplify Magic + Unending Breath
+#   dumps), ManaCost 120. Effect_1 = aura42 PROC_TRIGGER -> 16870 Clearcasting (unchanged from stock). The
+#   inherited ProcTypeMask 81924 (melee auto-attack + spellcasts) + ProcChance 100 drive the Clearcasting
+#   proc (auto-generated proc entry from the clone's DBC ProcFlags, same as NG 932505 — no spell_proc row
+#   needed). Stock 16864 stripped from a Vanilla druid in EraTalents.cpp. skillLine 574 (Balance tab, the
+#   node's tree tab).
+- id: 932512
+  name: Omen of Clarity
+  template: 16864
+  attributes: 0              # remove PASSIVE|DO_NOT_DISPLAY -> castable button (stock Vanilla was Mana 120 / instant)
+  castTimeIndex: 1           # instant
+  durationIndex: 6           # 600000 ms = 10 min
+  powerCost: 120             # 120 mana
+  manaCostPct: 0             # defensive: clones inherit ManaCostPct (16864's is already 0)
+  effects:
+  - { effect: 6, aura: 42, basePoints: 0, dieSides: 0, targetA: 1, trigger: 16870 }  # PROC_TRIGGER -> Clearcasting 16870
+  client:
+    name: Omen of Clarity
+    icon: 1754
+    description: "Imbues the Druid with natural energy. Each of the Druid's melee attacks has a chance of causing the caster to enter a Clearcasting state. The Clearcasting state reduces the Mana, Rage or Energy cost of your next damage or healing spell or offensive ability by 100%. Lasts 10 min."
+    auraDescription: "Each of your melee attacks has a chance to reduce the cost of your next spell or ability by 100%."
+    skillLine: 574
+# 932513: Enrage custom Vanilla clone (base ability, FIX ROUND 2026-08-21 issue 7). Version-swap (no talent
+#   gate — pure obtain swap like paladin Lay on Hands): granted by level (L12) in Vanilla / stock 5229
+#   granted by level in WotLK, both in EraTalents.cpp CLASS_DRUID block; stock 5229's trainer row is deleted
+#   globally. Clone of 5229 keeping castability, ShapeshiftMask 144 (bear|direbear), the Enrage identity
+#   (word-A bit19 524288) so Improved Enrage (18736, op=effect2) binds it, 1-min cd, rage cost 0, DurationIndex
+#   1 (10s), EffectAuraPeriod_1 1000 (inherited). Effects reshaped to 1.12: Effect_1 = 20 Rage over 10s
+#   (periodic energize, basePoints 20 = 2 rage/tick x 10 ticks), Effect_2 = ENERGIZE basePoints 0 (NO instant
+#   at base — present ONLY so Improved Enrage's SPELLMOD_EFFECT2 has a slot to add +5/+10 to), Effect_3 dropped.
+#   DIVERGENCE (documented): 1.12 5229 carried an Effect_2 aura-101 basePoints -76 that could NOT be
+#   confidently decoded (1.12 aura enum) as the Classic ~27%-base-armor drawback, so per the spec's guidance
+#   ("treat as none unless the dump clearly shows one") the armor penalty is OMITTED — a beneficial divergence.
+- id: 932513
+  name: Enrage
+  template: 5229
+  effects:
+  - { effect: 6, aura: 24, basePoints: 20, dieSides: 0, misc: 1, targetA: 1 }  # PERIODIC_ENERGIZE rage, 2 rage/tick x10s (period 1000 inherited) = 20 over 10s
+  - { effect: 30, aura: 0, basePoints: 0, dieSides: 0, misc: 1, targetA: 1 }   # ENERGIZE rage, base 0 (Improved Enrage op=effect2 adds +50/+100 = +5/+10 instant)
+  - { effect: 0, targetA: 0 }                                                   # drop the WotLK Effect_3 (aura 94, inert base 0) — no armor penalty
+  client:
+    name: Enrage
+    icon: 961
+    description: "Generates 20 Rage over 10 sec. Only usable in Bear Form and Dire Bear Form."
+    auraDescription: "Generating Rage."
+    skillLine: 134             # Feral Combat spellbook tab (stock Enrage 5229 is SkillLine 134)
+# ---- Insect Swarm Vanilla chain 932514-932518 (node 18738; final review deferred-gaps round 2026-09-07, G-51)
+# Clones of the stock rank ids (inherit family-7 word-A bit21 identity, 30 yd range, 12 s duration,
+# instant cast, Balance skill line). Effect 0 = aura 3 PERIODIC_DAMAGE every 2 s x6 (amplitude
+# written explicitly — the core's broken-dbc guard defaults 0 to 1000 ms), Effect 1 = aura 54
+# MOD_HIT_CHANCE -2. dieSides 0 -> value == basePoints. Mana = 1.12 tooltips (45/85/100/140/160).
+- id: 932514
+  name: Insect Swarm
+  template: 5570
+  powerCost: 45
+  manaCostPct: 0
+  effects:
+  - { effect: 6, aura: 3,  basePoints: 11, dieSides: 0, targetA: 6, amplitude: 2000 }   # 66 over 12 s
+  - { effect: 6, aura: 54, basePoints: -2, dieSides: 0, targetA: 6 }                    # -2% hit
+  client:
+    name: Insect Swarm
+    icon: 1771
+    rank: 1
+    description: "The enemy target is swarmed by insects, decreasing their chance to hit by $s2% and causing $o1 Nature damage over $d."
+    auraDescription: "Chance to hit reduced by $s2%. $s1 Nature damage every $t1 sec."
+    skillLine: 574
+- id: 932515
+  name: Insect Swarm
+  template: 24974
+  powerCost: 85
+  manaCostPct: 0
+  effects:
+  - { effect: 6, aura: 3,  basePoints: 23, dieSides: 0, targetA: 6, amplitude: 2000 }   # 138
+  - { effect: 6, aura: 54, basePoints: -2, dieSides: 0, targetA: 6 }
+  client:
+    name: Insect Swarm
+    icon: 1771
+    rank: 2
+    description: "The enemy target is swarmed by insects, decreasing their chance to hit by $s2% and causing $o1 Nature damage over $d."
+    auraDescription: "Chance to hit reduced by $s2%. $s1 Nature damage every $t1 sec."
+    skillLine: 574
+- id: 932516
+  name: Insect Swarm
+  template: 24975
+  powerCost: 100
+  manaCostPct: 0
+  effects:
+  - { effect: 6, aura: 3,  basePoints: 29, dieSides: 0, targetA: 6, amplitude: 2000 }   # 174
+  - { effect: 6, aura: 54, basePoints: -2, dieSides: 0, targetA: 6 }
+  client:
+    name: Insect Swarm
+    icon: 1771
+    rank: 3
+    description: "The enemy target is swarmed by insects, decreasing their chance to hit by $s2% and causing $o1 Nature damage over $d."
+    auraDescription: "Chance to hit reduced by $s2%. $s1 Nature damage every $t1 sec."
+    skillLine: 574
+- id: 932517
+  name: Insect Swarm
+  template: 24976
+  powerCost: 140
+  manaCostPct: 0
+  effects:
+  - { effect: 6, aura: 3,  basePoints: 44, dieSides: 0, targetA: 6, amplitude: 2000 }   # 264
+  - { effect: 6, aura: 54, basePoints: -2, dieSides: 0, targetA: 6 }
+  client:
+    name: Insect Swarm
+    icon: 1771
+    rank: 4
+    description: "The enemy target is swarmed by insects, decreasing their chance to hit by $s2% and causing $o1 Nature damage over $d."
+    auraDescription: "Chance to hit reduced by $s2%. $s1 Nature damage every $t1 sec."
+    skillLine: 574
+- id: 932518
+  name: Insect Swarm
+  template: 24977
+  powerCost: 160
+  manaCostPct: 0
+  effects:
+  - { effect: 6, aura: 3,  basePoints: 54, dieSides: 0, targetA: 6, amplitude: 2000 }   # 324
+  - { effect: 6, aura: 54, basePoints: -2, dieSides: 0, targetA: 6 }
+  client:
+    name: Insect Swarm
+    icon: 1771
+    rank: 5
+    description: "The enemy target is swarmed by insects, decreasing their chance to hit by $s2% and causing $o1 Nature damage over $d."
+    auraDescription: "Chance to hit reduced by $s2%. $s1 Nature damage every $t1 sec."
+    skillLine: 574
+_ref:
+  familyName: 7
+  skillLines:
+    balance: 574
+    feral: 134
+    restoration: 573
+  spells:
+    Wrath:
+      id: 5176
+      flagsA: 1
+      flagsB: 0
+      flagsC: 0
+    Starfire:
+      id: 2912
+      flagsA: 4
+      flagsB: 0
+      flagsC: 0
+    Moonfire:
+      id: 8921
+      flagsA: 2
+      flagsB: 0
+      flagsC: 0
+    Insect Swarm:
+      id: 5570
+      flagsA: 2097152
+      flagsB: 0
+      flagsC: 0
+    Hurricane:
+      id: 16914
+      flagsA: 4194304
+      flagsB: 0
+      flagsC: 0
+    Entangling Roots:
+      id: 339
+      flagsA: 512
+      flagsB: 0
+      flagsC: 0
+    Thorns:
+      id: 467
+      flagsA: 256
+      flagsB: 0
+      flagsC: 0
+    Faerie Fire:
+      id: 770
+      flagsA: 1024
+      flagsB: 0
+      flagsC: 0
+    Faerie Fire (Feral):
+      id: 16857
+      flagsA: 1024
+      flagsB: 0
+      flagsC: 0
+    Nature's Grasp:
+      id: 16689
+      flagsA: 1048576
+      flagsB: 0
+      flagsC: 4096
+    Moonkin Form:
+      id: 24858
+      flagsA: 0
+      flagsB: 8192
+      flagsC: 0
+    Innervate:
+      id: 29166
+      flagsA: 0
+      flagsB: 4096
+      flagsC: 0
+    Healing Touch:
+      id: 5185
+      flagsA: 32
+      flagsB: 0
+      flagsC: 0
+    Regrowth:
+      id: 8936
+      flagsA: 64
+      flagsB: 0
+      flagsC: 0
+    Rejuvenation:
+      id: 774
+      flagsA: 16
+      flagsB: 0
+      flagsC: 0
+    Tranquility:
+      id: 740
+      flagsA: 128
+      flagsB: 0
+      flagsC: 0
+    Mark of the Wild:
+      id: 1126
+      flagsA: 262144
+      flagsB: 0
+      flagsC: 0
+    Swiftmend:
+      id: 18562
+      flagsA: 0
+      flagsB: 2
+      flagsC: 0
+    Nature's Swiftness:
+      id: 17116
+      flagsA: 0
+      flagsB: 524288
+      flagsC: 0
+    Omen of Clarity:
+      id: 16864
+      flagsA: 0
+      flagsB: 2097152
+      flagsC: 0
+    Maul:
+      id: 6807
+      flagsA: 2048
+      flagsB: 0
+      flagsC: 0
+    Swipe (Bear):
+      id: 769
+      flagsA: 0
+      flagsB: 1048576
+      flagsC: 0
+    Swipe (Cat):
+      id: 62078
+      flagsA: 0
+      flagsB: 0
+      flagsC: 1024
+    Bash:
+      id: 5211
+      flagsA: 8192
+      flagsB: 0
+      flagsC: 0
+    Demoralizing Roar:
+      id: 99
+      flagsA: 8
+      flagsB: 0
+      flagsC: 0
+    Claw:
+      id: 1082
+      flagsA: 0
+      flagsB: 0
+      flagsC: 262144
+    Rake:
+      id: 1822
+      flagsA: 4096
+      flagsB: 0
+      flagsC: 0
+    Shred:
+      id: 5221
+      flagsA: 32768
+      flagsB: 0
+      flagsC: 0
+    Rip:
+      id: 1079
+      flagsA: 8388608
+      flagsB: 0
+      flagsC: 2097152
+    Ferocious Bite:
+      id: 22568
+      flagsA: 8388608
+      flagsB: 0
+      flagsC: 0
+    Pounce:
+      id: 9005
+      flagsA: 131072
+      flagsB: 0
+      flagsC: 0
+    Cower:
+      id: 8998
+      flagsA: 0
+      flagsB: 536870912
+      flagsC: 0
+    Tiger's Fury:
+      id: 5217
+      flagsA: 0
+      flagsB: 0
+      flagsC: 2048
+    Feral Charge - Bear:
+      id: 16979
+      flagsA: 0
+      flagsB: 1
+      flagsC: 16
+    Leader of the Pack:
+      id: 17007
+      flagsA: 0
+      flagsB: 0
+      flagsC: 0
+    Prowl:
+      id: 5215
+      flagsA: 16384
+      flagsB: 0
+      flagsC: 0
+    Enrage:
+      id: 5229
+      flagsA: 524288
+      flagsB: 0
+      flagsC: 0
+    Challenging Roar:
+      id: 5209
+      flagsA: 0
+      flagsB: 0
+      flagsC: 1
+    Cat Form:
+      id: 768
+      flagsA: 2147483648
+      flagsB: 0
+      flagsC: 0
+    Bear Form:
+      id: 5487
+      flagsA: 1073741824
+      flagsB: 0
+      flagsC: 0
+    Dire Bear Form:
+      id: 9634
+      flagsA: 1073741824
+      flagsB: 0
+      flagsC: 0
+    Travel Form:
+      id: 783
+      flagsA: 0
+      flagsB: 16384
+      flagsC: 0
+    Aquatic Form:
+      id: 1066
+      flagsA: 536870912
+      flagsB: 0
+      flagsC: 0
+    Vengeance (Balance passive):
+      id: 16909
+      flagsA: 0
+      flagsB: 0
+      flagsC: 0
+  nameCollisions:
+    swipe_bare_name_decoys:
+    - 27554
+    - 31279
+    - 53498
+    claw_bare_name_decoys:
+    - 24187
+    - 31289
+    - 51772
+    pounce_bare_name_decoy:
+    - 39449
+    shred_bare_name_decoy:
+    - 27555
+    claw_hunter_pet: 3009/3010/16827-16832/27049/52471/52472 = family=9 HUNTER PET Claw — different class, different ability
+      entirely.
+    cower_hunter_pet: 1742/1747-1751/1753-1756/16697/16698/24450/27048/27346 = family=9 HUNTER PET Cower — different class;
+      the real Feral Cower (8998, word B bit29) is adjacent but distinct from the pet's word B bit28.
+    prowl_hunter_pet: 24450/24452/24453 = family=9 HUNTER PET Prowl — different class.
+    swiftmend_hunter: 5375 = family=9 (HUNTER) — total name collision, unrelated ability.
+    natures_swiftness_shaman: 16188 = family=11 (SHAMAN) Nature's Swiftness — same tooltip shape, different class/id (17116
+      is the druid one).
+    entangling_roots_priest: 22800 = family=6 (PRIEST) — total name collision, unrelated ability.
+    bash_shaman: 58861 = family=11 (SHAMAN) — total name collision, unrelated ability.
+    feral_charge_bare_name: 39435 (family=4 WARRIOR) and 49377 (family=0, [talent][learn] — actually the WotLK Feral Charge
+      - CAT talent's learn-spell wrapper, id name happens to print bare 'Feral Charge') both resolve for the exact-name search
+      'Feral Charge'; NEITHER is the real Bear-Form talent (16979, named 'Feral Charge - Bear' in this DBC).
+  grants:
+    natures_swiftness:
+      1: 17116
+    omen_of_clarity:
+      1: 16864
+    swiftmend:
+      1: 18562
+    innervate:
+      1: 29166
+    vengeance:
+      1: 16909
+      2: 16910
+      3: 16911
+      4: 16912
+      5: 16913
+    sharpened_claws:
+      1: 16942
+      2: 16943
+      3: 16944
+    savage_fury:
+      1: 16998
+      2: 16999
+    furor:
+      1: 17056
+      2: 17058
+      3: 17059
+      4: 17060
+      5: 17061
+    feral_charge_bear:
+      1: 16979
+    gift_of_nature:
+      1: 17104
+      2: 24943
+      3: 24944
+      4: 24945
+      5: 24946
+  triggers:                # stock ids a data-proc/trigger node's granted passive casts (recorded for the
+                           # owning-tab Tasks 6-8; live-verified against the DBC + core scripts).
+    moonkin_form_aura: 24907   # Moonkin Form (24858) Effect_3 = TRIGGER_SPELL -> 24907 "Moonkin Aura" (confirmed via EffectTriggerSpell_3 dump). See survival.moonkin_aura for the WotLK-vs-Vanilla shape difference.
+    leader_of_the_pack_heal: 34299   # spell_dru_leader_of_the_pack (spell_druid.cpp:1400) casts this on a crit while in Cat/Bear/DireBear form (script bound to 24932, EFFECT_1 DUMMY, NOT the talent 17007 itself).
+    leader_of_the_pack_mana: 68285   # same script, mana-return branch (only when the aura's caster == target, i.e. self-buffed not another player's LotP).
+    natures_grace_cast_time_buff: { 1: 16886 }   # what ALL THREE ranks (16880/61345/61346) of Nature's Grace trigger on a qualifying crit (ProcChance 33/66/100%, ProcTypeMask 87376). 16886 = aura65 MOD_CASTING_SPEED_NOT_STACK, EffectSpellClassMaskA=16777831/maskB=1 (a specific NATURE-SCHOOL spell set: bits {0,1,2,5,6,9,24} in word A confirmed as Wrath/Moonfire/Starfire/Healing Touch/Regrowth/Entangling Roots + one unresolved word-A bit24 + one unresolved word-B bit0 — not fully enumerated in this pass).
+    # CORRECTED 2026-08-20 (Task 7 authoring loop, live DBC dump): these two labels were SWAPPED and
+    # the "both add combo points" claim was wrong. Re-verified with dump_spell_effects.py on the ids:
+    primal_fury_bear_rage_proc: { r1: 16958, r2: 16961 }    # ShapeshiftMask 144 = BEAR|DIRE BEAR; PROC_TRIGGER (50/100%, ProcFlags 87380, incl. auto-attack bit 0x4) -> 16959 = SPELL_EFFECT_ENERGIZE(30) misc 1 POWER_RAGE basePoints 49 = 5 Rage (rage x10). THIS IS Vanilla PRIMAL FURY (bear rage-on-crit), NOT a combo proc.
+    blood_frenzy_cat_combo_proc: { r1: 16952, r2: 16954 }   # ShapeshiftMask 1 = CAT; PROC_TRIGGER (50/100%, ProcFlags 87376, EXCLUDES auto-attack = abilities only) -> 16953 = SPELL_EFFECT_ADD_COMBO_POINTS(80) +1. THIS IS Vanilla BLOOD FRENZY (cat combo-on-crit). Task 7 GRANTS these two stock chains directly (see survival).
+
+  survival:                # THE PIVOTAL DELIVERABLE — per divergence target: does the Vanilla spell/
+                           # mechanic SURVIVE in this 3.3.5a store, in what form, and the initial Task
+                           # 6-9 disposition (grant | clone | script). Confirmed empirically against the
+                           # DBC + core scripts, NOT assumed. Uncertain calls marked `disposition: X?`.
+    moonkin_form:
+      survives: true
+      stock_ids: [24858]   # [talent], single rank
+      form: "Effect_1=6 aura36 MOD_SHAPESHIFT (misc31=FORM_MOONKIN) + Effect_2=6 aura77 MECHANIC_IMMUNITY (misc17, polymorph+movement-impair — matches skeleton tooltip verbatim) + Effect_3=64 TRIGGER_SPELL -> 24907 Moonkin Aura. ManaCostPct 22%. The FORM ITSELF (armor+immunity+DPS-caster-lock) is Vanilla-faithful."
+      disposition: grant   # grant 24858 for the form; the AURA it triggers is a separate divergence (below).
+    moonkin_aura:
+      survives: true
+      stock_ids: [24907]   # triggered automatically by 24858, not separately talent-learned
+      form: "Effect_1=65 AREA_AURA_RAID aura57 MOD_SPELL_CRIT_CHANCE +5% (basepoints4) + Effect_2=65 aura189 MOD_RATING. REWORKED vs Vanilla: Vanilla Moonkin Aura = +3% PARTY spell crit only (+the form's own armor bonus, which is a separate SpellShapeshiftForm.dbc field, unaffected); WotLK = +5% RAID-wide spell crit (broader radius/scope + higher %, per the design doc's expectation)."
+      disposition: clone?   # confirm in the Task 6 authoring loop — clone 24907 down to Vanilla's 3%/party-range shape, or accept the stronger WotLK aura as a minor buff (owner call).
+    natures_grace:
+      survives: true
+      stock_ids: [16880, 61345, 61346]   # [talent][passive], 3 ranks (WotLK expanded from Vanilla's 1 rank)
+      form: "aura42 PROC_TRIGGER_SPELL at 33/66/100% chance (ProcTypeMask 87376) -> 16886 (aura65 MOD_CASTING_SPEED_NOT_STACK, a %-cast-time-reduction buff SCOPED to a specific Nature-school spell set via EffectSpellClassMask, NOT all spells). REWORKED vs Vanilla: Vanilla = ANY spell critical (not Nature-restricted) triggers a flat -0.5s cast-time reduction on the caster's NEXT spell, single rank, no chance gate (100% on any crit). WotLK = Nature-spell-crit only, %-based reduction, 3 ranks with a chance gate."
+      disposition: clone   # Vanilla's flat -0.5s/any-spell/always-proc shape cannot be expressed by a straight grant of 16880's chain; clone required for fidelity.
+    leader_of_the_pack:
+      survives: true
+      stock_ids: [17007, 24932]   # 17007 = the [talent][passive] spellbook entry (EMPTY mask, ShapeshiftMask 0, inert on its own per the DBC); 24932 = the REAL applied/scripted spell (ShapeshiftMask 145 = Cat|Bear|DireBear), script-bound via spell_dru_leader_of_the_pack (spell_druid.cpp:1400)
+      form: "24932: Effect_1=65 AREA_AURA_RAID aura52 MOD_WEAPON_CRIT_PERCENT +5% (basepoints4) + Effect_2=65 aura4 DUMMY (script-bound proc, ProcTypeMask 4436/ProcChance100) -> casts 34299 (heal, 6s internal cd) and, if self-cast, 68285 (mana). REWORKED vs Vanilla: Vanilla Leader of the Pack = +3% PARTY crit chance ONLY, no heal, no mana, in Cat/Bear/Dire Bear form. WotLK ADDED the on-crit self-heal (% of max HP) + mana-return branch, and widened scope from party to raid-area-aura."
+      disposition: clone   # clone the aura down to Vanilla's crit%-only shape (drop the heal/mana proc) if strict fidelity wanted; else grant 17007/24932 as-is for a stronger WotLK-flavored talent (owner call, matches paladin-ref's holy_shield/blessing_of_sanctuary precedent of "clone or accept the buff").
+    heart_of_the_wild:
+      survives: true
+      stock_ids: [17003, 17004, 17005, 17006, 24894]   # [talent][passive], 5 ranks — RANK COUNT MATCHES Vanilla exactly
+      form: "Effect_1=6 aura137 MOD_TOTAL_STAT_PERCENTAGE misc3(=STAT_INTELLECT) +4/8/12/16/20% (basepoints 3/7/...) + Effect_2=3 SPELL_EFFECT_DUMMY (per-form Stamina-in-Bear / Strength-in-Cat split — NO druid AuraScript found in spell_druid.cpp for this id, so the per-form branch is core-generic/hardcoded elsewhere, not confirmed in this pass). Values (4/8/12/16/20% Int, matching skeleton) appear Vanilla-faithful on the Intellect component; the per-form stat component's exact mechanism was not traced to source in this task."
+      disposition: grant   # CONFIRMED 2026-08-20 (Task 7): GRANT 17003-17006/24894. +Int (icon 240) is exact. The per-form stat is NOT the DUMMY effect (that's inert) — the core shapeshift handler (SpellAuraEffects.cpp:1509) detects the icon-240 Int aura + form and casts 24899(bear stam)/24900(cat AP). It applies at the WotLK rate (Int%/2, AP not Str for cat) — a documented Task-10 baseline gap; Int% is fully Vanilla-faithful.
+    predatory_strikes:
+      survives: true
+      stock_ids: [16972, 16974, 16975]   # [talent][passive], 3 ranks — RANK COUNT MATCHES Vanilla exactly
+      form: "Effect_1/2=6 aura4 DUMMY (basepoints 49/6, 99/13, 149/19 across ranks) + Effect_3=6 aura109 ADD_TARGET_TRIGGER (basepoints -1->0). Script spell_dru_predatory_strikes (spell_druid.cpp:800) does nothing but call target->UpdateAttackPowerAndDamage() on apply/remove/amount-change — the actual AP-scaling FORMULA (level-based in Vanilla vs. AP-based-with-proc in WotLK, per the design doc's known-divergence note) lives in core Unit.cpp/Player.cpp, not in this DBC dump or the druid script file. The 3rd effect (aura109 ADD_TARGET_TRIGGER) has NO Vanilla analog and is not handled by the druid script — a WotLK-only addition."
+      disposition: clone   # CONFIRMED 2026-08-20 (Task 7): CLONE 16972/16974/16975 -> band 932500-502, keeping SpellIconID 1563. The core feral-AP formula (StatSystem.cpp:405-478) reads a DUMMY aura BY ICON 1563 at effect index 0 as the "% of level" mult — so a clone with ONLY effect-0 DUMMY (50/100/150) reproduces Vanilla's % of level EXACTLY, while dropping the WotLK effect-1 weapon-AP% and effect-2 aura-109 Ravage proc. No script.
+    vengeance:
+      survives: true
+      stock_ids: [16909, 16910, 16911, 16912, 16913]   # [talent][passive], 5 ranks
+      form: "aura108 ADD_PCT_MODIFIER (misc15 = SPELLMOD crit-damage-bonus type) on EffectSpellClassMaskA=7 (Wrath+Moonfire+Starfire). Values 20/40/60/80/100% (basepoints 19/39/59/79/99) — EXACT match to the skeleton's Vanilla tooltip, 5 ranks."
+      disposition: grant   # fully Vanilla-faithful, no divergence found.
+    furor:
+      survives: true
+      stock_ids: [17056, 17058, 17059, 17060, 17061]   # [talent][passive], 5 ranks
+      form: "aura4 DUMMY chance 20/40/60/80/100% (basepoints 19/39/59/79/99) to gain Rage(Bear/DireBear)/Energy(Cat) on shapeshift — EXACT match to skeleton tooltip percentages, 5 ranks. No druid AuraScript found (core-generic shapeshift-proc handling)."
+      disposition: grant   # fully Vanilla-faithful, no divergence found.
+    omen_of_clarity:
+      survives: true
+      stock_ids: [16864]   # [talent], single rank
+      form: "aura42 PROC_TRIGGER_SPELL Clearcasting — single rank both eras, matches skeleton tooltip exactly."
+      disposition: grant
+    innervate:
+      survives: true
+      stock_ids: [29166]
+      form: "aura24 PERIODIC_ENERGIZE, DurationIndex1, RecoveryTime 180000 (3-min cd) — baseline mana-regen active in BOTH Vanilla and WotLK, per the skeleton's own authored comment. CONFIRMED no divergence — Innervate is intentionally excluded from the talent-node list (baseline in both eras)."
+      disposition: grant   # (not even talent-gated; noted here only to close the loop the prompt explicitly asked to confirm)
+      trainer_baseline_both_eras: true
+    swiftmend:
+      survives: true
+      stock_ids: [18562]   # [talent], single rank
+      form: "Effect_1=10 HEAL, 15s cd, 16% mana, consumes a Rejuvenation/Regrowth. Matches the skeleton's own placeholder tooltip shape; single rank both eras (Restoration capstone since 1.11)."
+      disposition: grant
+    natures_swiftness:
+      survives: true
+      stock_ids: [17116]   # [talent], single rank; WARNING do not confuse with SHAMAN's 16188
+      form: "aura108 ADD_PCT_MODIFIER -100% cast time, 3-min cd — matches skeleton tooltip exactly, single rank both eras."
+      disposition: grant
+    feral_charge:
+      survives: true
+      stock_ids: [16979]   # "Feral Charge - Bear" — the exact-name "Feral Charge" search does NOT find this id (see nameCollisions)
+      form: "Effect_1=96 CHARGE + Effect_2/3=64 TRIGGER_SPELL, RecoveryTime 15000 (15s cd), ManaCost 50 (rage), RangeIndex 95 (8-25yd) — matches skeleton tooltip exactly (5 rage, 8-25yd, instant, 15s cd, Bear/Dire Bear only). Vanilla-faithful, single rank both eras. 'Feral Charge - Cat' (49376, a SEPARATE WotLK 3.1+ talent) must NOT be conflated with this."
+      disposition: grant
+    savage_fury:
+      survives: true
+      stock_ids: [16998, 16999]   # [talent][passive], 2 ranks
+      form: "aura108 ADD_PCT_MODIFIER +10/+20% (basepoints9/19) on Maul/Swipe(Bear)/Claw/Rake (per EffectSpellClassMask, not independently re-verified per-rank in this pass but rank-1 shape confirmed). Matches skeleton exactly (10%/20%, 2 ranks)."
+      disposition: grant
+    sharpened_claws:
+      survives: true
+      stock_ids: [16942, 16943, 16944]   # [talent][passive], 3 ranks
+      form: "aura52 MOD_WEAPON_CRIT_PERCENT +2/4/6% (basepoints1/3/5) — EXACT match to skeleton (2/4/6%, 3 ranks)."
+      disposition: grant
+    primal_fury:
+      # CORRECTED 2026-08-20 (Task 7 authoring loop, live DBC dump). PRE-CORRECTION MISLABEL: the
+      # original entry read `disposition: script?`, `stock_ids: [37116, 37117]`, and claimed WotLK
+      # merged Primal Fury + Blood Frenzy into a single inseparable combo-point talent. That was wrong
+      # — the two Vanilla mechanics survive as SEPARATE, cleanly-form-gated stock spells (the earlier
+      # note had the two proc trigger-spells swapped). Vanilla split: Primal Fury = Bear/Dire-Bear
+      # rage-on-crit via 16958/16961 -> 16959 (SPELL_EFFECT_ENERGIZE, 5 Rage); Blood Frenzy = Cat
+      # combo-on-crit via 16952/16954 -> 16953 (SPELL_EFFECT_ADD_COMBO_POINTS). See blood_frenzy below.
+      survives: true
+      stock_ids: [16958, 16961]   # Primal Fury R1/R2. ShapeshiftMask 144 (Bear|Dire Bear); auto-proc from DBC ProcFlags 87380 (incl. auto-attack); -> 16959 ENERGIZE misc 1 POWER_RAGE basePoints 49 = 5 Rage (rage x10). ProcChance 50/100%.
+      form: "Vanilla Primal Fury = Bear/Dire-Bear-Form rage-on-crit. 16958 (R1, 50%) / 16961 (R2, 100%) carry ShapeshiftMask 144 (Bear|Dire Bear) and PROC_TRIGGER_SPELL -> 16959 = SPELL_EFFECT_ENERGIZE(30) misc 1 (POWER_RAGE) basePoints 49 = 5 Rage (rage stored x10). ProcFlags 87380 INCLUDE melee auto-attack crits, matching Vanilla's 'any critical strike'. These are the same stock spells WotLK's merged talent 37116/37117 learns, but they remain distinct spells with their own form gating, so the era GRANTS them directly."
+      disposition: grant   # 16958/16961 — see vanilla/druid.yaml node 18727. NO script, NO clone.
+    blood_frenzy:
+      # CORRECTED 2026-08-20 (Task 7 authoring loop, live DBC dump). PRE-CORRECTION MISLABEL: the
+      # original entry read `disposition: script?` and treated the druid mechanic as an inseparable
+      # byproduct of the WotLK merge. In fact the druid Cat combo-on-crit survives cleanly as stock
+      # 16952/16954. (The [talent][passive]-TAGGED ids NAMED 'Blood Frenzy' in this DBC — 29836/29859
+      # — are the unrelated family-4 WARRIOR talent; that cross-class name-collision note still holds.)
+      survives: true
+      stock_ids: [16952, 16954]   # Blood Frenzy R1/R2 (druid, family=7). ShapeshiftMask 1 (Cat); auto-proc from DBC ProcFlags 87376 (EXCLUDES auto-attack = abilities only); -> 16953 SPELL_EFFECT_ADD_COMBO_POINTS +1. ProcChance 50/100%.
+      form: "Vanilla Blood Frenzy = Cat-Form combo-point-on-crit. 16952 (R1, 50%) / 16954 (R2, 100%) carry ShapeshiftMask 1 (Cat) and PROC_TRIGGER_SPELL -> 16953 = SPELL_EFFECT_ADD_COMBO_POINTS(80) +1 combo point. ProcFlags 87376 EXCLUDE melee auto-attack, matching Vanilla's 'abilities that add combo points'. The DBC ids literally NAMED 'Blood Frenzy' (29836/29859) are the unrelated family-4 WARRIOR talent (WotLK reassigned the name); the druid mechanic lives on 16952/16954 as above."
+      disposition: grant   # 16952/16954 — see vanilla/druid.yaml node 18726. NO script, NO clone.
+    gift_of_nature:
+      survives: true
+      stock_ids: [17104, 24943, 24944, 24945, 24946]   # [talent][passive], 5 ranks
+      form: "aura108 ADD_PCT_MODIFIER +2/4/6/8/10% (basepoints1/...) SCOPED to EffectSpellClassMaskA=224 (Healing Touch+Regrowth+Tranquility) + maskB=80 (2 unresolved word-B heal-identity bits, not traced in this pass). Rejuvenation's own identity bit (word A bit4=16) is NOT present in maskA224 — i.e. this WotLK spellmod does NOT reach Rejuvenation directly by full-identity binding."
+      disposition: grant?   # percentages match Vanilla (2/4/6/8/10%) but the SCOPE may under-cover Vanilla's 'all healing spells' if Rejuvenation/Swiftmend must be included — confirm scope in Task 9 before treating this as a clean grant; may need an affectsMask addition rather than a bare grant.
+
+  renamed: {}

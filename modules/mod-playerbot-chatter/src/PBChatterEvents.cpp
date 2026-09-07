@@ -28,8 +28,10 @@ namespace
 
     bool IsBot(Player* p)
     {
+        // upstream 17214b3 renamed PlayerbotAI::IsRealPlayer() (which meant "selfbot") to the
+        // free IsSelfBot(Player*); the free IsRealPlayer(Player*) now means "no bot AI at all".
         PlayerbotAI* ai = GET_PLAYERBOT_AI(p);
-        return ai && !ai->IsRealPlayer();
+        return ai && !IsSelfBot(p);
     }
 
     void Stamp(Player* p, std::string hint)

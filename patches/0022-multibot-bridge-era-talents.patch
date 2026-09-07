@@ -1,0 +1,38 @@
+diff --git a/modules/mod-multibot-bridge/src/MultiBotBridge.cpp b/modules/mod-multibot-bridge/src/MultiBotBridge.cpp
+index fe517ec..b6ba50c 100644
+--- a/modules/mod-multibot-bridge/src/MultiBotBridge.cpp
++++ b/modules/mod-multibot-bridge/src/MultiBotBridge.cpp
+@@ -50,6 +50,11 @@
+ #include <utility>
+ #include <vector>
+ 
++// mod-era-talents spec-tab bridge (same extern idiom as fork patch 0020). MUST be declared at
++// GLOBAL scope: inside the anonymous namespace below it would get internal linkage and fail to
++// link against the module's definition.
++extern bool EraTalentBots_SpecTabs(Player* bot, uint32* tabs3);
++
+ namespace
+ {
+ char const* const kAddonPrefix = "MBOT";
+@@ -792,6 +797,21 @@ std::array<uint32, 3> BuildTalentTabPoints(Player* bot)
+     if (!bot)
+         return tabs;
+ 
++    // mod-era-talents: an era-managed character's build lives in era_character_talent — the
++    // NATIVE talent map walked below is stripped for them, so DETAILS reported 0~0~0 and the
++    // BotGrid addon showed every era bot as "Unknown" spec. The module bridge (extern-declared
++    // at global scope above) reports the era build's per-tab points (era tab keys match the
++    // client tab order); it returns false for native characters, unmanaged bands, or when the
++    // module is off — the native walk below then runs unchanged.
++    uint32 eraTabs[3] = {0, 0, 0};
++    if (EraTalentBots_SpecTabs(bot, eraTabs))
++    {
++        tabs[0] = eraTabs[0];
++        tabs[1] = eraTabs[1];
++        tabs[2] = eraTabs[2];
++        return tabs;
++    }
++
+     uint8 const activeSpecMask = bot->GetActiveSpecMask();
+ 
+     for (PlayerTalentMap::const_iterator it = bot->GetTalentMap().begin(); it != bot->GetTalentMap().end(); ++it)

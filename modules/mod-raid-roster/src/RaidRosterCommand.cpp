@@ -4,16 +4,19 @@
 #include "RaidRosterStore.h"
 #include "RaidRosterGear.h"
 #include "Chat.h"
+#include "StringFormat.h"   // Acore::StringFormat for the login era-band suffix
 #include "CommandScript.h"
 #include "RBAC.h"
 #include "Player.h"
 #include "PlayerbotMgr.h"
+#include "RaidRosterEra.h"           // era-sync shim (isolates mod-individual-progression's headers)
 #include "Playerbots.h"
 #include "RandomPlayerbotMgr.h"
 #include "Mgr/Guild/PlayerbotGuildMgr.h"
 #include "ObjectAccessor.h"
 #include "CharacterCache.h"
 #include "PlayerbotFactory.h"
+#include "EraTalentBots.h"   // era-managed bots get era builds at sync (mod-era-talents)
 #include "PlayerbotAI.h"
 #include "PlayerbotAIConfig.h"
 #include "InstanceSaveMgr.h"
@@ -23,6 +26,8 @@
 #include "SharedDefines.h"
 #include "Containers.h"
 #include <set>
+#include <array>
+#include <utility>
 #include <unordered_set>
 #include <vector>
 #include <map>
@@ -61,10 +66,32 @@ bool RaidRosterCommand::HandleCreate(ChatHandler* handler)
     if (!master) { handler->SendSysMessage("Run this in-world as a player."); return true; }
 
     uint32 owner = master->GetGUID().GetCounter();
-    if (RaidRosterStore::Exists(owner))
-    { handler->SendSysMessage("You already have a roster. Use .raidroster remove confirm first."); return true; }
-
     bool isAlliance = (master->GetTeamId(true) == TEAM_ALLIANCE);
+
+    // `create` is an idempotent TOP-UP. It pins bots only for comp slots this owner lacks (all 44
+    // for a fresh roster; the 4 era substitutes for a roster created before them) and re-bands
+    // existing rows whose stored band drifted from the comp (pre-substitute rosters store band 0
+    // for their Death Knight slots). Stored rows map to RAID_COMP by slot_index, which is why
+    // slots 0-39 of the comp must never be reordered.
+    std::vector<RaidRosterRow> existing = RaidRosterStore::Load(owner);
+    std::array<bool, RAID_COMP.size()> have{};
+    std::vector<std::pair<uint8, uint8>> reband;   // (slot, comp band)
+    for (RaidRosterRow const& r : existing)
+    {
+        if (r.slot >= RAID_COMP.size()) continue;   // slot from a larger past comp: leave it alone
+        have[r.slot] = true;
+        if (r.band != RAID_COMP[r.slot].band) reband.emplace_back(r.slot, RAID_COMP[r.slot].band);
+    }
+    std::vector<uint8> missing;
+    for (uint8 i = 0; i < static_cast<uint8>(RAID_COMP.size()); ++i)
+        if (!have[i]) missing.push_back(i);
+
+    if (missing.empty() && reband.empty())
+    {
+        handler->PSendSysMessage("Roster is complete ({} slots). Use .raidroster login [5|10|25|40] then .raidroster sync.",
+            (uint32)RAID_COMP.size());
+        return true;
+    }
 
     // Load every GUID already in any roster so we don't double-pin (would hit uk_bot).
     std::unordered_set<uint32> pinned = RaidRosterStore::AllPinnedBots();
@@ -84,10 +111,12 @@ bool RaidRosterCommand::HandleCreate(ChatHandler* handler)
             do { pinned.insert(r->Fetch()[0].Get<uint32>()); } while (r->NextRow());
     }
 
-    // Take a working copy of the addclass pools per class so we can pop chosen GUIDs.
+    // Take a working copy of the addclass pools per class (only the classes we still need) so we
+    // can pop chosen GUIDs.
     std::map<uint8, std::vector<ObjectGuid>> avail;
-    for (RaidCompSlot const& slot : RAID_COMP)
+    for (uint8 i : missing)
     {
+        RaidCompSlot const& slot = RAID_COMP[i];
         if (avail.count(slot.cls)) continue;
         uint8 key = RandomPlayerbotMgr::GetTeamClassIdx(isAlliance, slot.cls);
         std::unordered_set<ObjectGuid> const& pool = sRandomPlayerbotMgr.addclassCache[key];
@@ -106,8 +135,8 @@ bool RaidRosterCommand::HandleCreate(ChatHandler* handler)
     }
 
     std::vector<RaidRosterRow> rows;
-    rows.reserve(RAID_COMP.size());
-    for (uint8 i = 0; i < static_cast<uint8>(RAID_COMP.size()); ++i)
+    rows.reserve(missing.size());
+    for (uint8 i : missing)
     {
         RaidCompSlot const& slot = RAID_COMP[i];
         std::vector<ObjectGuid>& v = avail[slot.cls];
@@ -116,18 +145,29 @@ bool RaidRosterCommand::HandleCreate(ChatHandler* handler)
             handler->PSendSysMessage("Not enough addclass characters of class {} ({} faction). "
                 "Raise AiPlayerbot.AddClassAccountPoolSize and restart.", uint32(slot.cls),
                 isAlliance ? "Alliance" : "Horde");
-            return true; // nothing persisted yet
+            return true; // nothing persisted yet (existing rows untouched)
         }
         ObjectGuid g = v.back(); v.pop_back();
         RaidRosterRow row;
         row.botGuid = g.GetCounter();
-        row.cls = slot.cls; row.role = slot.role; row.specTab = slot.specTab; row.slot = i;
+        row.cls = slot.cls; row.role = slot.role; row.specTab = slot.specTab; row.slot = i; row.band = slot.band;
         rows.push_back(row);
     }
 
-    RaidRosterStore::Replace(owner, rows);
-    handler->PSendSysMessage("Created roster of {} bots (4 tank / 9 heal / 27 dps). "
-        "Use .raidroster login [5|10|25|40] then .raidroster sync.", (uint32)rows.size());
+    if (existing.empty())
+    {
+        RaidRosterStore::Replace(owner, rows);
+        handler->PSendSysMessage("Created roster of {} bots (4 tank / 9 heal / 27 dps in every era: 4 Death Knight "
+            "slots active at level {}+, 4 substitutes below). Use .raidroster login [5|10|25|40] then .raidroster sync.",
+            (uint32)rows.size(), (uint32)kWotlkBandMinLevel);
+    }
+    else
+    {
+        RaidRosterStore::Append(owner, rows);         // no-op on empty
+        RaidRosterStore::UpdateBands(owner, reband);  // no-op on empty
+        handler->PSendSysMessage("Roster topped up: added {} slot(s), re-banded {} existing slot(s). "
+            "Run .raidroster login to apply.", (uint32)rows.size(), (uint32)reband.size());
+    }
     return true;
 }
 
@@ -163,10 +203,20 @@ bool RaidRosterCommand::HandleLogin(ChatHandler* handler, Optional<uint32> sizeA
     std::vector<RaidRosterRow> rows = RaidRosterStore::Load(owner);
     if (rows.empty()) { handler->SendSysMessage("No roster. Use .raidroster create."); return true; }
 
-    // Roster capacity per role (caps how many of each we can actually field).
+    // Era gate: a slot is eligible only in its band for the MASTER's level (bots are levelled to
+    // the master at sync, so this is the bots' era band too). Below kWotlkBandMinLevel the 4
+    // Death Knight slots are benched and the 4 substitutes are eligible; at/above it the reverse.
+    uint8 const masterLevel = master->GetLevel();
+    bool const wotlkBand = masterLevel >= kWotlkBandMinLevel;
+    auto eligible = [masterLevel](RaidRosterRow const& r) { return RaidCompEligible(r.band, masterLevel); };
+
+    // Roster capacity per role (caps how many of each we can actually field) — eligible rows only.
     uint8 availT = 0, availH = 0, availD = 0;
     for (RaidRosterRow const& r : rows)
-    { if (r.role == 0) ++availT; else if (r.role == 1) ++availH; else ++availD; }
+    {
+        if (!eligible(r)) continue;
+        if (r.role == 0) ++availT; else if (r.role == 1) ++availH; else ++availD;
+    }
 
     // Bot sub-comp for this size; then let the player take their slot: drop one bot of the
     // player's role and backfill the freed slot (prefer dps, then heal, then tank) within roster
@@ -198,7 +248,7 @@ bool RaidRosterCommand::HandleLogin(ChatHandler* handler, Optional<uint32> sizeA
         std::vector<RaidRosterRow> online, offline;
         for (RaidRosterRow const& r : rows)
         {
-            if (r.role != role) continue;
+            if (r.role != role || !eligible(r)) continue;
             ObjectGuid g = ObjectGuid::Create<HighGuid::Player>(r.botGuid);
             (mgr->GetPlayerBot(g) ? online : offline).push_back(r);
         }
@@ -241,8 +291,10 @@ bool RaidRosterCommand::HandleLogin(ChatHandler* handler, Optional<uint32> sizeA
     // `size` is the raid size incl. you; you fill one slot, bots fill the rest.
     char const* roleName = playerRole == 0 ? "TANK" : (playerRole == 1 ? "HEALER" : "DPS");
     handler->PSendSysMessage("Raid {} — you fill the {} slot; {} bots ({} tank / {} heal / {} dps): "
-        "{} online now, dismissed {}. (Bots load async; re-check or see .raidroster status.)",
-        size, roleName, (uint32)want.size(), (uint32)botT, (uint32)botH, (uint32)botD, online, dismissed);
+        "{} online now, dismissed {}. Death Knights {} (Bots load async; re-check or see .raidroster status.)",
+        size, roleName, (uint32)want.size(), (uint32)botT, (uint32)botH, (uint32)botD, online, dismissed,
+        wotlkBand ? Acore::StringFormat("active (level {}+).", (uint32)kWotlkBandMinLevel)
+                  : Acore::StringFormat("benched (below level {}; substitutes active).", (uint32)kWotlkBandMinLevel));
     return true;
 }
 
@@ -256,8 +308,12 @@ static void SyncBotToSpec(Player* master, Player* bot, int specTab)
     //    kept purely for the non-gear work.
     PlayerbotFactory factory(bot, master->GetLevel(), ITEM_QUALITY_LEGENDARY, 0);
     factory.Randomize(false);
-    // 2) Force the target talent spec (0-based tab).
-    PlayerbotFactory::InitTalentsBySpecNo(bot, specTab, true);
+    // 2) Force the target talent spec (0-based tab). A bot in a managed era band (levelled
+    //    to the master in step 1, so BotEra == the master's band) gets an ERA build instead
+    //    of the WotLK template; FactoryReconcile also tears down stale era rows on the way
+    //    OUT of a band. Inert (returns false) unless EraTalents.BotTalents=1.
+    if (!EraTalentBots::FactoryReconcile(bot, specTab))
+        PlayerbotFactory::InitTalentsBySpecNo(bot, specTab, true);
     // 3) Re-derive tank/heal/dps strategies from the new spec.
     if (PlayerbotAI* ai = GET_PLAYERBOT_AI(bot)) ai->ResetStrategies(false);
     // 4) Deterministic set-aware re-gear for the forced spec (replaces the old
@@ -283,6 +339,9 @@ static void SyncBotToSpec(Player* master, Player* bot, int specTab)
         if (!bot->IsQuestRewarded(dkQuest))
             bot->SetRewardedQuest(dkQuest);
     }
+
+    // 7) Match the bot's IP era to the master's so grouped raids run at the master's tier.
+    RaidRosterEra::SyncBotToMaster(master, bot);
 }
 
 // Canonical spec tab for a class filling a role (0=tank, 1=heal, 2=dps), matching the
@@ -530,11 +589,17 @@ bool RaidRosterCommand::HandleStatus(ChatHandler* handler)
     std::vector<RaidRosterRow> rows = RaidRosterStore::Load(owner);
     if (rows.empty()) { handler->SendSysMessage("No roster. Use .raidroster create."); return true; }
 
-    uint32 tanks = 0, heals = 0, dps = 0, online = 0, stale = 0;
+    uint8 const masterLevel = master->GetLevel();
+    bool const wotlkBand = masterLevel >= kWotlkBandMinLevel;
+    uint32 tanks = 0, heals = 0, dps = 0, benched = 0, online = 0, stale = 0, misbanded = 0;
     PlayerbotMgr* mgr = GET_PLAYERBOT_MGR(master);
     for (RaidRosterRow const& row : rows)
     {
-        if (row.role == 0) ++tanks; else if (row.role == 1) ++heals; else ++dps;
+        if (RaidCompEligible(row.band, masterLevel))
+        { if (row.role == 0) ++tanks; else if (row.role == 1) ++heals; else ++dps; }
+        else
+            ++benched;
+        if (row.slot < RAID_COMP.size() && row.band != RAID_COMP[row.slot].band) ++misbanded;
         ObjectGuid bg = ObjectGuid::Create<HighGuid::Player>(row.botGuid);
         if (mgr && mgr->GetPlayerBot(bg)) ++online;
         // Stale: character deleted or no longer in the addclass pool.
@@ -542,8 +607,13 @@ bool RaidRosterCommand::HandleStatus(ChatHandler* handler)
             !sRandomPlayerbotMgr.IsAddclassBot(row.botGuid))
             ++stale;
     }
-    handler->PSendSysMessage("Roster: {} bots ({} tank / {} heal / {} dps), {} online.",
-        (uint32)rows.size(), tanks, heals, dps, online);
+    handler->PSendSysMessage("Roster: {} bots; eligible at level {}: {} ({} tank / {} heal / {} dps), benched: {} [{}]; {} online.",
+        (uint32)rows.size(), (uint32)masterLevel, tanks + heals + dps, tanks, heals, dps, benched,
+        wotlkBand ? "substitutes" : "Death Knights", online);
+    uint32 const missingSlots = rows.size() < RAID_COMP.size() ? (uint32)(RAID_COMP.size() - rows.size()) : 0;
+    if (missingSlots || misbanded)
+        handler->PSendSysMessage("WARNING: roster predates the era substitutes ({} slot(s) missing, {} mis-banded). "
+            "Run .raidroster create to top it up.", missingSlots, misbanded);
     if (stale)
         handler->PSendSysMessage("WARNING: {} roster slot(s) are stale (character deleted or left "
             "the addclass pool). Run .raidroster remove confirm then .raidroster create.", stale);

@@ -7,7 +7,8 @@ set of scripts and docs that clone, build, configure, tune, and operate
 [playerbots fork](https://github.com/mod-playerbots/azerothcore-wotlk)) and a curated set of
 community modules in Docker. On top of that orchestration it adds **several custom mods of its
 own** — AI bot chat, a lore Q&A sidecar, a persistent raid roster, rated-arena support,
-bot-driven Wintergrasp, an AH price tool, scripted raid-boss AI, and a web registration site.
+bot-driven Wintergrasp, era-authentic Vanilla/TBC talent trees for the Individual Progression
+era system, an AH price tool, scripted raid-boss AI, and a web registration site.
 
 The goal is to take you from a bare Linux or Windows host to a populated, self-running world with a
 single `./setup.sh`, then keep it running with plain `start` / `stop` / `update` / `backup`
@@ -63,6 +64,14 @@ this repo.
   that show the buy-value range the AH bot buyer will pay for an item, so you can price your
   listings to actually sell. Off by default (`AHPRICE_ENABLE`). See
   [Auction house economy](#auction-house-economy-ahbot--optional).
+- **Per-character expansion progression** via
+  [mod-individual-progression](https://github.com/ZhengPeiRu21/mod-individual-progression):
+  every character starts in Vanilla and earns its way into TBC and WotLK on one realm, with the
+  world, level cap, and gear scaled to its era. On by default (`IP_ENABLE`).
+- **Era talents** (`mod-era-talents`): the missing piece of that progression — real Vanilla and TBC
+  talent trees (all nine original classes) for characters in those eras, with the talents actually
+  doing what their tooltips say, era-correct spellbooks, and WotLK-only glyphs. On by default with
+  IP (`ERATALENTS_ENABLE`). See [Era talents](#era-talents-mod-era-talents).
 
 ## Requirements
 - **A host to run the server on**, with Docker + Docker Compose. Either:
@@ -248,7 +257,7 @@ A small Go service so friends can self-register accounts and download the client
 
 ## Using bots in-game
 - **Roaming bots** log in automatically — you'll see them questing around the world.
-  They're spread across level brackets (via `mod-player-bot-level-brackets`) so low and
+  They're spread across level brackets (via mod-playerbots' built-in level-bracket balancer) so low and
   high zones both feel populated.
 - **Party bots:** whisper or use chat commands to add bots to your group, e.g.
   `.playerbots bot add <name>` / invite then accept; full command list:
@@ -261,8 +270,9 @@ guilds — rather than just running around. All of this is tunable in
 `azerothcore-wotlk/env/dist/etc/modules/playerbots.conf`.
 
 **Leveling.** Random bots span levels 1–80 and gain XP from questing/grinding. The
-`mod-player-bot-level-brackets` module spreads the population across level ranges so every
-zone stays populated (the system also balances the distribution, so you won't end up with
+level-bracket balancer built into mod-playerbots (`AiPlayerbot.LevelBrackets.*`, formerly the
+separate mod-player-bot-level-brackets module, now merged upstream) spreads the population across
+level ranges so every zone stays populated (the system also balances the distribution, so you won't end up with
 1000 max-level bots). Relevant keys: `AiPlayerbot.RandomBotMinLevel` / `RandomBotMaxLevel`,
 `AiPlayerbot.RandomBotXPRate` (multiplies your server XP rate for bots).
 
@@ -338,6 +348,9 @@ This repo also **authors its own client addons** (under `client-addons-src/`, st
 - **AHPrice** — the client half of the AH price lookup (see
   [Auction house economy](#auction-house-economy-ahbot--optional)).
 - **DarkmoonFaire** — a small minimap tracker for the (continuously-rotating) Darkmoon Faire.
+- **EraTalents** — the talent window for Vanilla/TBC-era characters (see
+  [Era talents](#era-talents-mod-era-talents)). Required when era talents are enabled — it is
+  the only way to spend talent points in those eras.
 
 Other community addons you may want (not auto-installed): **DBM** (boss-fight warnings)
 and **CompactRaidFrame-3.3.5** (raid frames) for raiding with bot groups.
@@ -781,6 +794,57 @@ Under the hood the arena AI (team-shared kill target, rating-banded aggression, 
 use that works while crowd-controlled) ships as tracked fork patch `patches/0005`, applied
 automatically by `setup.sh`/`update.sh`.
 
+## Era talents (mod-era-talents)
+
+A custom local module (in `modules/mod-era-talents/`, compiled into the build by `setup.sh`) that
+gives **era-authentic talent trees** to characters progressing through the expansions: while a
+character is in the Vanilla or TBC era, the stock WotLK talent window is fenced off and replaced by
+that era's real trees for its class — and the talents actually do what their tooltips say.
+
+**The mod it extends.** This server runs
+[mod-individual-progression](https://github.com/ZhengPeiRu21/mod-individual-progression) (IP),
+which gives every character its **own expansion timeline on a single WotLK realm**: a new character
+starts in Vanilla (level cap 60, Vanilla dungeons and raids, era-scaled gear and difficulty),
+unlocks TBC after clearing Naxxramas and WotLK after Sunwell, and sees the world phased to its era.
+It's on by default (`IP_ENABLE=1`; the `IP_*` block in `.env` mirrors its options). What IP does
+**not** touch is the talent system: a "Vanilla" character still gets WotLK's 71-point trees, WotLK
+talents, and glyphs. Era talents is an enhancement that closes that gap — it depends on IP for a
+character's era (`setup.sh` forces it off if IP is disabled) and never edits IP itself.
+
+**What you get:**
+- **Era trees for all nine original classes, in both Vanilla (51 points) and TBC (61 points)**,
+  authored from each era's own data. WotLK-era characters and Death Knights keep the stock trees.
+- **Correct talents, not cosmetic ones.** Where WotLK kept a talent's behaviour and numbers, the
+  stock passive is reused; where WotLK retuned or removed it, the mod ships its own server-side
+  version — restored abilities (the Vanilla seal/judgement system, Bloodthirst, Conflagrate, the
+  Vanilla Vampiric Embrace, TBC Mangle, the full Vanilla/TBC totem set, …), procs, and per-rank
+  passives: about 3,600 custom spell rows in a reserved id band. Stock spells are never modified,
+  so WotLK-era characters on the same realm are unaffected. **See
+  [Era talents — class by class](docs/era-talents-classes.md)** for what each class gets.
+- **Era-correct spellbooks and glyphs.** WotLK-only talents and their spells are stripped in
+  earlier eras, and glyphs are WotLK-only (`ERATALENTS_GLYPHGATE`; Death Knights exempt).
+- **Real expansion transitions.** Crossing into TBC or WotLK wipes talents for a full respec into
+  the new trees. Because of that, advancing is a **player choice**: when eligible, Anduin Wrynn
+  (Alliance) / Thrall (Horde) offer "Progress to the next expansion" with a confirm popup
+  (`IP_MANUAL_ERA_ADVANCE=1`, default). Respecs go through the class trainer as usual (gold charged).
+- **Bots too (optional).** With `ERATALENTS_BOTS=1`, bots in the Vanilla (1–60) and TBC (61–70)
+  level bands spend authored era builds for their spec, the bot AI uses the era versions of its
+  spells, and their consumables/glyphs are era-gated. Default 0 (bots keep stock WotLK talents).
+
+**Client side (each player's PC)** — two pieces, both staged into `client-addons/` by
+`./fetch-client-addons.sh`:
+- the **EraTalents addon** (required — it *is* the talent window in Vanilla/TBC; the normal talent
+  button/key opens it), installed like any addon;
+- **`patch-V.mpq`** (IP's own client data patch with this mod's custom buff/debuff rows merged in) —
+  copy it to `World of Warcraft/Data/`. Without it, custom debuffs still work but show no icon; the
+  addon warns in chat if a player's copy is from a stale generation.
+
+**Enable / tune** (`.env`, then re-run `./setup.sh`): `ERATALENTS_ENABLE` (default 1, requires
+`IP_ENABLE=1`), `ERATALENTS_BOTS`, `ERATALENTS_GLYPHGATE`, `ERATALENTS_DEBUG`,
+`IP_MANUAL_ERA_ADVANCE`. GM/console commands: `.eratalents status|doctor|reset|learn <char>` —
+`doctor` is the first stop for any "this talent doesn't work" report. Authoring or changing a
+talent: read [`docs/era-talents-framework.md`](docs/era-talents-framework.md) first.
+
 ## Backups & data safety
 Everything (characters, gear, gold, guilds, AH) lives in MySQL in a persistent Docker volume,
 so restarts and host reboots are safe. Characters auto-save every **5 minutes**
@@ -879,14 +943,15 @@ star and support the original projects; they did the hard part.
 **Server modules** (cloned and compiled into the build by `setup.sh`)
 - **[mod-playerbots](https://github.com/mod-playerbots/mod-playerbots)** — the bot engine itself:
   the player-like bots that quest, grind, group, trade, and fight. The heart of the experience.
-- **[mod-player-bot-level-brackets](https://github.com/DustinHendrickson/mod-player-bot-level-brackets)**
-  (Dustin Hendrickson) — spreads random bots across level ranges so every zone stays populated.
 - **[mod-junk-to-gold](https://github.com/noisiver/mod-junk-to-gold)** (noisiver) — auto-sells
   gray trash to cut bag clutter.
 - **[mod-multibot-bridge](https://github.com/Wishmaster117/mod-multibot-bridge)** (Wishmaster117)
   — the server half of the in-game *MultiBot* control addon.
 - **[mod-ah-bot-plus](https://github.com/NathanHandley/mod-ah-bot-plus)** (Nathan Handley) — the
   optional auction-house economy agent (the AHBot in [Auction house economy](#auction-house-economy-ahbot--optional)).
+- **[mod-individual-progression](https://github.com/ZhengPeiRu21/mod-individual-progression)**
+  (ZhengPeiRu21) — per-character Vanilla → TBC → WotLK progression on one realm; the era system
+  that [Era talents](#era-talents-mod-era-talents) builds on.
 - **[mod-aoe-loot](https://github.com/azerothcore/mod-aoe-loot)** — currently disabled in
   `setup.sh` (it broke group-loot rolls), credited because it ships in the module list.
 
@@ -918,14 +983,18 @@ star and support the original projects; they did the hard part.
   jobs); the battle-invite and siege-vehicle AI ship as fork patches `patches/0003`/`0004`.
 - **`modules/mod-ahbot-price/`** — read-only `.ahprice` AH price lookup, paired with the
   **`AHPrice`** client addon (`client-addons-src/AHPrice/`).
-- **Scripted raid strategies** (`patches/0002`, `0006`, `0007`, `0014`, `0016`, …) — authored bot
+- **`modules/mod-era-talents/`** — era-authentic Vanilla/TBC talent trees for Individual
+  Progression characters (and optionally bots), paired with the **`EraTalents`** client addon
+  (`client-addons-src/EraTalents/`) and a `patch-V.mpq` merge; the pieces that live in core code
+  ship as fork patches (`patches/0018`–`0027`). See [Era talents](#era-talents-mod-era-talents).
+- **Scripted raid strategies** (`patches/0006`, `0007`, `0014`, `0016`, …) — authored bot
   AI for hard raid encounters (Heigan, Kologarn, Lich King p3, Sunwell, AQ40 Twins), plus core
   performance and correctness patches, applied onto the fork by `setup.sh`/`update.sh`.
 - **`lore-sidecar/`** — a Python sidecar that answers whispered factual questions from real game
   data.
 - **`webreg/`** — a Go self-service account-registration and client-download site.
 - **Client addons** (`client-addons-src/`): **BotGrid** (Grid2-style bot raid manager),
-  **RaidRoster**, **AHPrice**, and **DarkmoonFaire** — see
+  **RaidRoster**, **AHPrice**, **EraTalents**, and **DarkmoonFaire** — see
   [Bot-management addons](#bot-management-addons-recommended).
 
 *World of Warcraft* and *Wrath of the Lich King* are trademarks of Blizzard Entertainment. This is

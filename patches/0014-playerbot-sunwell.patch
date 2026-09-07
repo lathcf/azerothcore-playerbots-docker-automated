@@ -1,16 +1,16 @@
 diff --git a/modules/mod-playerbots/src/Ai/Raid/RaidStrategyContext.h b/modules/mod-playerbots/src/Ai/Raid/RaidStrategyContext.h
-index bb74535..efe8cc6 100644
+index 89bdea6..5b4ad32 100644
 --- a/modules/mod-playerbots/src/Ai/Raid/RaidStrategyContext.h
 +++ b/modules/mod-playerbots/src/Ai/Raid/RaidStrategyContext.h
-@@ -14,6 +14,7 @@
- #include "HyjalStrategy.h"
- #include "BTStrategy.h"
- #include "ZAStrategy.h"
+@@ -22,6 +22,7 @@
+ #include "OnyStrategy.h"
+ #include "RSStrategy.h"
+ #include "SSCStrategy.h"
 +#include "SWPStrategy.h"
- #include "OSStrategy.h"
- #include "EoEStrategy.h"
- #include "VoAStrategy.h"
-@@ -39,6 +40,7 @@ public:
+ #include "Strategy.h"
+ #include "TKStrategy.h"
+ #include "UldStrategy.h"
+@@ -45,6 +46,7 @@ public:
          creators["hyjal"] = &RaidStrategyContext::hyjal;
          creators["blacktemple"] = &RaidStrategyContext::blacktemple;
          creators["zulaman"] = &RaidStrategyContext::zulaman;
@@ -18,7 +18,7 @@ index bb74535..efe8cc6 100644
          creators["wotlk-os"] = &RaidStrategyContext::wotlk_os;
          creators["wotlk-eoe"] = &RaidStrategyContext::wotlk_eoe;
          creators["voa"] = &RaidStrategyContext::voa;
-@@ -61,6 +63,7 @@ private:
+@@ -67,6 +69,7 @@ private:
      static Strategy* hyjal(PlayerbotAI* botAI) { return new RaidHyjalSummitStrategy(botAI); }
      static Strategy* blacktemple(PlayerbotAI* botAI) { return new RaidBlackTempleStrategy(botAI); }
      static Strategy* zulaman(PlayerbotAI* botAI) { return new RaidZulAmanStrategy(botAI); }
@@ -1068,10 +1068,10 @@ index 0000000..ee51a4b
 +}
 diff --git a/modules/mod-playerbots/src/Ai/Raid/SWP/SWPActions_Kalecgos.cpp b/modules/mod-playerbots/src/Ai/Raid/SWP/SWPActions_Kalecgos.cpp
 new file mode 100644
-index 0000000..6bfe3fe
+index 0000000..4c9e85d
 --- /dev/null
 +++ b/modules/mod-playerbots/src/Ai/Raid/SWP/SWPActions_Kalecgos.cpp
-@@ -0,0 +1,213 @@
+@@ -0,0 +1,216 @@
 +/*
 + * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
 + * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
@@ -1084,7 +1084,10 @@ index 0000000..6bfe3fe
 +
 +#include "GameObject.h"
 +#include "Playerbots.h"
-+#include "RaidBossHelpers.h"
++#include "EncounterHelpers.h"
++
++using namespace EncounterHelpers;
++
 +#include "SWPHelpers.h"
 +#include "WorldPacket.h"
 +
@@ -2310,10 +2313,10 @@ index 0000000..386a8e2
 +}
 diff --git a/modules/mod-playerbots/src/Ai/Raid/SWP/SWPHelpers.cpp b/modules/mod-playerbots/src/Ai/Raid/SWP/SWPHelpers.cpp
 new file mode 100644
-index 0000000..07bb67c
+index 0000000..31c26dc
 --- /dev/null
 +++ b/modules/mod-playerbots/src/Ai/Raid/SWP/SWPHelpers.cpp
-@@ -0,0 +1,2969 @@
+@@ -0,0 +1,2972 @@
 +/*
 + * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
 + * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
@@ -2333,7 +2336,10 @@ index 0000000..07bb67c
 +#include "Map.h"
 +#include "Player.h"
 +#include "Playerbots.h"
-+#include "RaidBossHelpers.h"
++#include "EncounterHelpers.h"
++
++using namespace EncounterHelpers;
++
 +#include "Spell.h"
 +#include "SpellAuras.h"
 +#include "TemporarySummon.h"
@@ -8236,10 +8242,10 @@ index 0000000..a267755
 +#endif
 diff --git a/modules/mod-playerbots/src/Ai/Raid/SWP/SWPTriggers_Brutallus.cpp b/modules/mod-playerbots/src/Ai/Raid/SWP/SWPTriggers_Brutallus.cpp
 new file mode 100644
-index 0000000..d051ee7
+index 0000000..adc87bf
 --- /dev/null
 +++ b/modules/mod-playerbots/src/Ai/Raid/SWP/SWPTriggers_Brutallus.cpp
-@@ -0,0 +1,132 @@
+@@ -0,0 +1,135 @@
 +/*
 + * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
 + * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
@@ -8249,7 +8255,10 @@ index 0000000..d051ee7
 +#include "SWPTriggers.h"
 +
 +#include "Playerbots.h"
-+#include "RaidBossHelpers.h"
++#include "EncounterHelpers.h"
++
++using namespace EncounterHelpers;
++
 +#include "SWPHelpers.h"
 +
 +using namespace SunwellPlateauHelpers;
@@ -8374,10 +8383,10 @@ index 0000000..d051ee7
 +}
 diff --git a/modules/mod-playerbots/src/Ai/Raid/SWP/SWPTriggers_Felmyst.cpp b/modules/mod-playerbots/src/Ai/Raid/SWP/SWPTriggers_Felmyst.cpp
 new file mode 100644
-index 0000000..dabfe41
+index 0000000..6fdb5d9
 --- /dev/null
 +++ b/modules/mod-playerbots/src/Ai/Raid/SWP/SWPTriggers_Felmyst.cpp
-@@ -0,0 +1,125 @@
+@@ -0,0 +1,128 @@
 +/*
 + * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
 + * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
@@ -8387,7 +8396,10 @@ index 0000000..dabfe41
 +#include "SWPTriggers.h"
 +
 +#include "Playerbots.h"
-+#include "RaidBossHelpers.h"
++#include "EncounterHelpers.h"
++
++using namespace EncounterHelpers;
++
 +#include "SWPHelpers.h"
 +
 +using namespace SunwellPlateauHelpers;
@@ -8505,10 +8517,10 @@ index 0000000..dabfe41
 +}
 diff --git a/modules/mod-playerbots/src/Ai/Raid/SWP/SWPTriggers_Kalecgos.cpp b/modules/mod-playerbots/src/Ai/Raid/SWP/SWPTriggers_Kalecgos.cpp
 new file mode 100644
-index 0000000..4b4a90b
+index 0000000..63bb7d2
 --- /dev/null
 +++ b/modules/mod-playerbots/src/Ai/Raid/SWP/SWPTriggers_Kalecgos.cpp
-@@ -0,0 +1,276 @@
+@@ -0,0 +1,279 @@
 +/*
 + * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
 + * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
@@ -8522,7 +8534,10 @@ index 0000000..4b4a90b
 +#include <vector>
 +
 +#include "Playerbots.h"
-+#include "RaidBossHelpers.h"
++#include "EncounterHelpers.h"
++
++using namespace EncounterHelpers;
++
 +#include "SWPHelpers.h"
 +
 +using namespace SunwellPlateauHelpers;
@@ -8612,7 +8627,7 @@ index 0000000..4b4a90b
 +    if (!group)
 +        return false;
 +
-+    Player* mainTank = GetGroupMainTank(botAI, bot);
++    Player* mainTank = GetGroupMainTank(bot);
 +    if (bot == mainTank)
 +        return false;  // the main tank holds the dragon topside
 +
@@ -8787,10 +8802,10 @@ index 0000000..4b4a90b
 +}
 diff --git a/modules/mod-playerbots/src/Ai/Raid/SWP/SWPTriggers_Kiljaeden.cpp b/modules/mod-playerbots/src/Ai/Raid/SWP/SWPTriggers_Kiljaeden.cpp
 new file mode 100644
-index 0000000..3822f1f
+index 0000000..1d2e0a9
 --- /dev/null
 +++ b/modules/mod-playerbots/src/Ai/Raid/SWP/SWPTriggers_Kiljaeden.cpp
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,60 @@
 +/*
 + * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
 + * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
@@ -8800,7 +8815,10 @@ index 0000000..3822f1f
 +#include "SWPTriggers.h"
 +
 +#include "Playerbots.h"
-+#include "RaidBossHelpers.h"
++#include "EncounterHelpers.h"
++
++using namespace EncounterHelpers;
++
 +#include "SWPHelpers.h"
 +
 +using namespace SunwellPlateauHelpers;
@@ -8850,10 +8868,10 @@ index 0000000..3822f1f
 +}
 diff --git a/modules/mod-playerbots/src/Ai/Raid/SWP/SWPTriggers_Muru.cpp b/modules/mod-playerbots/src/Ai/Raid/SWP/SWPTriggers_Muru.cpp
 new file mode 100644
-index 0000000..8f30466
+index 0000000..b22b7b7
 --- /dev/null
 +++ b/modules/mod-playerbots/src/Ai/Raid/SWP/SWPTriggers_Muru.cpp
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,55 @@
 +/*
 + * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
 + * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
@@ -8863,7 +8881,10 @@ index 0000000..8f30466
 +#include "SWPTriggers.h"
 +
 +#include "Playerbots.h"
-+#include "RaidBossHelpers.h"
++#include "EncounterHelpers.h"
++
++using namespace EncounterHelpers;
++
 +#include "SWPHelpers.h"
 +
 +using namespace SunwellPlateauHelpers;
@@ -8908,10 +8929,10 @@ index 0000000..8f30466
 +}
 diff --git a/modules/mod-playerbots/src/Ai/Raid/SWP/SWPTriggers_Twins.cpp b/modules/mod-playerbots/src/Ai/Raid/SWP/SWPTriggers_Twins.cpp
 new file mode 100644
-index 0000000..4f608fa
+index 0000000..bc08596
 --- /dev/null
 +++ b/modules/mod-playerbots/src/Ai/Raid/SWP/SWPTriggers_Twins.cpp
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,95 @@
 +/*
 + * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
 + * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
@@ -8921,7 +8942,10 @@ index 0000000..4f608fa
 +#include "SWPTriggers.h"
 +
 +#include "Playerbots.h"
-+#include "RaidBossHelpers.h"
++#include "EncounterHelpers.h"
++
++using namespace EncounterHelpers;
++
 +#include "SWPHelpers.h"
 +
 +using namespace SunwellPlateauHelpers;
@@ -9005,18 +9029,18 @@ index 0000000..4f608fa
 +    return TwinsShouldDispelPyrogenics(bot, botAI);
 +}
 diff --git a/modules/mod-playerbots/src/Bot/Engine/BuildSharedActionContexts.cpp b/modules/mod-playerbots/src/Bot/Engine/BuildSharedActionContexts.cpp
-index 171d5c0..921d0db 100644
+index a1cf72a..f7dd3a2 100644
 --- a/modules/mod-playerbots/src/Bot/Engine/BuildSharedActionContexts.cpp
 +++ b/modules/mod-playerbots/src/Bot/Engine/BuildSharedActionContexts.cpp
-@@ -14,6 +14,7 @@
- #include "HyjalActionContext.h"
- #include "BTActionContext.h"
- #include "ZAActionContext.h"
+@@ -22,6 +22,7 @@
+ #include "OnyActionContext.h"
+ #include "RSActionContext.h"
+ #include "SSCActionContext.h"
 +#include "SWPActionContext.h"
- #include "OSActionContext.h"
- #include "EoEActionContext.h"
- #include "VoAActionContext.h"
-@@ -40,6 +41,7 @@ void AiObjectContext::BuildSharedActionContexts(SharedNamedObjectContextList<Act
+ #include "TKActionContext.h"
+ #include "TbcDungeonActionContext.h"
+ #include "UldActionContext.h"
+@@ -46,6 +47,7 @@ void AiObjectContext::BuildSharedActionContexts(SharedNamedObjectContextList<Act
      actionContexts.Add(new RaidHyjalSummitActionContext());
      actionContexts.Add(new RaidBlackTempleActionContext());
      actionContexts.Add(new RaidZulAmanActionContext());
@@ -9025,18 +9049,18 @@ index 171d5c0..921d0db 100644
      actionContexts.Add(new RaidOsActionContext());
      actionContexts.Add(new RaidEoEActionContext());
 diff --git a/modules/mod-playerbots/src/Bot/Engine/BuildSharedTriggerContexts.cpp b/modules/mod-playerbots/src/Bot/Engine/BuildSharedTriggerContexts.cpp
-index cfc150d..daeee53 100644
+index 344e239..1472970 100644
 --- a/modules/mod-playerbots/src/Bot/Engine/BuildSharedTriggerContexts.cpp
 +++ b/modules/mod-playerbots/src/Bot/Engine/BuildSharedTriggerContexts.cpp
-@@ -14,6 +14,7 @@
- #include "HyjalTriggerContext.h"
- #include "BTTriggerContext.h"
- #include "ZATriggerContext.h"
+@@ -21,6 +21,7 @@
+ #include "OnyTriggerContext.h"
+ #include "RSTriggerContext.h"
+ #include "SSCTriggerContext.h"
 +#include "SWPTriggerContext.h"
- #include "OSTriggerContext.h"
- #include "EoETriggerContext.h"
- #include "VoATriggerContext.h"
-@@ -41,6 +42,7 @@ void AiObjectContext::BuildSharedTriggerContexts(SharedNamedObjectContextList<Tr
+ #include "TKTriggerContext.h"
+ #include "TbcDungeonTriggerContext.h"
+ #include "TriggerContext.h"
+@@ -47,6 +48,7 @@ void AiObjectContext::BuildSharedTriggerContexts(SharedNamedObjectContextList<Tr
      triggerContexts.Add(new RaidHyjalSummitTriggerContext());
      triggerContexts.Add(new RaidBlackTempleTriggerContext());
      triggerContexts.Add(new RaidZulAmanTriggerContext());
@@ -9045,19 +9069,21 @@ index cfc150d..daeee53 100644
      triggerContexts.Add(new RaidEoETriggerContext());
      triggerContexts.Add(new RaidVoATriggerContext());
 diff --git a/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp b/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp
-index c3a57a0..dbec4f8 100644
+index 6799e88..89a1f81 100644
 --- a/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp
 +++ b/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp
-@@ -1646,7 +1646,7 @@ void PlayerbotAI::ApplyInstanceStrategies(uint32 mapId, bool tellMaster)
+@@ -1654,8 +1654,8 @@ void PlayerbotAI::ApplyInstanceStrategies(uint32 mapId, bool tellMaster)
      static const std::vector<std::string> allInstanceStrategies =
      {
-         "aq20", "blacktemple", "bwl", "gruulslair", "hyjal", "icc", "karazhan",
--        "magtheridon", "moltencore", "naxx", "onyxia", "rs", "ssc", "tbc-ac", "tempestkeep",
-+        "magtheridon", "moltencore", "naxx", "onyxia", "rs", "ssc", "sunwell", "tbc-ac", "tempestkeep",
-         "ulduar", "voa", "wotlk-an", "wotlk-cos", "wotlk-dtk", "wotlk-eoe", "wotlk-fos",
-         "wotlk-gd", "wotlk-hol", "wotlk-hor", "wotlk-hos", "wotlk-nex", "wotlk-occ",
-         "wotlk-ok", "wotlk-os", "wotlk-pos", "wotlk-toc", "wotlk-uk", "wotlk-up",
-@@ -1704,6 +1704,9 @@ void PlayerbotAI::ApplyInstanceStrategies(uint32 mapId, bool tellMaster)
+         "aq20", "blacktemple", "bwl", "gruulslair", "hyjal", "icc", "karazhan", "magtheridon",
+-        "moltencore", "naxx", "onyxia", "rs", "ssc", "tbc-ac", "tbc-mech", "tbc-seth", "tbc-ub",
+-        "tempestkeep", "ulduar", "voa", "wotlk-an", "wotlk-cos", "wotlk-dtk", "wotlk-eoe",
++        "moltencore", "naxx", "onyxia", "rs", "ssc", "sunwell", "tbc-ac", "tbc-mech", "tbc-seth",
++        "tbc-ub", "tempestkeep", "ulduar", "voa", "wotlk-an", "wotlk-cos", "wotlk-dtk", "wotlk-eoe",
+         "wotlk-fos", "wotlk-gd", "wotlk-hol", "wotlk-hos", "wotlk-nex", "wotlk-occ", "wotlk-ok",
+         "wotlk-os", "wotlk-pos", "wotlk-toc", "wotlk-uk", "wotlk-up", "wotlk-vh", "zulaman"
+     };
+@@ -1720,6 +1720,9 @@ void PlayerbotAI::ApplyInstanceStrategies(uint32 mapId, bool tellMaster)
          case 568:
              strategyName = "zulaman";  // Zul'Aman
              break;

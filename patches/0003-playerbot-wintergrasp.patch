@@ -73,7 +73,7 @@ index 0000000..32456d9
 +
 +#endif
 diff --git a/modules/mod-playerbots/src/Ai/Base/Strategy/WorldPacketHandlerStrategy.cpp b/modules/mod-playerbots/src/Ai/Base/Strategy/WorldPacketHandlerStrategy.cpp
-index 63a6a43..0f002f8 100644
+index f5b6083..5a0a4d3 100644
 --- a/modules/mod-playerbots/src/Ai/Base/Strategy/WorldPacketHandlerStrategy.cpp
 +++ b/modules/mod-playerbots/src/Ai/Base/Strategy/WorldPacketHandlerStrategy.cpp
 @@ -53,6 +53,8 @@ void WorldPacketHandlerStrategy::InitTriggers(std::vector<TriggerNode*>& trigger
@@ -86,18 +86,18 @@ index 63a6a43..0f002f8 100644
      triggers.push_back(
          new TriggerNode("levelup", { NextAction("auto maintenance on levelup", relevance + 3) }));
 diff --git a/modules/mod-playerbots/src/Ai/Base/WorldPacketActionContext.h b/modules/mod-playerbots/src/Ai/Base/WorldPacketActionContext.h
-index f94ed6e..1bc748d 100644
+index 3707d52..dc9a5e7 100644
 --- a/modules/mod-playerbots/src/Ai/Base/WorldPacketActionContext.h
 +++ b/modules/mod-playerbots/src/Ai/Base/WorldPacketActionContext.h
-@@ -8,6 +8,7 @@
- #define PLAYERBOTS_WORLDPACKETACTIONCONTEXT_H
- 
- #include "AcceptBattlegroundInvitationAction.h"
-+#include "AcceptWintergraspInvitationAction.h"
- #include "AcceptDuelAction.h"
+@@ -12,6 +12,7 @@
  #include "AcceptInvitationAction.h"
  #include "AcceptQuestAction.h"
-@@ -112,6 +113,8 @@ public:
+ #include "AcceptResurrectAction.h"
++#include "AcceptWintergraspInvitationAction.h"
+ #include "AreaTriggerAction.h"
+ #include "ArenaTeamActions.h"
+ #include "BattleGroundJoinAction.h"
+@@ -115,6 +116,8 @@ public:
          creators["lfg teleport"] = &WorldPacketActionContext::lfg_teleport;
          creators["see spell"] = &WorldPacketActionContext::see_spell;
          creators["arena team accept"] = &WorldPacketActionContext::arena_team_accept;
@@ -106,7 +106,7 @@ index f94ed6e..1bc748d 100644
      }
  
  private:
-@@ -178,6 +181,8 @@ private:
+@@ -183,6 +186,8 @@ private:
      static Action* lfg_join(PlayerbotAI* botAI) { return new LfgJoinAction(botAI); }
      static Action* see_spell(PlayerbotAI* botAI) { return new SeeSpellAction(botAI); }
      static Action* arena_team_accept(PlayerbotAI* botAI) { return new ArenaTeamAcceptAction(botAI); }
@@ -116,10 +116,10 @@ index f94ed6e..1bc748d 100644
  
  #endif
 diff --git a/modules/mod-playerbots/src/Ai/Base/WorldPacketTriggerContext.h b/modules/mod-playerbots/src/Ai/Base/WorldPacketTriggerContext.h
-index cf8445b..519f490 100644
+index f840695..339af69 100644
 --- a/modules/mod-playerbots/src/Ai/Base/WorldPacketTriggerContext.h
 +++ b/modules/mod-playerbots/src/Ai/Base/WorldPacketTriggerContext.h
-@@ -65,6 +65,8 @@ public:
+@@ -66,6 +66,8 @@ public:
          creators["lfg teleport"] = &WorldPacketTriggerContext::lfg_teleport;
          creators["inventory change failure"] = &WorldPacketTriggerContext::inventory_change_failure;
          creators["bg status"] = &WorldPacketTriggerContext::bg_status;
@@ -128,7 +128,7 @@ index cf8445b..519f490 100644
          creators["levelup"] = &WorldPacketTriggerContext::levelup;
          creators["xpgain"] = &WorldPacketTriggerContext::xpgain;
          creators["see spell"] = &WorldPacketTriggerContext::seespell;
-@@ -126,6 +128,8 @@ private:
+@@ -127,6 +129,8 @@ private:
      static Trigger* loot_roll(PlayerbotAI* botAI) { return new WorldPacketTrigger(botAI, "loot roll"); }
      static Trigger* taxi(PlayerbotAI* botAI) { return new WorldPacketTrigger(botAI, "activate taxi"); }
      static Trigger* bg_status(PlayerbotAI* botAI) { return new WorldPacketTrigger(botAI, "bg status"); }
@@ -138,19 +138,20 @@ index cf8445b..519f490 100644
      static Trigger* xpgain(PlayerbotAI* botAI) { return new WorldPacketTrigger(botAI, "xpgain"); }
      static Trigger* petition_offer(PlayerbotAI* botAI) { return new WorldPacketTrigger(botAI, "petition offer"); }
 diff --git a/modules/mod-playerbots/src/Bot/Factory/AiFactory.cpp b/modules/mod-playerbots/src/Bot/Factory/AiFactory.cpp
-index c895385..ba8e726 100644
+index 63e834f..34c8d73 100644
 --- a/modules/mod-playerbots/src/Bot/Factory/AiFactory.cpp
 +++ b/modules/mod-playerbots/src/Bot/Factory/AiFactory.cpp
-@@ -5,6 +5,8 @@
+@@ -5,6 +5,9 @@
   */
  
  #include "AiFactory.h"
++
 +#include "Battlefield.h"
 +#include "BattlefieldMgr.h"
- 
  #include "BattlegroundMgr.h"
  #include "DKAiObjectContext.h"
-@@ -710,6 +712,22 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
+ #include "DruidAiObjectContext.h"
+@@ -709,6 +712,22 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
              nonCombatEngine->removeStrategy("mount", false);
          }
      }
@@ -174,19 +175,19 @@ index c895385..ba8e726 100644
  
  Engine* AiFactory::createNonCombatEngine(Player* player, PlayerbotAI* const facade, AiObjectContext* aiObjectContext)
 diff --git a/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp b/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp
-index ff9059b..8caa01e 100644
+index 55f7732..4edc33c 100644
 --- a/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp
 +++ b/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp
-@@ -11,6 +11,8 @@
- #include <string>
+@@ -6,6 +6,8 @@
  
+ #include "PlayerbotAI.h"
  #include "AiFactory.h"
 +#include "Battlefield.h"
 +#include "BattlefieldMgr.h"
  #include "BudgetValues.h"
  #include "ChannelMgr.h"
  #include "CharacterPackets.h"
-@@ -196,6 +198,8 @@ PlayerbotAI::PlayerbotAI(Player* bot)
+@@ -202,6 +204,8 @@ PlayerbotAI::PlayerbotAI(Player* bot)
      botOutgoingPacketHandlers.AddHandler(SMSG_DUEL_REQUESTED, "duel requested");
      botOutgoingPacketHandlers.AddHandler(SMSG_INVENTORY_CHANGE_FAILURE, "inventory change failure");
      botOutgoingPacketHandlers.AddHandler(SMSG_BATTLEFIELD_STATUS, "bg status");
@@ -195,7 +196,7 @@ index ff9059b..8caa01e 100644
      botOutgoingPacketHandlers.AddHandler(SMSG_LFG_ROLE_CHECK_UPDATE, "lfg role check");
      botOutgoingPacketHandlers.AddHandler(SMSG_LFG_PROPOSAL_UPDATE, "lfg proposal");
      botOutgoingPacketHandlers.AddHandler(SMSG_TEXT_EMOTE, "receive text emote");
-@@ -4629,6 +4633,17 @@ bool PlayerbotAI::AllowActive(ActivityType activityType)
+@@ -4614,6 +4618,17 @@ bool PlayerbotAI::AllowActive(ActivityType activityType)
      if (bot->InBattlegroundQueue())
          return true;
  
@@ -214,20 +215,22 @@ index ff9059b..8caa01e 100644
      if (sPlayerbotAIConfig.BotActiveAloneForceWhenInGuild)
      {
 diff --git a/modules/mod-playerbots/src/Bot/RandomPlayerbotMgr.cpp b/modules/mod-playerbots/src/Bot/RandomPlayerbotMgr.cpp
-index 6abae47..8b88bfc 100644
+index c438eb7..65b9d78 100644
 --- a/modules/mod-playerbots/src/Bot/RandomPlayerbotMgr.cpp
 +++ b/modules/mod-playerbots/src/Bot/RandomPlayerbotMgr.cpp
-@@ -29,10 +29,26 @@
- #include "MapMgr.h"
- #include "NewRpgInfo.h"
- #include "NewRpgStrategy.h"
+@@ -6,6 +6,8 @@
+ 
+ #include "RandomPlayerbotMgr.h"
+ #include "AiFactory.h"
 +#include "Battlefield.h"
 +#include "BattlefieldMgr.h"
- #include "ObjectGuid.h"
- #include "PerfMonitor.h"
- #include "Player.h"
- #include "PlayerbotAI.h"
-+
+ #include "Battleground.h"
+ #include "BattlegroundMgr.h"
+ #include "Cell.h"
+@@ -47,6 +49,20 @@
+ #include <iomanip>
+ #include <random>
+ 
 +namespace
 +{
 +    // True while the bot is a Wintergrasp combatant. WG is a Battlefield, not a Battleground,
@@ -241,10 +244,11 @@ index 6abae47..8b88bfc 100644
 +        return bf && bf->IsWarTime();
 +    }
 +}
- #include "PlayerbotAIConfig.h"
- #include "PlayerbotFactory.h"
- #include "PlayerbotTextMgr.h"
-@@ -1456,6 +1472,9 @@ bool RandomPlayerbotMgr::ProcessBot(Player* bot)
++
+ struct GuidClassRaceInfo
+ {
+     ObjectGuid::LowType guid;
+@@ -1453,6 +1469,9 @@ bool RandomPlayerbotMgr::ProcessBot(Player* bot)
      if (bot->InBattlegroundQueue())
          return false;
  
@@ -254,7 +258,7 @@ index 6abae47..8b88bfc 100644
       uint32 botId = bot->GetGUID().GetCounter();
  
      // if death revive
-@@ -1593,6 +1612,10 @@ void RandomPlayerbotMgr::RandomTeleport(Player* bot, std::vector<WorldLocation>&
+@@ -1590,6 +1609,10 @@ void RandomPlayerbotMgr::RandomTeleport(Player* bot, std::vector<WorldLocation>&
      if (bot->InBattleground() || bot->InArena())
          return;
  

@@ -1,0 +1,2049 @@
+era: 0
+class: 8
+eraName: Vanilla
+className: MAGE
+ref: ../_ref/mage-spells.yaml
+# Fixed-id HELPER spells the module C++ casts by id (not talent-rank passives). era_ward_reflect
+# casts one of these on the mage while Fire/Frost Ward is up, with the reflect % (from the talent's
+# DUMMY marker) as the base point. SPELL_AURA_REFLECT_SPELLS_SCHOOL (aura 75), school-masked, with
+# the wards' own DurationIndex 9 (30s). Ids sit near the top of the reserved band, clear of the
+# node-derived ids (max 920392).
+helpers:
+  # Both carry a `client:` block (ADDED in the mage final review, M-63): they are VISIBLE buffs on
+  # the mage while the ward is up, and a band spell with no client row ships no client record at
+  # all — the buff rendered as an empty/placeholder icon. `icon` is the STOCK ward's SpellIconID
+  # (Fire Ward 543 -> 16, Frost Ward 6143 -> 501; dumped from ip-dbc/Spell.dbc 2026-09-06) so the
+  # reflect buff reads as "that ward". Name + icon only — the `client: { name, icon }` shape the
+  # Chilled helpers below already use for a triggered payload; no `skillLine` (nothing grants these
+  # into a spellbook) and no prose (the ward's own tooltip carries the reflect sentence, which the
+  # talent's panel text already states).
+  - id: 932990
+    name: "Fire Ward Reflect"
+    aura: 75
+    misc: 4        # SPELL_SCHOOL_MASK_FIRE
+    durationIndex: 9
+    client: { name: "Fire Ward Reflect", icon: 16 }    # stock Fire Ward 543 SpellIconID
+  - id: 932991
+    name: "Frost Ward Reflect"
+    aura: 75
+    misc: 16       # SPELL_SCHOOL_MASK_FROST
+    durationIndex: 9
+    client: { name: "Frost Ward Reflect", icon: 501 }  # stock Frost Ward 6143 SpellIconID
+  # Improved Blizzard's chill, at the AUTHENTIC Vanilla slow (30/50/65%) — the stock Chilled
+  # 12484/12485/12486 is only 25/40/50%. MOD_DECREASE_SPEED (aura 33) on the enemy (target 6),
+  # frost school, Mechanic 11 (snare) so Frostbite/Winter's Chill/Permafrost treat it as a chill,
+  # DurationIndex 65 (1.5s, refreshes each Blizzard tick — same as retail).
+  #
+  # **FAMILY IDENTITY = family 3 + WORD 2 (`maskC`) BIT 6 (64)** — the reserved pseudo-bit
+  # Permafrost 18039 binds so it can extend/deepen this chill alongside Frostbolt's and Cone of
+  # Cold's. It moved here in the R1 fix pass (2026-09-06): the helpers previously claimed WORD 0
+  # bit 28 (268435456), which is **Mage Armor's** identity (6117/22782/22783/27125/43023/43024,
+  # censused from ip-dbc/Spell.dbc) — NEVER recycle that bit. No word-0 bit is free in family 3, but
+  # word 2 bits 6-30 are: the only stock family-3 word-2 bits in use are 0 (Winter's Chill 12579),
+  # 1, 2, 3 (the big shared category bit), 4, 5 and 31, and NO stock family-3 spellmod's word-2 mask
+  # sets bit 6 either — both censused before the move. The TBC twins 948961-948963 carry the same
+  # bit.
+  - id: 932980
+    name: "Chill (Improved Blizzard, Rank 1)"
+    aura: 33
+    basePoints: -30
+    durationIndex: 65
+    targetA: 6
+    school: 16
+    mechanic: 11
+    family: 3
+    maskC: 64          # word-2 bit 6 — the reserved "Blizzard Chill" pseudo-identity (see block comment)
+    client:
+      name: "Chilled"
+      icon: 285        # stock Chilled 12484 SpellIconID
+      description: "Slows movement speed by 30% for 1.50 sec."
+      auraDescription: "Movement slowed by 30%."
+  - id: 932981
+    name: "Chill (Improved Blizzard, Rank 2)"
+    aura: 33
+    basePoints: -50
+    durationIndex: 65
+    targetA: 6
+    school: 16
+    mechanic: 11
+    family: 3
+    maskC: 64          # word-2 bit 6 — the reserved "Blizzard Chill" pseudo-identity (see block comment)
+    client:
+      name: "Chilled"
+      icon: 285        # stock Chilled 12484 SpellIconID
+      description: "Slows movement speed by 50% for 1.50 sec."
+      auraDescription: "Movement slowed by 50%."
+  - id: 932982
+    name: "Chill (Improved Blizzard, Rank 3)"
+    aura: 33
+    basePoints: -65
+    durationIndex: 65
+    targetA: 6
+    school: 16
+    mechanic: 11
+    family: 3
+    maskC: 64          # word-2 bit 6 — the reserved "Blizzard Chill" pseudo-identity (see block comment)
+    client:
+      name: "Chilled"
+      icon: 285        # stock Chilled 12484 SpellIconID
+      description: "Slows movement speed by 65% for 1.50 sec."
+      auraDescription: "Movement slowed by 65%."
+  # --- Arcane Power Vanilla clone 932760 (node 18016 grants it) — WotLK 12042 MAGNITUDE + cd DIVERGED. -
+  # Vanilla Arcane Power (warcraft.wiki.gg / Wowhead Classic 12042, verified 2026-08-18): Instant,
+  # 3 min cooldown, spells deal +30% damage while costing +30% mana, 15 sec. WotLK 12042 (DBC dump
+  # 2026-08-18) was retuned DOWN to +20%/+20% and its cooldown shortened to 2 min (RecoveryTime 120000).
+  # 12042 is a self-contained data spell — NOT script-bound (grep spell_mage.cpp 2026-08-18: 12042 absent;
+  # the only references are a durotar buff-detection list + a SpellInfoCorrections category comment) — so
+  # a pure data clone is faithful, unlike Cold Snap 11958 / Combustion 11129 (both script-bound —
+  # both have SINCE been cloned anyway, 932325 in the Phase 9 re-audit and 932335 in the 2026-09-06
+  # final review, each with a script rebind of its own). Its three effects are all aura 108 ADD_PCT_MODIFIER, each with its OWN
+  # per-effect class mask selecting a different slice of the mage's spells: Effect_1 misc 0 SPELLMOD_DAMAGE
+  # (direct damage, mask A), Effect_2 misc 14 SPELLMOD_COST (mana cost, mask B), Effect_3 misc 22
+  # SPELLMOD_DOT (periodic damage, mask C) — the WotLK engine split "+X% damage" into direct+DoT because a
+  # single op-0 mod does not scale DoT ticks. Vanilla's "+30% damage" must likewise cover DoTs, so all
+  # THREE effects go to +30%. Overriding stock 12042 is era-unsafe (Spell.dbc is global), so clone it:
+  # helper_overrides does NOT touch EffectSpellClassMask*, so the three masks A/B/C (and SpellClassSet 3,
+  # DurationIndex 8 = 15s, attrs, icon) pass through the cloned template row; the effects list keeps 12042's
+  # exact ordering so mask A->damage, B->cost, C->dot stay aligned. Override ONLY the three magnitudes to
+  # +30% (base 29 + d1 -> 30, the Last Stand base-29 precedent) and the cooldown: neutralize the inherited
+  # Category 1151 (category:0 + categoryCooldown:0, the Last Stand 932840 / Aimed Shot 932952 precedent) so
+  # the Vanilla 3-min cd lives purely in RecoveryTime. Active castable -> client row w/ Vanilla text +
+  # SkillLine 237 (Arcane; SkillLineAbility 12042 -> 237, dump 2026-08-18) so it tabs into the Arcane page.
+  # Stock 12042 ships UNTOUCHED for WotLK-stage mages; a reconcile strip removes stale 12042 off Vanilla
+  # mages (EraTalents.cpp CLASS_MAGE block).
+  - id: 932760
+    name: Arcane Power
+    template: 12042       # clone stock Arcane Power (inherit the 3 aura-108 effects' class masks A/B/C, family 3, DurationIndex 8=15s, attrs, icon)
+    category: 0          # neutralize inherited Category 1151 (else the category cd path still gates)
+    categoryCooldown: 0  # neutralize inherited CategoryRecoveryTime 15000 — cd lives purely in RecoveryTime
+    cooldown: 180000     # Vanilla 3-min cooldown (stock RecoveryTime 120000 = 2 min)
+    effects:             # +30%/+30%/+30% (base 29 + d1 -> 30); each slot's class mask + misc match 12042's effect order
+    - { effect: 6, aura: 108, basePoints: 29, dieSides: 1, misc: 0,  targetA: 1 }   # +30% direct spell damage (SPELLMOD_DAMAGE, mask A)
+    - { effect: 6, aura: 108, basePoints: 29, dieSides: 1, misc: 14, targetA: 1 }   # +30% mana cost (SPELLMOD_COST, mask B)
+    - { effect: 6, aura: 108, basePoints: 29, dieSides: 1, misc: 22, targetA: 1 }   # +30% periodic/DoT damage (SPELLMOD_DOT, mask C)
+    client:
+      name: Arcane Power
+      icon: 62           # stock Arcane Power SpellIconID (12042 dump 2026-08-18)
+      skillLine: 237     # Arcane skill line (SkillLineAbility 12042 -> 237; dump 2026-08-18) — else the granted active lands in the General tab
+      description: "When activated, your spells deal 30% more damage while costing 30% more mana to cast. This effect lasts 15 sec."
+      auraDescription: "Spell damage increased by 30%. Mana cost increased by 30%."
+  # --- Presence of Mind Vanilla clone 932761 (node 18013 grants it) — WotLK 12043 cd DIVERGED. ------
+  # Vanilla Presence of Mind (12043, 1.12.1 client Spell.dbc): Instant, 3-min cooldown, your next Mage
+  # spell with a cast time < 10s becomes an instant cast. WotLK 12043 (DBC dump 2026-08-24) shortened
+  # the cooldown to 2 min (RecoveryTime 120000). Like Arcane Power 12042, PoM is a self-contained data
+  # spell — NOT script-bound (grep spell_mage.cpp 2026-08-24: 12043 absent) — so a pure data clone is
+  # faithful (unlike the script-bound Cold Snap 11958 / Combustion 11129, which needed a script
+  # rebind alongside their clones 932335 / 932325). The MECHANIC
+  # is unchanged Vanilla->WotLK; only the cooldown differs, so the clone overrides ONLY the cooldown and
+  # INHERITS 12043's single instant-cast SPELLMOD effect (Effect_1 aura 108, op SPELLMOD_CASTING_TIME
+  # -100%) + ProcCharges 1 via the template (no effects: list). Neutralize the inherited Category 1151
+  # (category:0 + categoryCooldown:0, the Arcane Power 932760 precedent) so the Vanilla 3-min cd lives
+  # purely in RecoveryTime. Client row w/ Vanilla text + SkillLine 237 (Arcane; matches Arcane Power) so
+  # the granted active tabs into the Arcane page. Stock 12043 ships UNTOUCHED for WotLK-stage mages; a
+  # reconcile strip removes stale 12043 off Vanilla mages (EraTalents.cpp CLASS_MAGE block). This closes
+  # the twin case the 2026-08-18 Arcane Power grant-accuracy pass missed (final-review F-2).
+  - id: 932761
+    name: Presence of Mind
+    template: 12043      # clone stock PoM (inherit the instant-cast SPELLMOD effect, ProcCharges 1, family 3, attrs, icon)
+    spellFixAck: >-
+      SpellInfoCorrections.cpp:4664 ORs SPELL_ATTR6_NO_CATEGORY_COOLDOWN_MODS (0x80000000) onto 12043
+      by id, so Presence of Mind does not share category-1151 cooldown modifiers with Arcane Power
+      12042. There is no generator key for AttributesEx6 -- and it is MOOT for this clone anyway: it
+      authors `category: 0` / `categoryCooldown: 0`, so no category cooldown remains for a modifier to
+      touch. Shipped, merged, real-client-verified Vanilla substrate: deliberately NOT fixed here.
+    category: 0          # neutralize inherited Category 1151 (else the category cd path still gates)
+    categoryCooldown: 0  # cd lives purely in RecoveryTime
+    cooldown: 180000     # Vanilla 3-min cooldown (stock RecoveryTime 120000 = 2 min)
+    effects:             # byte-identical to stock 12043 Effect_1 (dump 2026-08-24) — mechanic unchanged; the EffectSpellClassMaskA (1631584309/4096/0) + ProcCharges 1 + DurationIndex 21 all INHERIT from the template
+    - { effect: 6, aura: 108, basePoints: -101, dieSides: 1, misc: 10, targetA: 1 }   # ADD_PCT_MODIFIER -100% cast time (SPELLMOD_CASTING_TIME, misc 10) on the next mage spell, self
+    client:
+      name: Presence of Mind
+      icon: 139          # stock PoM SpellIconID (12043 dump 2026-08-24)
+      skillLine: 237     # Arcane skill line (matches Arcane Power 932760) — else the granted active lands in the General tab
+      description: "When activated, your next Mage spell with a casting time less than 10 sec becomes an instant cast spell."
+      auraDescription: "Your next Mage spell with a casting time less than 10 sec becomes an instant cast spell."
+  # --- Magic Absorption clones 932326-932330 (node 18005 grants one per rank) ---------------------
+  # ADDED 2026-09-05 (TBC Phase 9 re-audit, vanilla_fix_rows[18005]). The node shipped the always-on
+  # resistance half only, with a comment saying the "restore X% of your total mana on a fully
+  # resisted spell" rider was "NOT yet wired". The TBC pass proved the rider IS expressible in data
+  # + a script rebind, because it is the SAME talent: the core script
+  # `spell_mage_magic_absorption` (spell_mage.cpp, bound -29441) is entirely amount-driven —
+  # `CalculatePct(GetMaxPower(POWER_MANA), aurEff->GetAmount())` off EFFECT_0, then a hardcoded cast
+  # of 29442 — so a clone carrying the DUMMY amount and a rebind reproduces it at every rank.
+  #
+  # WHY A CLONE CHAIN AND NOT A `multi` NODE: the first pass proposed keeping `mechanic: multi` and
+  # hanging a `proc:` block off it. That is not expressible — `gen_era_talents.py:1650-1660` emits a
+  # `spell_proc` row only for `mechanic: proc`/`proc-scripted`, so a `multi` node never gets one.
+  # Helpers DO support a `proc:` block (`:1593-1602`), which is why the clone chain is the fix.
+  # The node therefore becomes a pure GRANT node: the resistance half moves onto each clone's e2, so
+  # it is preserved exactly once (keeping the old `mechanic: stat` alongside `grants:` would either
+  # double the resistance or emit dead SQL — `emit_data_sql` writes era_talent_rank from `grants:`
+  # when both are present, leaving the mechanic's passive unreachable).
+  #
+  # Template is stock 29441 for all five ranks (29444 is byte-identical apart from its amounts;
+  # 29445/29446 are absent from the live store and 29447 is "Torment the Weak" live).
+  #   * e1 `aura 4` SPELL_AURA_DUMMY, basePoints 1..5 = the mana % the core script reads.
+  #   * e2 `aura 22` MOD_RESISTANCE, misc **126** (all schools but Physical — the Vanilla tooltip
+  #     says "all resistances"; TBC's own 124 excludes Holy and is used only by the TBC clones),
+  #     basePoints 2..10, and `perLevel: 0` — MANDATORY, because live 29441/29444 carry
+  #     EffectRealPointsPerLevel 0.5/1.0 on that slot and `helper_overrides` writes that column only
+  #     when the key is present, so omitting it would INHERIT the live scaling.
+  #   * `spellLevel: 0` — `SpellInfoCorrections.cpp:1061` sets SpellLevel 0 on 29441/29444 BY ID and
+  #     a clone never receives a by-id fix (workflow lesson 14).
+  #   * helper-level `proc:` copying live `-29441` verbatim: family 0, no masks, SpellTypeMask 7,
+  #     SpellPhaseMask 0, HitMask 8 = PROC_HIT_FULL_RESIST, Cooldown 1000, Chance 0. `flags: 131072`
+  #     translates the stock row's ProcFlags 0, which means "use the spell's own DBC ProcTypeMask" —
+  #     131072 = TAKEN_SPELL_MAGIC_DMG_CLASS_NEG, inherited from the template.
+  #   * `client:` per rank — node 18005 is now a GRANT node, so the talent-panel tooltip is the
+  #     granted spell's own client-DBC Description (framework "Talent-panel tooltip for
+  #     spell-granting nodes"); without it the panel would go blank.
+  - id: 932326
+    name: Magic Absorption
+    template: 29441
+    spellLevel: 0
+    spellFixAck: >-
+      SpellInfoCorrections.cpp:1061 sets `SpellLevel = 0` on stock 29441/29444 BY ID, and a clone
+      never receives a by-id fix. The POST-FIX VALUE IS AUTHORED on this helper (`spellLevel: 0`
+      above) — `SpellLevel` simply has no entry in era_audit's `_SPELLFIX_KEYABLE` table, so the
+      check cannot see that the key is already set and falls through to the acknowledge-only branch.
+      Nothing is waived: the clone ships SpellLevel 0 exactly as the corrected stock row does.
+    effects:
+    - { effect: 6, aura: 4,  basePoints: 1, targetA: 1 }            # mana % the core script reads
+    - { effect: 6, aura: 22, basePoints: 2, misc: 126, targetA: 1, perLevel: 0 }
+    proc: { flags: 131072, typeMask: 7, phaseMask: 0, hitMask: 8, chance: 0, cooldown: 1000 }
+    client:
+      name: Magic Absorption
+      icon: 459        # stock 29441 SpellIconID
+      description: "Increases all resistances by 2 and causes all spells you resist to restore 1% of your total mana."
+  - id: 932327
+    name: Magic Absorption
+    template: 29441
+    spellLevel: 0
+    spellFixAck: >-
+      SpellInfoCorrections.cpp:1061 sets `SpellLevel = 0` on stock 29441/29444 BY ID, and a clone
+      never receives a by-id fix. The POST-FIX VALUE IS AUTHORED on this helper (`spellLevel: 0`
+      above) — `SpellLevel` simply has no entry in era_audit's `_SPELLFIX_KEYABLE` table, so the
+      check cannot see that the key is already set and falls through to the acknowledge-only branch.
+      Nothing is waived: the clone ships SpellLevel 0 exactly as the corrected stock row does.
+    effects:
+    - { effect: 6, aura: 4,  basePoints: 2, targetA: 1 }
+    - { effect: 6, aura: 22, basePoints: 4, misc: 126, targetA: 1, perLevel: 0 }
+    proc: { flags: 131072, typeMask: 7, phaseMask: 0, hitMask: 8, chance: 0, cooldown: 1000 }
+    client:
+      name: Magic Absorption
+      icon: 459
+      description: "Increases all resistances by 4 and causes all spells you resist to restore 2% of your total mana."
+  - id: 932328
+    name: Magic Absorption
+    template: 29441
+    spellLevel: 0
+    spellFixAck: >-
+      SpellInfoCorrections.cpp:1061 sets `SpellLevel = 0` on stock 29441/29444 BY ID, and a clone
+      never receives a by-id fix. The POST-FIX VALUE IS AUTHORED on this helper (`spellLevel: 0`
+      above) — `SpellLevel` simply has no entry in era_audit's `_SPELLFIX_KEYABLE` table, so the
+      check cannot see that the key is already set and falls through to the acknowledge-only branch.
+      Nothing is waived: the clone ships SpellLevel 0 exactly as the corrected stock row does.
+    effects:
+    - { effect: 6, aura: 4,  basePoints: 3, targetA: 1 }
+    - { effect: 6, aura: 22, basePoints: 6, misc: 126, targetA: 1, perLevel: 0 }
+    proc: { flags: 131072, typeMask: 7, phaseMask: 0, hitMask: 8, chance: 0, cooldown: 1000 }
+    client:
+      name: Magic Absorption
+      icon: 459
+      description: "Increases all resistances by 6 and causes all spells you resist to restore 3% of your total mana."
+  - id: 932329
+    name: Magic Absorption
+    template: 29441
+    spellLevel: 0
+    spellFixAck: >-
+      SpellInfoCorrections.cpp:1061 sets `SpellLevel = 0` on stock 29441/29444 BY ID, and a clone
+      never receives a by-id fix. The POST-FIX VALUE IS AUTHORED on this helper (`spellLevel: 0`
+      above) — `SpellLevel` simply has no entry in era_audit's `_SPELLFIX_KEYABLE` table, so the
+      check cannot see that the key is already set and falls through to the acknowledge-only branch.
+      Nothing is waived: the clone ships SpellLevel 0 exactly as the corrected stock row does.
+    effects:
+    - { effect: 6, aura: 4,  basePoints: 4, targetA: 1 }
+    - { effect: 6, aura: 22, basePoints: 8, misc: 126, targetA: 1, perLevel: 0 }
+    proc: { flags: 131072, typeMask: 7, phaseMask: 0, hitMask: 8, chance: 0, cooldown: 1000 }
+    client:
+      name: Magic Absorption
+      icon: 459
+      description: "Increases all resistances by 8 and causes all spells you resist to restore 4% of your total mana."
+  - id: 932330
+    name: Magic Absorption
+    template: 29441
+    spellLevel: 0
+    spellFixAck: >-
+      SpellInfoCorrections.cpp:1061 sets `SpellLevel = 0` on stock 29441/29444 BY ID, and a clone
+      never receives a by-id fix. The POST-FIX VALUE IS AUTHORED on this helper (`spellLevel: 0`
+      above) — `SpellLevel` simply has no entry in era_audit's `_SPELLFIX_KEYABLE` table, so the
+      check cannot see that the key is already set and falls through to the acknowledge-only branch.
+      Nothing is waived: the clone ships SpellLevel 0 exactly as the corrected stock row does.
+    effects:
+    - { effect: 6, aura: 4,  basePoints: 5, targetA: 1 }
+    - { effect: 6, aura: 22, basePoints: 10, misc: 126, targetA: 1, perLevel: 0 }
+    proc: { flags: 131072, typeMask: 7, phaseMask: 0, hitMask: 8, chance: 0, cooldown: 1000 }
+    client:
+      name: Magic Absorption
+      icon: 459
+      description: "Increases all resistances by 10 and causes all spells you resist to restore 5% of your total mana."
+  # --- Improved Counterspell silence 932762 (node 18011 triggers it) ------------------------------
+  # ADDED 2026-09-05 (TBC Phase 9 re-audit, vanilla_fix_rows[18011]). The node's tooltip promises a
+  # **4 sec** silence and it triggered stock 18469, which on this core is `DurationIndex 39` =
+  # **2000 ms** (WotLK halved it; wago 2.5.4 18469 is `durIdx 35` = 4000 ms, and the cached TBC
+  # tooltip for 11255 also says 4 sec — 4 s is the pre-Wrath value in BOTH earlier eras). A per-era
+  # duration cannot be expressed on the global stock id, so the payload is cloned and the node's
+  # `proc.trigger` re-pointed at it.
+  # Everything but the duration inherits: aura 27 SILENCE, Mechanic 9, DispelType 1, SchoolMask 64,
+  # ImplicitTargetA 6, RangeIndex 13. A visible enemy debuff needs its own `client:` row or the icon
+  # never renders (the Blackout 932970 precedent); no `skillLine:` — it is a triggered payload.
+  # PER-ERA IDENTITY: the TBC node 20810 uses its OWN clone 948770 in the TBC slice. Do NOT share
+  # one helper between eras.
+  - id: 932762
+    name: Silenced - Improved Counterspell
+    template: 18469
+    durationIndex: 35    # 4000 ms (stock 18469 is index 39 = 2000 ms)
+    effects:             # byte-identical to stock 18469's Effect_1; the generator requires an
+                         # authored effects list on any `template:` helper (template effects would
+                         # otherwise pass through wholesale). Mechanic 9 / DispelType 1 /
+                         # SchoolMask 64 / RangeIndex 13 still inherit.
+    - { effect: 6, aura: 27, basePoints: 1, targetA: 6 }   # SPELL_AURA_MOD_SILENCE on the target
+    client:
+      name: Silenced - Improved Counterspell
+      icon: 17           # stock 18469 SpellIconID
+      description: "Silenced."
+      auraDescription: "Silenced."
+  # --- Fire Vulnerability 932763 (node 18026 Improved Scorch triggers it) -------------------------
+  # ADDED 2026-09-05 (TBC Phase 9 re-audit, vanilla_fix_rows[18026]). The node triggered STOCK 22959
+  # while its tooltip promised "+3% Fire damage ... 30 sec ... Stacks up to 5 times". Live 22959 is
+  # named "Improved Scorch" and is `aura 179 MOD_ATTACKER_SPELL_CRIT_CHANCE misc 126 val 5,
+  # CumulativeAura 1` — i.e. +5% crit taken, ALL schools, ONE stack. wago 2.5.4 22959 is named
+  # "Fire Vulnerability" and is `aura 87 MOD_DAMAGE_PERCENT_TAKEN misc 4 (fire) val 3, durIdx 9
+  # (30 s), CumulativeAura 5` — exactly what the Vanilla tooltip says. So the shipped node was
+  # delivering a WotLK crit debuff while advertising the era one; the payload is cloned per era and
+  # `proc.trigger` re-pointed. Stock 22959 ships untouched for WotLK-stage mages.
+  # PER-ERA IDENTITY: the TBC node 20832 uses its OWN clone 948860 in the TBC slice — never share.
+  # NO `spell_proc` row on the debuff: it is a plain aura-87 debuff that never procs, and stock 22959
+  # has none either (verified on the dev box, 2026-09-05). The `-11095` contract belongs to the
+  # TALENT, which node 18026 carries.
+  # INHERITED BY DECISION (orchestrator, fix round): live 22959's `AttributesEx2 0x84` /
+  # `AttributesEx3 0x30000` (LoS + proc-suppression engine guards) and its `SpellClassMask_2 = 8192`
+  # identity bit. Unlike Combustion's CAN_PROC_FROM_PROCS (authored to 0 below), clearing these would
+  # let a PROC-APPLIED debuff's own application drive further procs and pull initial aggro — an
+  # engine-guard loss, not an era gain. They stay.
+  - id: 932763
+    name: Fire Vulnerability
+    template: 22959
+    school: 4            # SPELL_SCHOOL_MASK_FIRE (identical in both stores; authored for the record)
+    durationIndex: 9     # 30 s (identical in both stores)
+    stackAmount: 5       # CumulativeAura — live 22959 is 1
+    effects:
+    - { effect: 6, aura: 87, basePoints: 3, misc: 4, targetA: 6 }   # MOD_DAMAGE_PERCENT_TAKEN, fire, +3%
+    client:
+      name: Fire Vulnerability
+      icon: 816          # stock 22959 SpellIconID
+      description: "Fire damage taken increased by 3%."
+      auraDescription: "Fire damage taken increased by 3%."
+  # --- Pyroblast r1-r8, 932310-932317 (node 18024 grants r1; r2-r8 trainer-taught at Task 5) ------
+  # ADDED 2026-09-05 (TBC Phase 9 re-audit, vanilla_fix_rows[18024]; USER DECISION 2026-09-05 —
+  # ships this generation). The node GRANTED stock 11366, whose live `CastingTimeIndex 6` = 5000 ms.
+  # wago 2.5.4 11366 is `CastingTimeIndex 171` = **6000 ms** on every rank and the cached Wowhead TBC
+  # tooltip reads "6 sec cast": WotLK 3.0 shortened Pyroblast, so **Vanilla 1.12 and TBC 2.4.3 share
+  # the 6 s cast** and the Vanilla node had the same defect the TBC node 20830 is being fixed for.
+  # SHAPE = the TBC twin's: clone the chain, copy the LIVE stock values verbatim, change ONLY the
+  # era-diverged field. Index **171 is 6000 ms in BOTH stores**, so the index is authored verbatim.
+  # The Vanilla cap is level 60, so the chain stops at r8 (18809) — 27132/33938/42890/42891 are not
+  # cloned and stay reachable for higher-era mages. `category: 0` is the pre-Wrath value (live's 290
+  # carries CategoryRecoveryTime 0, so it groups nothing either way).
+  # Client text is live's description string verbatim: it is pure `$s1`/`$o2`/`$d` substitution off
+  # the clone's OWN row, and the 6 s cast comes from the DBC column the client reads directly.
+  # Node 18024 is a GRANT node, so this description IS the talent-panel tooltip (lesson 17d).
+  # r2-r8 trainer rows (TrainerId 16, live levels/costs), the `spell_ranks` chain, the stock swap and
+  # the strip arms are Task 5. Nothing is deleted — the stock chain roots at 11366, which a Vanilla
+  # mage never holds, so it is already self-gating.
+  - id: 932310
+    name: Pyroblast
+    template: 11366
+    castTimeIndex: 171   # 6000 ms (live index 6 = 5000 ms)
+    category: 0          # pre-Wrath; live 290 (CategoryRecoveryTime 0 either way)
+    effects:
+    - { effect: 2, basePoints: 140, dieSides: 47, targetA: 6 }
+    - { effect: 6, aura: 3, basePoints: 13, dieSides: 1, targetA: 6 }
+    client:
+      name: Pyroblast
+      icon: 184          # stock Pyroblast SpellIconID
+      rank: 1
+      skillLine: 8       # Fire tab (else a granted active lands in the client's General tab)
+      description: "Hurls an immense fiery boulder that causes $s1 Fire damage and an additional $o2 Fire damage over $d."
+      auraDescription: "$s2 Fire damage every $t2 seconds."
+  - id: 932311
+    name: Pyroblast
+    template: 12505
+    castTimeIndex: 171   # 6000 ms (live index 6 = 5000 ms)
+    category: 0          # pre-Wrath; live 290 (CategoryRecoveryTime 0 either way)
+    effects:
+    - { effect: 2, basePoints: 179, dieSides: 57, targetA: 6 }
+    - { effect: 6, aura: 3, basePoints: 17, dieSides: 1, targetA: 6 }
+    client:
+      name: Pyroblast
+      icon: 184          # stock Pyroblast SpellIconID
+      rank: 2
+      skillLine: 8       # Fire tab (else a granted active lands in the client's General tab)
+      description: "Hurls an immense fiery boulder that causes $s1 Fire damage and an additional $o2 Fire damage over $d."
+      auraDescription: "$s2 Fire damage every $t2 seconds."
+  - id: 932312
+    name: Pyroblast
+    template: 12522
+    castTimeIndex: 171   # 6000 ms (live index 6 = 5000 ms)
+    category: 0          # pre-Wrath; live 290 (CategoryRecoveryTime 0 either way)
+    effects:
+    - { effect: 2, basePoints: 254, dieSides: 73, targetA: 6 }
+    - { effect: 6, aura: 3, basePoints: 23, dieSides: 1, targetA: 6 }
+    client:
+      name: Pyroblast
+      icon: 184          # stock Pyroblast SpellIconID
+      rank: 3
+      skillLine: 8       # Fire tab (else a granted active lands in the client's General tab)
+      description: "Hurls an immense fiery boulder that causes $s1 Fire damage and an additional $o2 Fire damage over $d."
+      auraDescription: "$s2 Fire damage every $t2 seconds."
+  - id: 932313
+    name: Pyroblast
+    template: 12523
+    castTimeIndex: 171   # 6000 ms (live index 6 = 5000 ms)
+    category: 0          # pre-Wrath; live 290 (CategoryRecoveryTime 0 either way)
+    effects:
+    - { effect: 2, basePoints: 328, dieSides: 91, targetA: 6 }
+    - { effect: 6, aura: 3, basePoints: 30, dieSides: 1, targetA: 6 }
+    client:
+      name: Pyroblast
+      icon: 184          # stock Pyroblast SpellIconID
+      rank: 4
+      skillLine: 8       # Fire tab (else a granted active lands in the client's General tab)
+      description: "Hurls an immense fiery boulder that causes $s1 Fire damage and an additional $o2 Fire damage over $d."
+      auraDescription: "$s2 Fire damage every $t2 seconds."
+  - id: 932314
+    name: Pyroblast
+    template: 12524
+    castTimeIndex: 171   # 6000 ms (live index 6 = 5000 ms)
+    category: 0          # pre-Wrath; live 290 (CategoryRecoveryTime 0 either way)
+    effects:
+    - { effect: 2, basePoints: 406, dieSides: 109, targetA: 6 }
+    - { effect: 6, aura: 3, basePoints: 38, dieSides: 1, targetA: 6 }
+    client:
+      name: Pyroblast
+      icon: 184          # stock Pyroblast SpellIconID
+      rank: 5
+      skillLine: 8       # Fire tab (else a granted active lands in the client's General tab)
+      description: "Hurls an immense fiery boulder that causes $s1 Fire damage and an additional $o2 Fire damage over $d."
+      auraDescription: "$s2 Fire damage every $t2 seconds."
+  - id: 932315
+    name: Pyroblast
+    template: 12525
+    castTimeIndex: 171   # 6000 ms (live index 6 = 5000 ms)
+    category: 0          # pre-Wrath; live 290 (CategoryRecoveryTime 0 either way)
+    effects:
+    - { effect: 2, basePoints: 502, dieSides: 129, targetA: 6 }
+    - { effect: 6, aura: 3, basePoints: 46, dieSides: 1, targetA: 6 }
+    client:
+      name: Pyroblast
+      icon: 184          # stock Pyroblast SpellIconID
+      rank: 6
+      skillLine: 8       # Fire tab (else a granted active lands in the client's General tab)
+      description: "Hurls an immense fiery boulder that causes $s1 Fire damage and an additional $o2 Fire damage over $d."
+      auraDescription: "$s2 Fire damage every $t2 seconds."
+  - id: 932316
+    name: Pyroblast
+    template: 12526
+    castTimeIndex: 171   # 6000 ms (live index 6 = 5000 ms)
+    category: 0          # pre-Wrath; live 290 (CategoryRecoveryTime 0 either way)
+    effects:
+    - { effect: 2, basePoints: 599, dieSides: 151, targetA: 6 }
+    - { effect: 6, aura: 3, basePoints: 56, dieSides: 1, targetA: 6 }
+    client:
+      name: Pyroblast
+      icon: 184          # stock Pyroblast SpellIconID
+      rank: 7
+      skillLine: 8       # Fire tab (else a granted active lands in the client's General tab)
+      description: "Hurls an immense fiery boulder that causes $s1 Fire damage and an additional $o2 Fire damage over $d."
+      auraDescription: "$s2 Fire damage every $t2 seconds."
+  - id: 932317
+    name: Pyroblast
+    template: 18809
+    castTimeIndex: 171   # 6000 ms (live index 6 = 5000 ms)
+    category: 0          # pre-Wrath; live 290 (CategoryRecoveryTime 0 either way)
+    effects:
+    - { effect: 2, basePoints: 707, dieSides: 191, targetA: 6 }
+    - { effect: 6, aura: 3, basePoints: 66, dieSides: 1, targetA: 6 }
+    client:
+      name: Pyroblast
+      icon: 184          # stock Pyroblast SpellIconID
+      rank: 8
+      skillLine: 8       # Fire tab (else a granted active lands in the client's General tab)
+      description: "Hurls an immense fiery boulder that causes $s1 Fire damage and an additional $o2 Fire damage over $d."
+      auraDescription: "$s2 Fire damage every $t2 seconds."
+  # --- Blast Wave r1-r5, 932320-932324 (node 18030 grants r1; r2-r5 trainer-taught at Task 5) -----
+  # ADDED 2026-09-05 (TBC Phase 9 re-audit, vanilla_fix_rows[18030]; USER DECISION — ships this
+  # generation). The node GRANTED stock 11113, whose live record carries `e3 = eff 98
+  # SPELL_EFFECT_KNOCK_BACK val 80 misc 100`. wago 2.5.4 11113 has only TWO effects (damage + the
+  # -50% snare): the knockback is a WotLK 3.0 addition and is wrong for Vanilla exactly as it is for
+  # TBC. Authoring exactly two effects makes the templated 0-fill zero Effect_3.
+  # The Vanilla cap is 60, so the chain stops at r5 (13021); 27133/33933/42944/42945 stay for higher
+  # eras. The clones carry LIVE's identity encoding (`flagsB 64`), which templating 11113 gives for
+  # free — every spellmod on this core that names Blast Wave binds through that bit.
+  # NO `spell_mage_blast_wave` rebind: that SpellScript only prevents EFFECT_2's knockback under
+  # Glyph of Blast Wave, and the clone has no such effect for it to hook.
+  - id: 932320
+    name: Blast Wave
+    template: 11113
+    effects:             # exactly TWO — the 0-fill drops live's e3 SPELL_EFFECT_KNOCK_BACK
+    - { effect: 2, basePoints: 153, dieSides: 33, targetA: 22 }
+    - { effect: 6, aura: 33, basePoints: -51, dieSides: 1, targetA: 22 }   # -50% snare (the "daze")
+    client:
+      name: Blast Wave
+      icon: 292          # stock Blast Wave SpellIconID
+      rank: 1
+      skillLine: 8       # Fire tab
+      description: "A wave of flame radiates outward from the caster, damaging all enemies caught within the blast for $s1 Fire damage, dazing them for $d."
+      auraDescription: "Dazed."
+  - id: 932321
+    name: Blast Wave
+    template: 13018
+    effects:             # exactly TWO — the 0-fill drops live's e3 SPELL_EFFECT_KNOCK_BACK
+    - { effect: 2, basePoints: 200, dieSides: 41, targetA: 22 }
+    - { effect: 6, aura: 33, basePoints: -51, dieSides: 1, targetA: 22 }   # -50% snare (the "daze")
+    client:
+      name: Blast Wave
+      icon: 292          # stock Blast Wave SpellIconID
+      rank: 2
+      skillLine: 8       # Fire tab
+      description: "A wave of flame radiates outward from the caster, damaging all enemies caught within the blast for $s1 Fire damage, dazing them for $d."
+      auraDescription: "Dazed."
+  - id: 932322
+    name: Blast Wave
+    template: 13019
+    effects:             # exactly TWO — the 0-fill drops live's e3 SPELL_EFFECT_KNOCK_BACK
+    - { effect: 2, basePoints: 276, dieSides: 53, targetA: 22 }
+    - { effect: 6, aura: 33, basePoints: -51, dieSides: 1, targetA: 22 }   # -50% snare (the "daze")
+    client:
+      name: Blast Wave
+      icon: 292          # stock Blast Wave SpellIconID
+      rank: 3
+      skillLine: 8       # Fire tab
+      description: "A wave of flame radiates outward from the caster, damaging all enemies caught within the blast for $s1 Fire damage, dazing them for $d."
+      auraDescription: "Dazed."
+  - id: 932323
+    name: Blast Wave
+    template: 13020
+    effects:             # exactly TWO — the 0-fill drops live's e3 SPELL_EFFECT_KNOCK_BACK
+    - { effect: 2, basePoints: 364, dieSides: 69, targetA: 22 }
+    - { effect: 6, aura: 33, basePoints: -51, dieSides: 1, targetA: 22 }   # -50% snare (the "daze")
+    client:
+      name: Blast Wave
+      icon: 292          # stock Blast Wave SpellIconID
+      rank: 4
+      skillLine: 8       # Fire tab
+      description: "A wave of flame radiates outward from the caster, damaging all enemies caught within the blast for $s1 Fire damage, dazing them for $d."
+      auraDescription: "Dazed."
+  - id: 932324
+    name: Blast Wave
+    template: 13021
+    effects:             # exactly TWO — the 0-fill drops live's e3 SPELL_EFFECT_KNOCK_BACK
+    - { effect: 2, basePoints: 461, dieSides: 83, targetA: 22 }
+    - { effect: 6, aura: 33, basePoints: -51, dieSides: 1, targetA: 22 }   # -50% snare (the "daze")
+    client:
+      name: Blast Wave
+      icon: 292          # stock Blast Wave SpellIconID
+      rank: 5
+      skillLine: 8       # Fire tab
+      description: "A wave of flame radiates outward from the caster, damaging all enemies caught within the blast for $s1 Fire damage, dazing them for $d."
+      auraDescription: "Dazed."
+  # --- Combustion 932325 (node 18032 grants it) ---------------------------------------------------
+  # ADDED 2026-09-05 (TBC Phase 9 re-audit, vanilla_fix_rows[18032]; USER DECISION — ships this
+  # generation). The node GRANTED stock 11129, which live retuned twice over: `RecoveryTime 120000`
+  # (2 min) where wago 2.5.4 has 180000 (3 min), and `e1` turned into `aura 108 ADD_PCT_MODIFIER
+  # misc 15 SPELLMOD_CRIT_DAMAGE_BONUS +50%` where the era record is a BARE `aura 4` DUMMY at 0.
+  # The shipped node's own tooltip already described the era version (3 crits, no crit-damage half),
+  # so the grant was contradicting its own text. Same recipe as the TBC twin 948887.
+  # `e2` KEEPS `SPELL_EFFECT_TRIGGER_SPELL -> 28682` — the stacking crit buff is the same spell in
+  # both eras, is already in the client DBC, and keeps its own `spell_mage_combustion_proc` binding.
+  # `dispelType: 0` reproduces `SpellInfoCorrections.cpp:1055` (`{11129} Dispel = DISPEL_NONE`), a
+  # by-id fix a clone never inherits (workflow lesson 14).
+  # SCRIPT REBIND IS MANDATORY: `spell_mage_combustion` is bound to the POSITIVE id 11129, so it is
+  # absent on a clone — and its `DoCheckProc` IS the mechanic (add a 28682 stack and REFUSE the
+  # charge on a non-crit; let the charge drop on a crit). See `scriptBindings:` below.
+  # OWN `spell_proc` row copying the stock POSITIVE-id row 11129 verbatim (a clone inherits none):
+  # school 4, family 3, mask (146800663, 200776, 0), ProcFlags 0 -> the DBC ProcTypeMask 65536,
+  # SpellTypeMask 1, SpellPhaseMask 2, HitMask 0, Chance 0 (core seeds 100 from the DBC), Charges 0
+  # -> the DBC's ProcCharges 3 (`SpellMgr.cpp:2081-2082`).
+  # RECORDED RESIDUALS (neither is an era magnitude): the census mask is LIVE's fire set (its word1
+  # bit 6 is Blast Wave, which the Vanilla clones keep); and `spell_mage_combustion_proc`, bound to
+  # the global 28682, removes the STOCK 11129 when the crit stack is cancelled, so that one cleanup
+  # path no longer reaches an era mage's Combustion.
+  # `attributesEx3: 0` IS AUTHORED (workflow lesson 17c). Live 11129 carries `0x4000000`
+  # SPELL_ATTR3_CAN_PROC_FROM_PROCS where wago 2.5.4 carries **0** — a WotLK addition that lets
+  # TRIGGERED casts drive the aura's proc, so inheriting it would let Ignite ticks and Blizzard's
+  # 42208 build and burn Combustion's three charges. Live's AttributesEx3 is exactly that one bit,
+  # so authoring 0 clears it and nothing else. Same authored value as the TBC twin 948887.
+  - id: 932325
+    name: Combustion
+    template: 11129
+    cooldown: 180000     # 3 min (live 120000)
+    attributesEx3: 0     # wago 11129 = 0; live's 0x4000000 CAN_PROC_FROM_PROCS is a WotLK addition
+    dispelType: 0        # SpellInfoCorrections.cpp:1055 sets DISPEL_NONE on 11129 by id
+    procCharges: 3       # 3 fire crits; authored explicitly because the charge window IS the spell
+    spellFixAck: >-
+      SpellInfoCorrections.cpp:1055 sets `Dispel = DISPEL_NONE` on stock 11129 BY ID, and a clone
+      never receives a by-id fix. The POST-FIX VALUE IS AUTHORED on this helper (`dispelType: 0`
+      above) — `Dispel` simply has no entry in era_audit's `_SPELLFIX_KEYABLE` table, so the check
+      cannot see that the key is already set and falls through to the acknowledge-only branch.
+      Nothing is waived.
+    effects:
+    - { effect: 6, aura: 4, basePoints: 0, targetA: 1, maskA: 12582935, maskB: 0, maskC: 0 }
+    - { effect: 64, trigger: 28682, targetA: 1 }
+    proc:
+      flags: 65536       # = the clone's inherited DBC ProcTypeMask (the stock row's ProcFlags is 0)
+      school: 4
+      typeMask: 1
+      phaseMask: 2
+      hitMask: 0
+      attrMask: 0
+      chance: 0          # stock row; the core seeds from the DBC ProcChance (100)
+      affectsMask: { a: 146800663, b: 200776, c: 0 }   # census row 11129 verbatim
+    client:
+      name: Combustion
+      icon: 33           # stock 11129 SpellIconID
+      skillLine: 8       # Fire tab
+      # Era tooltip wording — "3 critical strikes", not live's "3 non-periodic critical
+      # strikes". Behaviour is unchanged: the proc row's ProcTypeMask 65536 is
+      # DONE_SPELL_MAGIC_DMG_CLASS_NEG, which periodic damage never raises, so no DoT tick
+      # can spend a charge and the qualifier the WotLK text adds is already implied.
+      description: "When activated, this spell causes each of your Fire damage spell hits to increase your critical strike chance with Fire damage spells by $28682s1%.  This effect lasts until you have caused 3 critical strikes with Fire spells."
+  # --- Winter's Chill debuff 932764 (node 18048 triggers it) --------------------------------------
+  # ADDED 2026-09-05 (TBC Phase 9 re-audit, vanilla_fix_rows[18048]). The node triggered STOCK 12579
+  # while its tooltip promised "+2% ... a Frost spell will critically hit ... Stacks up to 5 times".
+  # Live 12579 is `aura 179 MOD_ATTACKER_SPELL_CRIT_CHANCE misc **126** val **1**` — +1% crit taken,
+  # ALL schools — where wago 2.5.4 12579 is `misc 16` (frost) `val 2`. So the shipped node advertised
+  # the era debuff and delivered the WotLK one, at half the magnitude and the wrong scope. Everything
+  # else (`durIdx 8` = 15 s, `CumulativeAura 5`, school 16, `targetA 6`, family 3,
+  # `attributes 0x800000`) is identical in both stores. Stock 12579 ships untouched.
+  # PER-ERA IDENTITY: the TBC node 20862 uses its OWN clone 948960 in the TBC slice — never share.
+  #
+  # **`singleAuraStack: true` IS LOAD-BEARING AND IS NOT INHERITED.** `SpellMgr.cpp:3752` applies
+  # `SPELL_ATTR0_CU_SINGLE_AURA_STACK` to **12579 BY ID** (workflow lesson 14): without it every
+  # caster owns a separate aura and `Aura::CanStackWith` REPLACES a rival mage's stack instead of
+  # incrementing one shared 5-stack debuff. The generator emits the `spell_custom_attr` row for it.
+  #
+  # NO `spell_proc` row on the debuff: it is a plain aura-179 debuff that never procs, and stock
+  # 12579 has none either. The `-11180` contract belongs to the TALENT, which node 18048 carries.
+  # (The ref's own `vanilla_fix_rows[18048].fix` said "give it its own `spell_proc` row" — the same
+  # slip Amendment C.3 corrected for Fire Vulnerability; corrected in the ref in this commit.)
+  # INHERITED BY DECISION (the C.3 precedent): live 12579's `AttributesEx2 0x4` (IGNORE_LINE_OF_SIGHT)
+  # and `AttributesEx3 0x40020000` (incl. SUPPRESS_TARGET_PROCS) are proc-loop / LoS engine guards on
+  # a PROC-APPLIED debuff, not era magnitudes; clearing them would let the debuff's own application
+  # drive further procs. Same for the inherited `SpellClassMask_3 = 1` — no mask in either era's mage
+  # tree binds family word 2.
+  # The client text is AUTHORED, not inherited: live 12579's Description hardcodes the foreign id
+  # `$12579s1` (workflow lesson 7), which on a clone would render STOCK's 1% forever.
+  - id: 932764
+    name: Winter's Chill
+    template: 12579
+    school: 16           # frost (identical in both stores; authored for the record)
+    durationIndex: 8     # 15 s (identical in both stores)
+    stackAmount: 5       # CumulativeAura (identical in both stores)
+    attributes: 8388608  # 0x800000 — the era's own Attributes word (identical to live)
+    singleAuraStack: true  # SpellMgr.cpp:3752 gives stock 12579 this BY ID; a clone does not inherit it
+    effects:
+    - { effect: 6, aura: 179, basePoints: 2, misc: 16, targetA: 6 }   # MOD_ATTACKER_SPELL_CRIT_CHANCE, frost, +2%
+    client:
+      name: Winter's Chill
+      icon: 187          # stock 12579 SpellIconID
+      description: "Increases the chance a Frost spell will critically hit the target by 2% for 15 sec.  Stacks up to 5 times."
+      auraDescription: "Frost spells have a 2% additional chance to critically hit.  Stacks up to 5 times."
+  # --- Ice Barrier r1-r4, 932331-932334 (node 18049 grants r1; r2-r4 trainer-taught at Task 5) ----
+  # ADDED 2026-09-05 (TBC Phase 9 re-audit, spec Amendment **A.7** — the fourth Vanilla clone chain,
+  # found by the TBC coefficient hunt rather than by the sweep, because the DBC rows are LIVE_MATCH).
+  # The node GRANTED stock 11426, whose live AuraScript `spell_mage_ice_barrier_aura` adds **80.68%
+  # of spell power** in code (spell_mage.cpp:627). In 1.12 the absorb is **BASE POINTS ONLY**:
+  # cmangos `mangos-classic` has no `spell_bonus_data` subsystem at all
+  # (`grep GetSpellBonusData src/game/Entities/Unit.cpp` = 0 hits), `SPELL_AURA_SCHOOL_ABSORB` maps to
+  # the empty `HandleNoImmediateEffect` (SpellAuras.cpp:130, SpellAuras.h:283-286), and
+  # `CalculateDamageAbsorbAndResist` (Unit.cpp:2363+) reads the stored base amount with no SP term;
+  # TBC's own patch notes call absorb scaling a 2.0 change.
+  #
+  # **THE FIX IS THE ABSENCE OF A SCRIPT.** These clones carry NO `scriptBindings:` entry — a band id
+  # is outside the `-11426` stock chain, so `spell_mage_ice_barrier(_aura)` never touches it, and the
+  # absorb stays exactly its base value. That is the 1.12 behaviour, achieved by cloning and binding
+  # nothing. (Contrast the TBC twin 20863, whose clones DO bind the new `era_mag_ice_barrier_tbc` to
+  # supply TBC's own 0.1 coefficient.) Losing `spell_mage_ice_barrier`'s CheckCast bounce-guard —
+  # which refuses a recast that would replace a stronger barrier — is accepted; with a base-only
+  # absorb every rank's value is fixed, so a "weaker overwrite" can only mean a genuinely lower rank.
+  #
+  # The Vanilla cap is level 60, so the chain stops at r4 (13033) — 27134/33405/43038/43039 are not
+  # cloned and stay reachable for higher-era mages. Every clone copies the LIVE values verbatim
+  # (absorb 438/549/678/818, perLevel 2.8/3.2/3.6/4.0, `durIdx 3` = 60 s, `category 471` +
+  # `catCooldown 30000`, mana 305/360/420/480, levels 40/46/52/58) — all INHERITED from that rank's
+  # own template, which is why each clone authors only its effect.
+  # Client text is live's description verbatim: pure `$s1`/`$d` substitution off the clone's OWN row.
+  # Node 18049 is a GRANT node, so this string IS the talent-panel tooltip (lesson 17d).
+  # r2-r4 trainer rows (TrainerId 16, L46/52/58, cost 1700/1748/2000), the `spell_ranks` chain, the
+  # stock swap and the strip arms are Task 5. Nothing is deleted — the stock chain roots at 11426,
+  # which a Vanilla mage never holds, so it is already self-gating.
+  - id: 932331
+    name: Ice Barrier
+    template: 11426
+    effects:
+    - { effect: 6, aura: 69, basePoints: 438, misc: 127, targetA: 1, perLevel: 2.8 }   # SCHOOL_ABSORB
+    client:
+      name: Ice Barrier
+      icon: 32           # stock 11426 SpellIconID
+      rank: 1
+      skillLine: 6       # Frost tab
+      description: "Instantly shields you, absorbing $s1 damage.  Lasts $d.  While the shield holds, spellcasting will not be delayed by damage."
+      auraDescription: "Absorbs damage."
+  - id: 932332
+    name: Ice Barrier
+    template: 13031
+    effects:
+    - { effect: 6, aura: 69, basePoints: 549, misc: 127, targetA: 1, perLevel: 3.2 }
+    client:
+      name: Ice Barrier
+      icon: 32
+      rank: 2
+      skillLine: 6
+      description: "Instantly shields you, absorbing $s1 damage.  Lasts $d.  While the shield holds, spellcasting will not be delayed by damage."
+      auraDescription: "Absorbs damage."
+  - id: 932333
+    name: Ice Barrier
+    template: 13032
+    effects:
+    - { effect: 6, aura: 69, basePoints: 678, misc: 127, targetA: 1, perLevel: 3.6 }
+    client:
+      name: Ice Barrier
+      icon: 32
+      rank: 3
+      skillLine: 6
+      description: "Instantly shields you, absorbing $s1 damage.  Lasts $d.  While the shield holds, spellcasting will not be delayed by damage."
+      auraDescription: "Absorbs damage."
+  - id: 932334
+    name: Ice Barrier
+    template: 13033
+    effects:
+    - { effect: 6, aura: 69, basePoints: 818, misc: 127, targetA: 1, perLevel: 4.0 }
+    client:
+      name: Ice Barrier
+      icon: 32
+      rank: 4
+      skillLine: 6
+      description: "Instantly shields you, absorbing $s1 damage.  Lasts $d.  While the shield holds, spellcasting will not be delayed by damage."
+      auraDescription: "Absorbs damage."
+  # --- Cold Snap 932335 (node 18041 grants it) — the cooldown DIVERGED ---------------------------
+  # ADDED 2026-09-06 by the mage FINAL REVIEW (item G-45, owner-approved). Node 18041 used to grant
+  # STOCK 11958, whose live `RecoveryTime` is 480000 (8 min); Vanilla's Cold Snap is a **10 min**
+  # cooldown. Overriding stock 11958 is era-unsafe (Spell.dbc is global), so clone it — the same
+  # call the Arcane Power 932760 / Presence of Mind 932761 blocks make for their cd divergences.
+  #
+  # Stock 11958 has `Category 0` / `CategoryRecoveryTime 0` (dumped from ip-dbc/Spell.dbc
+  # 2026-09-06), so unlike those two there is NO inherited category to neutralize — the cooldown
+  # lives purely in `RecoveryTime`. Effect_1 is a bare `SPELL_EFFECT_DUMMY` (3) on self, base 0:
+  # ALL of the behaviour is in the script.
+  #
+  # **THE SCRIPT IS THE REASON THIS CLONE NEEDED A DECISION.** Core `spell_mage_cold_snap`
+  # (spell_mage.cpp:485) is bound to the POSITIVE id 11958, so it is simply absent on a band clone
+  # (workflow lesson 6), and it cannot be re-bound the way Combustion's is: its reset loop skips
+  # exactly one spell, `SPELL_MAGE_COLD_SNAP` = 11958, so on the clone the loop would find 932335
+  # (family 3, frost school, RecoveryTime > 0) and clear COLD SNAP'S OWN cooldown — an infinite
+  # free reset. Hence the module SpellScript `era_mag_cold_snap`, a copy of the core logic that
+  # excludes BOTH ids. Bound below in `scriptBindings:` by positive id.
+  - id: 932335
+    name: Cold Snap
+    template: 11958      # clone stock Cold Snap (inherit family 3, school 16, attrs, icon, level 30)
+    cooldown: 600000     # Vanilla 10-min cooldown (stock RecoveryTime 480000 = 8 min)
+    effects:             # byte-identical to stock 11958 Effect_1 — a bare DUMMY; the script is the mechanic
+    - { effect: 3, basePoints: 0, dieSides: 0, targetA: 1 }   # SPELL_EFFECT_DUMMY, self
+    client:
+      name: Cold Snap
+      icon: 133          # stock Cold Snap SpellIconID (11958 dump 2026-09-06)
+      skillLine: 6       # Frost tab — else the granted active lands in the client's General tab
+      description: "When activated, this spell finishes the cooldown on all of your Frost spells."
+# Attach the module AuraScript to EVERY rank of Fire Ward (-543) and Frost Ward (-6143) — a
+# negative id binds the whole spell chain. The script grants the matching reflect helper while the
+# ward is up when the mage has the Improved Fire Ward / Frost Warding DUMMY marker.
+#
+# The Magic Absorption clones 932326-932330 (node 18005) re-bind the CORE script
+# `spell_mage_magic_absorption`, which is bound by negative id to -29441 and is therefore dead on a
+# band clone (workflow lesson 6). BOUND PER RANK WITH POSITIVE IDS, NOT ONE NEGATIVE CHAIN ROOT:
+# `ObjectMgr::LoadSpellScriptNames` resolves a negative id through `GetFirstSpellInChain` /
+# `GetNextRankSpell`, i.e. through `spell_ranks`, and the generator emits no `spell_ranks` rows
+# (every era rank chain in this repo gets them from a hand SQL migration). A `-932326` binding on a
+# chain-less clone set would bind ONLY rank 1, silently, and ranks 2-5 would lose the mana rider.
+scriptBindings:
+  - { spell: -543,  script: era_ward_reflect }
+  - { spell: -6143, script: era_ward_reflect }
+  - { spell: 932326, script: spell_mage_magic_absorption }
+  - { spell: 932327, script: spell_mage_magic_absorption }
+  - { spell: 932328, script: spell_mage_magic_absorption }
+  - { spell: 932329, script: spell_mage_magic_absorption }
+  - { spell: 932330, script: spell_mage_magic_absorption }
+# The Combustion clone 932325 (node 18032) re-binds the CORE script `spell_mage_combustion`, which
+# is bound to the **POSITIVE** id 11129 and so is simply absent on a band clone (workflow lesson 6).
+# That script is the whole mechanic — its `DoCheckProc` casts a stack of 28682 and REFUSES the charge
+# on a NON-crit fire hit, letting the charge drop only on a crit — so without the rebind the clone
+# would burn all three charges on ordinary hits and never build the crit buff.
+  - { spell: 932325, script: spell_mage_combustion }
+# The Cold Snap clone 932335 (node 18041) binds the MODULE SpellScript `era_mag_cold_snap` rather
+# than re-binding core `spell_mage_cold_snap`: the core script's reset loop excludes only 11958, so
+# on the clone it would reset Cold Snap's own cooldown. See the 932335 helper block above.
+  - { spell: 932335, script: era_mag_cold_snap }
+tabs:
+- key: 1
+  name: Arcane
+  background: MageArcane
+  nodes:
+  - id: 18001
+    slug: arcane_subtlety
+    name: Arcane Subtlety
+    tab: 1
+    tier: 0
+    col: 0
+    icon: 'Spell_Holy_DispelMagic'
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 0
+    # Spell penetration for all the caster's magic schools (MOD_TARGET_RESISTANCE, misc 126,
+    # negative amount) + reduced Arcane threat (SPELLMOD_THREAT pct on the arcane nukes).
+    mechanic: multi
+    effects:
+      - type: stat
+        aura: 123
+        misc: 126
+        vals: [-5, -10]
+      - type: spellmod
+        affects: ["Arcane Missiles", "Arcane Explosion"]
+        op: threat
+        kind: pct
+        vals: [-20, -40]
+    tooltip:
+    - Reduces your target's resistance to all your spells by 5 and reduces threat of Arcane spells by 20%.
+    - Reduces your target's resistance to all your spells by 10 and reduces threat of Arcane spells by 40%.
+  - id: 18002
+    slug: arcane_focus
+    name: Arcane Focus
+    tab: 1
+    tier: 0
+    col: 1
+    icon: 'Spell_Holy_Devotion'
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    # "reduces chance opponent resists your Arcane spells" == +spell hit vs Arcane, the modern
+    # analog the real WotLK Elemental Precision (29438) uses: MOD_SPELL_HIT_CHANCE (aura 55) keyed
+    # to a school mask (arcane = 64). `school` here is EffectMiscValue.
+    mechanic: stat
+    aura: 55
+    school: 64
+    vals: [2, 4, 6, 8, 10]
+    tooltip:
+    - Reduces the chance that the opponent can resist your Arcane spells by 2%.
+    - Reduces the chance that the opponent can resist your Arcane spells by 4%.
+    - Reduces the chance that the opponent can resist your Arcane spells by 6%.
+    - Reduces the chance that the opponent can resist your Arcane spells by 8%.
+    - Reduces the chance that the opponent can resist your Arcane spells by 10%.
+  - id: 18003
+    slug: improved_arcane_missiles
+    name: Improved Arcane Missiles
+    tab: 1
+    tier: 0
+    col: 2
+    icon: 'Spell_Nature_StarFall'
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    # "avoid interruption caused by damage while channeling" == cast/channel pushback resist,
+    # i.e. SPELLMOD_NOT_LOSE_CASTING_TIME with the rank's % as a flat chance. Family-bound to
+    # Arcane Missiles only.
+    mechanic: spellmod
+    affects: ["Arcane Missiles"]
+    op: notLoseCastingTime
+    kind: flat
+    vals: [20, 40, 60, 80, 100]
+    tooltip:
+    - Gives you a 20% chance to avoid interruption caused by damage while channeling Arcane Missiles.
+    - Gives you a 40% chance to avoid interruption caused by damage while channeling Arcane Missiles.
+    - Gives you a 60% chance to avoid interruption caused by damage while channeling Arcane Missiles.
+    - Gives you a 80% chance to avoid interruption caused by damage while channeling Arcane Missiles.
+    - Gives you a 100% chance to avoid interruption caused by damage while channeling Arcane Missiles.
+  - id: 18004
+    slug: wand_specialization
+    name: Wand Specialization
+    tab: 1
+    tier: 1
+    col: 0
+    icon: 'INV_Wand_01'
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    # +wand damage. aura 79 MOD_DAMAGE_PERCENT_DONE gated to the held WAND. A player wand SHOT takes
+    # the equipped wand's MAGIC school (Spell.cpp overrides m_spellSchoolMask for wand users) and
+    # resolves through MeleeDamageBonusDone, which applies aura 79 only when the misc mask intersects
+    # the (magic) damage school — so school must be 126 (all schools but Physical), NOT 1 (Physical,
+    # which a magic wand shot never carries → inert). equipSubclass = 524288 (1<<19
+    # ITEM_SUBCLASS_WEAPON_WAND); the old 262144 was 1<<18 CROSSBOW → gated to nothing. The
+    # multi-school misc would otherwise leak onto every same-school SPELL cast while a wand is held;
+    # core patch 0025 band-gates that off. See docs/superpowers/specs/2026-09-04-era-talents-wand-spec-leak-fix-design.md.
+    mechanic: stat
+    aura: 79
+    school: 126
+    vals: [13, 25]
+    equipClass: 2
+    equipSubclass: 524288
+    tooltip:
+    - Increases your damage with Wands by 13%.
+    - Increases your damage with Wands by 25%.
+  - id: 18005
+    slug: magic_absorption
+    name: Magic Absorption
+    tab: 1
+    tier: 1
+    col: 1
+    icon: 'Spell_Nature_AstralRecalGroup'
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    # FIXED 2026-09-05 (TBC Phase 9 re-audit) — the mana-on-full-resist rider is now WIRED: the node
+    # grants the clone chain 932326-932330 (one per rank), each carrying the DUMMY mana % the core
+    # script `spell_mage_magic_absorption` reads AND the MOD_RESISTANCE half, with the script
+    # re-bound per rank in `scriptBindings:`.
+    # WAS: `mechanic: stat, aura: 22, school: 126, vals: [2,4,6,8,10]` — resistances only, with a
+    # comment stating the rider was "NOT yet wired". The resistance half is preserved unchanged on
+    # each clone's e2 (same aura 22 / misc 126 / same values); `mechanic:` is dropped rather than
+    # kept alongside `grants:` because `emit_data_sql` writes era_talent_rank from `grants:` when
+    # both are present, which would leave the old passive unreachable while still emitting its rows.
+    # See the 932326 helper block for the full encoding and the "why not a multi node" adjudication.
+    tooltip:
+    - Increases all resistances by 2 and causes all spells you resist to restore 1% of your total mana.
+    - Increases all resistances by 4 and causes all spells you resist to restore 2% of your total mana.
+    - Increases all resistances by 6 and causes all spells you resist to restore 3% of your total mana.
+    - Increases all resistances by 8 and causes all spells you resist to restore 4% of your total mana.
+    - Increases all resistances by 10 and causes all spells you resist to restore 5% of your total mana.
+    grants:
+      1: [932326]
+      2: [932327]
+      3: [932328]
+      4: [932329]
+      5: [932330]
+  - id: 18006
+    slug: arcane_concentration
+    name: Arcane Concentration
+    tab: 1
+    tier: 1
+    col: 2
+    icon: 'Spell_Shadow_ManaBurn'
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    # Any damage spell hit -> chance to enter Clearcasting (stock 12536, next damage spell free).
+    # No family restriction: the done-magic-damage proc flag already scopes it to the caster's own
+    # damage spells across all schools.
+    mechanic: proc
+    proc:
+      flags: 65536
+      chance: [2, 4, 6, 8, 10]
+      trigger: 12536
+      hitMask: 0
+    tooltip:
+    - Gives you a 2% chance of entering a Clearcasting state after any damage spell hits a target. The Clearcasting state
+      reduces the mana cost of your next damage spell by 100%.
+    - Gives you a 4% chance of entering a Clearcasting state after any damage spell hits a target. The Clearcasting state
+      reduces the mana cost of your next damage spell by 100%.
+    - Gives you a 6% chance of entering a Clearcasting state after any damage spell hits a target. The Clearcasting state
+      reduces the mana cost of your next damage spell by 100%.
+    - Gives you a 8% chance of entering a Clearcasting state after any damage spell hits a target. The Clearcasting state
+      reduces the mana cost of your next damage spell by 100%.
+    - Gives you a 10% chance of entering a Clearcasting state after any damage spell hits a target. The Clearcasting state
+      reduces the mana cost of your next damage spell by 100%.
+  - id: 18007
+    slug: magic_attunement
+    name: Magic Attunement
+    tab: 1
+    tier: 2
+    col: 0
+    icon: 'Spell_Nature_AbolishMagic'
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 10
+    # Scales the effect magnitude of Amplify/Dampen Magic (SPELLMOD_ALL_EFFECTS, pct).
+    mechanic: spellmod
+    affects: ["Amplify Magic", "Dampen Magic"]
+    op: allEffects
+    kind: pct
+    vals: [25, 50]
+    tooltip:
+    - Increases the effect of your Amplify Magic and Dampen Magic spells by 25%.
+    - Increases the effect of your Amplify Magic and Dampen Magic spells by 50%.
+  - id: 18008
+    slug: improved_arcane_explosion
+    name: Improved Arcane Explosion
+    tab: 1
+    tier: 2
+    col: 1
+    icon: 'Spell_Nature_WispSplode'
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    # FIXED 2026-09-05 (TBC Phase 9 re-audit) — `kind: pct` -> `kind: flat`: a PCT crit spellmod is
+    # effectively inert on this core (`Player::ApplySpellMod` skips a SPELLMOD_PCT mod when the base
+    # value is 0, with an explicit `mod->op == SPELLMOD_CRITICAL_CHANCE` early-return), so the
+    # talent added nothing. Every stock crit-chance talent in both eras is aura 107 ADD_FLAT_MODIFIER
+    # (TBC 11242 `aura=107 misc=7 val=2`), which adds the percentage points the tooltip promises.
+    mechanic: spellmod
+    affects: ["Arcane Explosion"]
+    op: crit
+    kind: flat
+    vals: [2, 4, 6]
+    tooltip:
+    - Increases the critical strike chance of your Arcane Explosion spell by an additional 2%
+    - Increases the critical strike chance of your Arcane Explosion spell by an additional 4%
+    - Increases the critical strike chance of your Arcane Explosion spell by an additional 6%
+  - id: 18009
+    slug: arcane_resilience
+    name: Arcane Resilience
+    tab: 1
+    tier: 2
+    col: 2
+    icon: 'Spell_Arcane_ArcaneResilience'
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    # Armor = 50% of Intellect. Encoding copied from the real WotLK Arcane Fortitude (28574):
+    # MOD_RESISTANCE_OF_STAT_PERCENT (aura 182), misc 1 (SCHOOL_MASK_NORMAL = armor),
+    # miscB 3 (STAT_INTELLECT). Uses a single-effect `multi` because it needs EffectMiscValueB,
+    # which the flat `stat` mechanic does not emit.
+    mechanic: multi
+    effects:
+      - type: stat
+        aura: 182
+        misc: 1
+        miscB: 3
+        vals: [50]
+    tooltip:
+    - Increases your armor by an amount equal to 50% of your Intellect.
+  - id: 18010
+    slug: improved_mana_shield
+    name: Improved Mana Shield
+    tab: 1
+    tier: 3
+    col: 0
+    icon: 'Spell_Shadow_DetectLesserInvisibility'
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 15
+    # Mana Shield's "mana lost per point of damage" IS the aura effect's ValueMultiplier (2.0),
+    # and core's CalcValueMultiplier applies exactly ONE spell mod to it: SPELLMOD_VALUE_MULTIPLIER
+    # (op 27). So this is a plain spellmod reducing that multiplier by 10/20%.
+    mechanic: spellmod
+    affects: ["Mana Shield"]
+    op: valueMultiplier
+    kind: pct
+    vals: [-10, -20]
+    tooltip:
+    - Decreases the mana lost per point of damage taken when Mana Shield is active by 10%.
+    - Decreases the mana lost per point of damage taken when Mana Shield is active by 20%.
+  - id: 18011
+    slug: improved_counterspell
+    name: Improved Counterspell
+    tab: 1
+    tier: 3
+    col: 1
+    icon: 'Spell_Frost_IceShock'
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 15
+    # Counterspell hit -> chance to also apply the silence. Family-restricted to Counterspell only.
+    # Counterspell deals no damage, so: typeMask 4 (NO_DMG_HEAL) and ProcFlags =
+    # DONE_SPELL_MAGIC_DMG_CLASS_NEG | DONE_SPELL_NONE_DMG_CLASS_NEG (65536|4096=69632) to fire
+    # whichever damage-class the cast raises. Runtime-verify the pop in P2-14.
+    # FIXED 2026-09-05 (TBC Phase 9 re-audit) — `proc.trigger` re-pointed from stock 18469 to the
+    # clone 932762: the tooltip promises a 4 sec silence but stock 18469 is `DurationIndex 39` =
+    # 2000 ms on this core (WotLK halved it). See the 932762 helper block.
+    mechanic: proc
+    proc:
+      flags: 69632
+      typeMask: 4
+      chance: [50, 100]
+      trigger: 932762
+      hitMask: 0
+      affects: [Counterspell]
+    tooltip:
+    - Gives your Counterspell a 50% chance to silence the target for 4 sec.
+    - Gives your Counterspell a 100% chance to silence the target for 4 sec.
+  - id: 18012
+    slug: arcane_meditation
+    name: Arcane Meditation
+    tab: 1
+    tier: 3
+    col: 3
+    icon: 'Spell_Shadow_SiphonMana'
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    mechanic: stat
+    aura: 134
+    school: 0
+    vals: [5, 10, 15]
+    tooltip:
+    - Allows 5% of your Mana regeneration to continue while casting.
+    - Allows 10% of your Mana regeneration to continue while casting.
+    - Allows 15% of your Mana regeneration to continue while casting.
+  - id: 18013
+    slug: presence_of_mind
+    name: Presence of Mind
+    tab: 1
+    tier: 4
+    col: 1
+    icon: 'Spell_Nature_EnchantArmor'
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 20
+    # GRANT-CHANGE (2026-08-24 final-review F-2): grants the Vanilla clone 932761 (3-min cd) instead of
+    # stock 12043 (WotLK 2-min cd). Mechanic is identical Vanilla->WotLK; only the cooldown diverged, and
+    # 12043 is data-only (not script-bound), so a clean data clone is faithful — the twin case the
+    # 2026-08-18 Arcane Power (12042->932760) grant-accuracy pass missed.
+    grants: {1: [932761]}
+    tooltip:
+    - When activated, your next Mage spell with a casting time less than 10 sec becomes an instant
+      cast spell.
+  - id: 18014
+    slug: arcane_mind
+    name: Arcane Mind
+    tab: 1
+    tier: 4
+    col: 2
+    icon: 'Spell_Shadow_Charm'
+    maxRank: 5
+    prereqTalentId: 18009
+    prereqPoints: 20
+    mechanic: stat
+    aura: 132
+    school: 0
+    vals: [2, 4, 6, 8, 10]
+    tooltip:
+    - Increases your maximum Mana by 2%.
+    - Increases your maximum Mana by 4%.
+    - Increases your maximum Mana by 6%.
+    - Increases your maximum Mana by 8%.
+    - Increases your maximum Mana by 10%.
+  - id: 18015
+    slug: arcane_instability
+    name: Arcane Instability
+    tab: 1
+    tier: 5
+    col: 1
+    icon: 'Spell_Shadow_Teleport'
+    maxRank: 3
+    prereqTalentId: 18013
+    prereqPoints: 25
+    # +spell damage AND +spell crit, both across all magic schools. Encoding copied verbatim from
+    # the real WotLK Arcane Instability (spell 15058): effect 1 aura 79 MOD_DAMAGE_PERCENT_DONE
+    # misc 126 (all-magic mask), effect 2 aura 71 MOD_SPELL_CRIT_CHANCE_SCHOOL misc 126. Magnitudes
+    # are the Vanilla 1/2/3%.
+    mechanic: multi
+    effects:
+      - type: stat
+        aura: 79
+        misc: 126
+        vals: [1, 2, 3]
+      - type: stat
+        aura: 71
+        misc: 126
+        vals: [1, 2, 3]
+    tooltip:
+    - Increases your spell damage and critical strike chance by 1%.
+    - Increases your spell damage and critical strike chance by 2%.
+    - Increases your spell damage and critical strike chance by 3%.
+  - id: 18016
+    slug: arcane_power
+    name: Arcane Power
+    tab: 1
+    tier: 6
+    col: 1
+    icon: 'Spell_Nature_Lightning'
+    maxRank: 1
+    prereqTalentId: 18015
+    prereqPoints: 30
+    # GRANT-CHANGE (2026-08-18): grants the Vanilla clone 932760 (+30%/+30%, 3-min cd) instead of stock
+    # 12042 (WotLK +20%/+20%, 2-min cd). 12042 is data-only (not script-bound), so a clean data clone is
+    # faithful. Reconcile strips stale 12042 off Vanilla mages (EraTalents.cpp CLASS_MAGE block). See the
+    # 932760 helper for the full rationale.
+    grants: {1: [932760]}
+    tooltip:
+    - When activated, your spells deal 30% more damage while costing 30% more mana to cast. This effect
+      lasts 15 sec.
+- key: 2
+  name: Fire
+  background: MageFire
+  nodes:
+  - id: 18017
+    slug: improved_fireball
+    name: Improved Fireball
+    tab: 2
+    tier: 0
+    col: 1
+    icon: 'Spell_Fire_FireBolt02'
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    grants: {1: [11069], 2: [12338], 3: [12339], 4: [12340], 5: [12341]}
+    tooltip:
+    - Reduces the casting time of your Fireball spell by 0.1 sec.
+    - Reduces the casting time of your Fireball spell by 0.2 sec.
+    - Reduces the casting time of your Fireball spell by 0.3 sec.
+    - Reduces the casting time of your Fireball spell by 0.4 sec.
+    - Reduces the casting time of your Fireball spell by 0.5 sec.
+  - id: 18018
+    slug: impact
+    name: Impact
+    tab: 2
+    tier: 0
+    col: 2
+    icon: 'Spell_Fire_MeteorStorm'
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    # Fire spell hits -> chance to cast the stock Impact stun (12355). Proc restricted to the
+    # mage's Fire family (affects) on done-magic-damage (flags 65536), any hit (hitMask 0).
+    mechanic: proc
+    proc:
+      flags: 65536
+      chance: [2, 4, 6, 8, 10]
+      trigger: 12355
+      hitMask: 0
+      affects: [Fireball, "Fire Blast", Scorch, Flamestrike, Pyroblast, "Blast Wave"]
+    tooltip:
+    - Gives your Fire spells a 2% chance to stun the target for 2 sec.
+    - Gives your Fire spells a 4% chance to stun the target for 2 sec.
+    - Gives your Fire spells a 6% chance to stun the target for 2 sec.
+    - Gives your Fire spells a 8% chance to stun the target for 2 sec.
+    - Gives your Fire spells a 10% chance to stun the target for 2 sec.
+  - id: 18019
+    slug: ignite
+    name: Ignite
+    tab: 2
+    tier: 1
+    col: 0
+    icon: 'Spell_Fire_Incinerate'
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    # Fire crit -> DoT worth vals% of the crit damage over 4s (stock Ignite DoT 12654). The C++
+    # era_ignite AuraScript reads the rank pct from the DUMMY amount and casts the DoT. spell_proc
+    # restricts to fire spells + crit hits.
+    mechanic: proc-scripted
+    script: era_ignite
+    vals: [8, 16, 24, 32, 40]
+    proc:
+      flags: 65536
+      chance: 100
+      hitMask: 2
+      affects: [Fireball, "Fire Blast", Scorch, Flamestrike, Pyroblast, "Blast Wave"]
+    tooltip:
+    - Your critical strikes from Fire damage spells cause the target to burn for an additional 8% of your spell's damage over
+      4 sec.
+    - Your critical strikes from Fire damage spells cause the target to burn for an additional 16% of your spell's damage
+      over 4 sec.
+    - Your critical strikes from Fire damage spells cause the target to burn for an additional 24% of your spell's damage
+      over 4 sec.
+    - Your critical strikes from Fire damage spells cause the target to burn for an additional 32% of your spell's damage
+      over 4 sec.
+    - Your critical strikes from Fire damage spells cause the target to burn for an additional 40% of your spell's damage
+      over 4 sec.
+  - id: 18020
+    slug: flame_throwing
+    name: Flame Throwing
+    tab: 2
+    tier: 1
+    col: 1
+    icon: 'Spell_Fire_Flare'
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    mechanic: spellmod
+    affects: [Fireball, "Fire Blast", Scorch, Flamestrike, Pyroblast]
+    op: range
+    kind: flat
+    vals: [3, 6]
+    tooltip:
+    - Increases the range of your fire spells by 3 yards.
+    - Increases the range of your fire spells by 6 yards.
+  - id: 18021
+    slug: improved_fire_blast
+    name: Improved Fire Blast
+    tab: 2
+    tier: 1
+    col: 2
+    icon: 'Spell_Fire_Fireball'
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 5
+    mechanic: spellmod
+    affects: ["Fire Blast"]
+    op: cooldown
+    kind: flat
+    vals: [-500, -1000, -1500]
+    tooltip:
+    - Reduces the cooldown of your Fire Blast spell by 0.5 sec.
+    - Reduces the cooldown of your Fire Blast spell by 1 sec.
+    - Reduces the cooldown of your Fire Blast spell by 1.5 sec.
+  - id: 18022
+    slug: incinerate
+    name: Incinerate
+    tab: 2
+    tier: 2
+    col: 0
+    icon: 'Spell_Fire_FlameShock'
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 10
+    # FIXED 2026-09-05 (TBC Phase 9 re-audit) — `kind: pct` -> `flat`: a PCT crit spellmod is
+    # effectively INERT on this core (`Player::ApplySpellMod` skips a SPELLMOD_PCT when the base value
+    # is 0, and carries an explicit `SPELLMOD_CRITICAL_CHANCE` early-return unless a mod was already
+    # applied to that cast), so the shipped node delivered nothing. Every stock crit-chance talent in
+    # BOTH eras is `aura 107 ADD_FLAT_MODIFIER` — TBC 18459/18460 ("Incineration", the same talent) are
+    # `aura 107 misc 7 val 2/4`. vanilla_fix_rows[18022].
+    mechanic: spellmod
+    affects: ["Fire Blast", Scorch]
+    op: crit
+    kind: flat
+    vals: [2, 4]
+    tooltip:
+    - Increases the critical strike chance of your Fire Blast and Scorch spells by 2%.
+    - Increases the critical strike chance of your Fire Blast and Scorch spells by 4%.
+  - id: 18023
+    slug: improved_flamestrike
+    name: Improved Flamestrike
+    tab: 2
+    tier: 2
+    col: 1
+    icon: 'Spell_Fire_SelfDestruct'
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    # FIXED 2026-09-05 (TBC Phase 9 re-audit) — `kind: pct` -> `flat`: same inert-PCT-crit mechanism
+    # as node 18022; TBC 11108/12349/12350 are `aura 107 misc 7 val 5/10/15`. vanilla_fix_rows[18023].
+    mechanic: spellmod
+    affects: [Flamestrike]
+    op: crit
+    kind: flat
+    vals: [5, 10, 15]
+    tooltip:
+    - Increases the critical strike chance of your Flamestrike spell by 5%.
+    - Increases the critical strike chance of your Flamestrike spell by 10%.
+    - Increases the critical strike chance of your Flamestrike spell by 15%.
+  - id: 18024
+    slug: pyroblast
+    name: Pyroblast
+    tab: 2
+    tier: 2
+    col: 2
+    icon: 'Spell_Fire_Fireball02'
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    # FIXED 2026-09-05 (TBC Phase 9 re-audit) — grants the 6 s-cast clone chain root 932310 instead of
+    # stock 11366, whose live `CastingTimeIndex 6` is WotLK's 5 s cast; wago 2.5.4 has index 171 =
+    # 6000 ms on every rank and 1.12 shared it. r2-r8 (932311-932317) are trainer-taught behind r1 at
+    # Task 5. See the helper block for the full recipe. vanilla_fix_rows[18024] (user decision
+    # 2026-09-05: ships this generation).
+    grants: {1: [932310]}
+    tooltip:
+    - Hurls an immense fiery boulder that causes 148 to 195 Fire damage and an additional
+      56 Fire damage over 12 sec.
+  - id: 18025
+    slug: burning_soul
+    name: Burning Soul
+    tab: 2
+    tier: 2
+    col: 3
+    icon: 'Spell_Fire_Fire'
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 10
+    # Dual-effect fire talent: cast pushback resist (SPELLMOD_NOT_LOSE_CASTING_TIME, rank % as a
+    # flat chance) + fire threat reduction (SPELLMOD_THREAT pct). Both bound to the fire family.
+    mechanic: multi
+    effects:
+      - type: spellmod
+        affects: [Fireball, "Fire Blast", Scorch, Flamestrike, Pyroblast, "Blast Wave"]
+        op: notLoseCastingTime
+        kind: flat
+        vals: [35, 70]
+      - type: spellmod
+        affects: [Fireball, "Fire Blast", Scorch, Flamestrike, Pyroblast, "Blast Wave"]
+        op: threat
+        kind: pct
+        vals: [-15, -30]
+    tooltip:
+    - Gives your fire spells a 35% chance to not lose casting time when you take damage and reduces the threat caused by your
+      Fire spells by 15%.
+    - Gives your fire spells a 70% chance to not lose casting time when you take damage and reduces the threat caused by your
+      Fire spells by 30%.
+  - id: 18026
+    slug: improved_scorch
+    name: Improved Scorch
+    tab: 2
+    tier: 3
+    col: 0
+    icon: 'Spell_Fire_SoulBurn'
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    # Scorch hit -> chance to apply a stacking Fire Vulnerability debuff, +3% fire damage taken, up
+    # to 5 stacks. Restricted to Scorch.
+    # FIXED 2026-09-05 (TBC Phase 9 re-audit) — `proc.trigger` re-pointed from STOCK 22959 to the era
+    # clone 932763. The comment above used to call 22959 "the STOCK stacking Fire Vulnerability
+    # debuff"; it is not one. Live 22959 is named "Improved Scorch" and is `aura 179
+    # MOD_ATTACKER_SPELL_CRIT_CHANCE misc 126 val 5, CumulativeAura 1` — +5% crit taken, ALL schools,
+    # ONE stack — so the shipped node advertised the era debuff and delivered the WotLK one.
+    # vanilla_fix_rows[18026]. See the 932763 helper block.
+    # `typeMask: 0` ALIGNED to the census row (fix round): live `-11095` is `SpellTypeMask 0`, i.e. it
+    # constrains by family mask + phase only, and the TBC twin 20832 authors the same. The shipped
+    # Vanilla row was taking the generator's default 1 (SPELL_DAMAGE), which is a narrower contract
+    # than either era's own row — twin drift, not a deliberate divergence.
+    mechanic: proc
+    proc:
+      flags: 65536
+      typeMask: 0        # census `-11095` — family mask + phase only
+      chance: [33, 66, 100]
+      trigger: 932763
+      hitMask: 0
+      affects: [Scorch]
+    tooltip:
+    - Your Scorch spells have a 33% chance to cause your target to be vulnerable to Fire damage. This vulnerability increases
+      the Fire damage dealt to your target by 3% and lasts 30 sec. Stacks up to 5 times.
+    - Your Scorch spells have a 66% chance to cause your target to be vulnerable to Fire damage. This vulnerability increases
+      the Fire damage dealt to your target by 3% and lasts 30 sec. Stacks up to 5 times.
+    - Your Scorch spells have a 100% chance to cause your target to be vulnerable to Fire damage. This vulnerability increases
+      the Fire damage dealt to your target by 3% and lasts 30 sec. Stacks up to 5 times.
+  - id: 18027
+    slug: improved_fire_ward
+    name: Improved Fire Ward
+    tab: 2
+    tier: 3
+    col: 1
+    icon: 'Spell_Fire_FireArmor'
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 15
+    # % chance to reflect Fire spells WHILE Fire Ward is active. Reflect must live on the ward buff
+    # (not always-on), so the talent passive is a SPELL_AURA_DUMMY marker (misc 2 = "fire ward
+    # reflect" era-hook opcode, amount = the %), and the module AuraScript era_ward_reflect (on Fire
+    # Ward 543) applies a fire SPELL_AURA_REFLECT_SPELLS_SCHOOL aura for the ward's duration when the
+    # caster has this marker.
+    mechanic: stat
+    aura: 4
+    school: 2
+    vals: [10, 20]
+    tooltip:
+    - Causes your Fire Ward to have a 10% chance to reflect Fire spells while active.
+    - Causes your Fire Ward to have a 20% chance to reflect Fire spells while active.
+  - id: 18028
+    slug: master_of_elements
+    name: Master of Elements
+    tab: 2
+    tier: 3
+    col: 3
+    icon: 'Spell_Fire_MasterOfElements'
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    # Fire/Frost crit -> refund vals% of the spell's base mana cost (stock energize 29077). C++
+    # era_master_of_elements reads the rank pct from the DUMMY amount; spell_proc restricts to the
+    # mage's fire+frost damage spells + crit.
+    mechanic: proc-scripted
+    script: era_master_of_elements
+    vals: [10, 20, 30]
+    # FINAL REVIEW 2026-09-06 (I-16 + I-27): `attrMask: 2` = PROC_ATTR_TRIGGERED_CAN_PROC, without
+    # which a Blizzard crit can never refund — Blizzard deals its damage through the TRIGGERED
+    # sub-spell 42208, exactly the case the framework's `AttributesMask` row names (the sibling
+    # frost procs 18037/18042/18048 all carry it). `affectsMask` pins the emitted DBC mask instead
+    # of ORing each `affects:` spell's full identity, because Blizzard's identity 524416 carries the
+    # SHARED word-0 bit 19 (also on Frost Armor / Ice Armor); the unique Blizzard bit is 128.
+    #   a = 4195063 = Fireball 1 | Fire Blast 2 | Flamestrike 4 | Scorch 16 | Frostbolt 32 |
+    #                 Frost Nova 64 | Blizzard 128 | Cone of Cold 512 | Pyroblast 4194304
+    #   b = 64      = Blast Wave (word 1 bit 6)
+    # `affects:` stays authored — it drives the addon spellMods name-map and the _ref.spells lint.
+    proc:
+      flags: 65536
+      chance: 100
+      hitMask: 2
+      attrMask: 2   # PROC_ATTR_TRIGGERED_CAN_PROC — Blizzard's damage tick 42208 must be able to proc
+      affects: [Fireball, "Fire Blast", Scorch, Flamestrike, Pyroblast, "Blast Wave",
+                Frostbolt, Blizzard, "Cone of Cold", "Frost Nova"]
+      affectsMask: { a: 4195063, b: 64, c: 0 }   # Blizzard by its UNIQUE bit 7 (128), not 524416
+    tooltip:
+    - Your Fire and Frost spell criticals will refund 10% of the mana cost.
+    - Your Fire and Frost spell criticals will refund 20% of the mana cost.
+    - Your Fire and Frost spell criticals will refund 30% of the mana cost.
+  - id: 18029
+    slug: critical_mass
+    name: Critical Mass
+    tab: 2
+    tier: 4
+    col: 1
+    icon: 'Spell_Nature_WispHeal'
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 20
+    # FIXED 2026-09-05 (TBC Phase 9 re-audit) — switched from an (inert) PCT crit SPELLMOD to the
+    # shape BOTH eras actually use for "crit chance of your fire spells": `aura 71
+    # MOD_SPELL_CRIT_CHANCE_SCHOOL` with EffectMiscValue 4 (fire). Stock 11115/11367/11368 are exactly
+    # that at 2/4/6% and read LIVE_MATCH, so this is the stock encoding rather than a flat-vs-pct
+    # patch. (The PCT-is-inert mechanism of node 18022 is why the shipped spellmod had to change
+    # either way.) On a `stat` node the key spelling for EffectMiscValue is **`school:`** (framework
+    # field-semantics gotcha; it defaults to 127). vanilla_fix_rows[18029], user-decided 2026-09-05.
+    mechanic: stat
+    aura: 71
+    school: 4            # EffectMiscValue = SPELL_SCHOOL_MASK_FIRE
+    vals: [2, 4, 6]
+    tooltip:
+    - Increases the critical strike chance of your fire spells by 2%.
+    - Increases the critical strike chance of your fire spells by 4%.
+    - Increases the critical strike chance of your fire spells by 6%.
+  - id: 18030
+    slug: blast_wave
+    name: Blast Wave
+    tab: 2
+    tier: 4
+    col: 2
+    icon: 'Spell_Holy_Excorcism_02'
+    maxRank: 1
+    prereqTalentId: 18024
+    prereqPoints: 20
+    # FIXED 2026-09-05 (TBC Phase 9 re-audit) — grants the knockback-free clone chain root 932320
+    # instead of stock 11113, whose live record carries a WotLK-added `e3 SPELL_EFFECT_KNOCK_BACK`
+    # that neither pre-Wrath store has. r2-r5 (932321-932324) are trainer-taught behind r1 at Task 5.
+    # vanilla_fix_rows[18030] (user decision 2026-09-05: ships this generation).
+    grants: {1: [932320]}
+    tooltip:
+    - A wave of flame radiates outward from the caster, damaging all enemies caught within
+      the blast for 160 to 192 Fire damage, and dazing them for 6 sec.
+  - id: 18031
+    slug: fire_power
+    name: Fire Power
+    tab: 2
+    tier: 5
+    col: 2
+    icon: 'Spell_Fire_Immolation'
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 25
+    mechanic: spellmod
+    affects: [Fireball, "Fire Blast", Scorch, Flamestrike, Pyroblast, "Blast Wave"]
+    op: damage
+    kind: pct
+    vals: [2, 4, 6, 8, 10]
+    tooltip:
+    - Increases the damage done by your fire spells by 2%.
+    - Increases the damage done by your fire spells by 4%.
+    - Increases the damage done by your fire spells by 6%.
+    - Increases the damage done by your fire spells by 8%.
+    - Increases the damage done by your fire spells by 10%.
+  - id: 18032
+    slug: combustion
+    name: Combustion
+    tab: 2
+    tier: 6
+    col: 1
+    icon: 'Spell_Fire_SealOfFire'
+    maxRank: 1
+    prereqTalentId: 18029
+    prereqPoints: 30
+    # FIXED 2026-09-05 (TBC Phase 9 re-audit) — grants the clone 932325 instead of stock 11129, which
+    # live retuned to a 2-min cooldown AND turned effect 1 into a +50% crit-DAMAGE spellmod; the era
+    # record is a 3-min cooldown with a bare DUMMY, which is what the tooltip below already described.
+    # vanilla_fix_rows[18032] (user decision 2026-09-05: ships this generation).
+    grants: {1: [932325]}
+    tooltip:
+    - When activated, this spell causes each Fire damage spell you cast to increase your critical strike
+      chance with Fire damage spells by 10%. This effect lasts until you have caused 3 critical strikes with Fire spells.
+- key: 3
+  name: Frost
+  background: MageFrost
+  nodes:
+  - id: 18033
+    slug: frost_warding
+    name: Frost Warding
+    tab: 3
+    tier: 0
+    col: 0
+    icon: 'Spell_Frost_FrostWard'
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 0
+    # Two effects: (1) armor/resist boost to Frost Armor + Ice Armor via SPELLMOD_ALL_EFFECTS (op 8);
+    # the Vanilla-band ranks of both spells share family mask 34078720, so one mask covers them
+    # (higher WotLK ranks with the 524288/0 mask are out of the era band). (2) a SPELL_AURA_DUMMY
+    # marker (misc 3 = "frost ward reflect" era-hook opcode, amount = the %) that the module
+    # AuraScript era_ward_reflect reads to apply a frost reflect aura while Frost Ward is up — the
+    # same mechanism as Improved Fire Ward.
+    # FINAL REVIEW 2026-09-06 (I-28): the armor half is pinned to `affectsMask: {a: 33554432}` —
+    # Frost Armor / Ice Armor's own word-0 bit 25 — because their full identity 34078720 also
+    # carries the SHARED bit 19 (524288) that Blizzard 10 carries, and a full-identity OR therefore
+    # ran an `allEffects` +15/30% into Blizzard's damage as well. `affects:` stays authored (addon
+    # spellMods name-map + the _ref.spells lint); only the emitted DBC mask changes.
+    mechanic: multi
+    effects:
+      - type: spellmod
+        affects: ["Frost Armor", "Ice Armor"]
+        affectsMask: { a: 33554432, b: 0, c: 0 }   # 0x2000000 — the two armors' bit 25 (bit 19 is shared with Blizzard)
+        op: allEffects
+        kind: pct
+        vals: [15, 30]
+      - type: stat
+        aura: 4
+        misc: 3
+        vals: [10, 20]
+    tooltip:
+    - Increases the armor and resistances given by your Frost Armor and Ice Armor spells by 15%. In addition, gives your Frost
+      Ward a 10% chance to reflect Frost spells and effects while active.
+    - Increases the armor and resistances given by your Frost Armor and Ice Armor spells by 30%. In addition, gives your Frost
+      Ward a 20% chance to reflect Frost spells and effects while active.
+  - id: 18034
+    slug: improved_frostbolt
+    name: Improved Frostbolt
+    tab: 3
+    tier: 0
+    col: 1
+    icon: 'Spell_Frost_FrostBolt02'
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    mechanic: spellmod
+    affects: [Frostbolt]
+    op: castTime
+    kind: flat
+    vals: [-100, -200, -300, -400, -500]
+    tooltip:
+    - Reduces the casting time of your Frostbolt spell by 0.1 sec.
+    - Reduces the casting time of your Frostbolt spell by 0.2 sec.
+    - Reduces the casting time of your Frostbolt spell by 0.3 sec.
+    - Reduces the casting time of your Frostbolt spell by 0.4 sec.
+    - Reduces the casting time of your Frostbolt spell by 0.5 sec.
+  - id: 18035
+    slug: elemental_precision
+    name: Elemental Precision
+    tab: 3
+    tier: 0
+    col: 2
+    icon: 'Spell_Ice_MagicDamage'
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 0
+    # +spell hit vs Fire and Frost (MOD_SPELL_HIT_CHANCE, school mask fire 4 | frost 16 = 20),
+    # the same aura the real Elemental Precision (29438) uses for its hit component.
+    mechanic: stat
+    aura: 55
+    school: 20
+    vals: [2, 4, 6]
+    tooltip:
+    - Reduces the chance that an opponent can resist your Fire and Frost spells by 2%.
+    - Reduces the chance that an opponent can resist your Fire and Frost spells by 4%.
+    - Reduces the chance that an opponent can resist your Fire and Frost spells by 6%.
+  - id: 18036
+    slug: ice_shards
+    name: Ice Shards
+    tab: 3
+    tier: 1
+    col: 0
+    icon: 'Spell_Frost_IceShard'
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    # FIXED 2026-09-05 (TBC Phase 9 re-audit) — `kind: flat` -> `pct`. The core consumes this op as
+    # `ApplySpellMod(id, SPELLMOD_CRIT_DAMAGE_BONUS, crit_bonus)` where `crit_bonus` is the EXTRA
+    # damage in RAW POINTS (Unit.cpp:1564 / :9487 / :9522), so the shipped flat modifier added a flat
+    # 20-100 damage to a crit instead of the +20%..+100% crit-damage bonus the tooltip promises.
+    # Both stores encode the talent as `aura 108 ADD_PCT_MODIFIER misc 15` (TBC 11207 val 20, live
+    # 11207 val 33). This is the OPPOSITE direction to the four `crit` rows (18008/18022/18023/18029)
+    # fixed in the same re-audit: `crit` is flat, `critDamage` is pct — the `kind:` key must be chosen
+    # by how the core consumes that SpellModOp, never by the tooltip's "%" sign.
+    # vanilla_fix_rows[18036]. The TBC twin is node 20848.
+    # FINAL REVIEW 2026-09-06 (I-27): pinned to Blizzard's UNIQUE bit 7 — its full identity 524416
+    # also carries the shared bit 19 that Frost Armor / Ice Armor carry.
+    mechanic: spellmod
+    affects: [Frostbolt, Blizzard, "Cone of Cold"]
+    affectsMask: { a: 672, b: 0, c: 0 }   # 0x2a0 — Frostbolt 32 | Blizzard 128 | Cone of Cold 512
+    op: critDamage
+    kind: pct
+    vals: [20, 40, 60, 80, 100]
+    tooltip:
+    - Increases the critical strike damage bonus of your Frost spells by 20%.
+    - Increases the critical strike damage bonus of your Frost spells by 40%.
+    - Increases the critical strike damage bonus of your Frost spells by 60%.
+    - Increases the critical strike damage bonus of your Frost spells by 80%.
+    - Increases the critical strike damage bonus of your Frost spells by 100%.
+  - id: 18037
+    slug: frostbite
+    name: Frostbite
+    tab: 3
+    tier: 1
+    col: 1
+    icon: 'Spell_Frost_FrostArmor'
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 5
+    # Chill = the innate slow on Frostbolt/Blizzard/Cone of Cold; a hit from one -> chance to
+    # freeze (stock Frostbite root 12494). Family-restricted to those chill spells.
+    mechanic: proc
+    proc:
+      flags: 65536
+      chance: [5, 10, 15]
+      trigger: 12494
+      hitMask: 0
+      attrMask: 2   # also proc off Blizzard's triggered damage tick (PROC_ATTR_TRIGGERED_CAN_PROC)
+      affects: [Frostbolt, Blizzard, "Cone of Cold"]
+      # FINAL REVIEW 2026-09-06 (I-27): Blizzard by its UNIQUE bit 7 (128); its full identity
+      # 524416 carries the shared bit 19 that Frost Armor / Ice Armor also carry.
+      affectsMask: { a: 672, b: 0, c: 0 }   # 0x2a0 — Frostbolt 32 | Blizzard 128 | Cone of Cold 512
+    tooltip:
+    - Gives your Chill effects a 5% chance to freeze the target for 5 sec.
+    - Gives your Chill effects a 10% chance to freeze the target for 5 sec.
+    - Gives your Chill effects a 15% chance to freeze the target for 5 sec.
+  - id: 18038
+    slug: improved_frost_nova
+    name: Improved Frost Nova
+    tab: 3
+    tier: 1
+    col: 2
+    icon: 'Spell_Frost_FreezingBreath'
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    mechanic: spellmod
+    affects: ["Frost Nova"]
+    op: cooldown
+    kind: flat
+    vals: [-2000, -4000]
+    tooltip:
+    - Reduces the cooldown of your Frost Nova spell by 2 sec.
+    - Reduces the cooldown of your Frost Nova spell by 4 sec.
+  - id: 18039
+    slug: perma_frost
+    # FIXED 2026-09-05 (TBC Phase 9 re-audit) — display name "Perma Frost" -> **"Permafrost"** (one
+    # word). Both stores this repo can measure spell it that way: the wago 2.5.4 SpellName for
+    # 11175/12569/12571 and the live 3.3.5a DBC both read "Permafrost". Evidence limit per workflow
+    # lesson 13: no 1.12.1 client DBC exists here, so the claim is "both measurable stores say
+    # Permafrost", not "the 1.12 client did". DISPLAY NAME ONLY — the `slug` (`perma_frost`), the node
+    # id and the rank ids are unchanged, so no `character_spell` / `era_character_talent` migration is
+    # implied. vanilla_fix_rows[18039]. The TBC twin 20851 authors "Permafrost" too, so the two eras
+    # now agree.
+    name: Permafrost
+    tab: 3
+    tier: 1
+    col: 3
+    icon: 'Spell_Frost_Wisp'
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 5
+    # Chill = the slow on Frostbolt / Cone of Cold, which lives in EFFECT_1 (aura 33
+    # MOD_DECREASE_SPEED, base -40 / -50) — verified from Spell.dbc (NOT effect_3, which is a
+    # vestigial MOD_HEALING_PCT). Effect 1 lengthens the chill (SPELLMOD_DURATION, +1/2/3s); effect 2
+    # deepens the slow by the additional % (SPELLMOD_EFFECT1, flat add to effect_1's negative speed).
+    # "Blizzard Chill" is the custom Improved Blizzard chill (helpers 932980-2), whose reserved
+    # pseudo-identity is WORD 2 bit 6 — which is why the pinned `affectsMask` below carries `c: 64`
+    # alongside the word-0 pin (see the I-29 note).
+    # FINAL REVIEW 2026-09-06 (I-29, as fixed in the R1 fix pass): both effects ship an explicit
+    # `affectsMask: {a: 544, c: 64}` — Frostbolt 32 | Cone of Cold 512 in word 0, plus the reserved
+    # "Blizzard Chill" pseudo-identity in WORD 2 bit 6. The word-0 pin exists because an identity OR
+    # would have dragged in Mage Armor: the chill helpers used to claim word-0 bit 28, which is Mage
+    # Armor's own bit. Moving the pseudo-identity to word 2 lets Permafrost keep reaching the
+    # Improved Blizzard chill (helpers 932980-932982) with no collision. The TBC twin 20851 is
+    # pinned the same way, so the two eras agree.
+    mechanic: multi
+    effects:
+      - type: spellmod
+        affects: [Frostbolt, "Cone of Cold", "Blizzard Chill"]
+        affectsMask: { a: 544, b: 0, c: 64 }   # 0x220 word0 (Frostbolt | Cone of Cold) + word2 bit 6 (Blizzard Chill)
+        op: duration
+        kind: flat
+        vals: [1000, 2000, 3000]
+      - type: spellmod
+        affects: [Frostbolt, "Cone of Cold", "Blizzard Chill"]
+        affectsMask: { a: 544, b: 0, c: 64 }   # 0x220 word0 + word2 bit 6 — same set as the duration half
+        op: effect1
+        kind: flat
+        vals: [-4, -7, -10]
+    tooltip:
+    - Increases the duration of your Chill effects by 1 sec and reduces the target's speed by an additional 4%.
+    - Increases the duration of your Chill effects by 2 sec and reduces the target's speed by an additional 7%.
+    - Increases the duration of your Chill effects by 3 sec and reduces the target's speed by an additional 10%.
+  - id: 18040
+    slug: piercing_ice
+    name: Piercing Ice
+    tab: 3
+    tier: 2
+    col: 0
+    icon: 'Spell_Frost_FrostBolt'
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    # FINAL REVIEW 2026-09-06 (I-27): Blizzard by its UNIQUE bit 7; the shared bit 19 in its full
+    # identity 524416 would have run the +% into Frost Armor / Ice Armor as well.
+    mechanic: spellmod
+    affects: [Frostbolt, Blizzard, "Cone of Cold"]
+    affectsMask: { a: 672, b: 0, c: 0 }   # 0x2a0 — Frostbolt 32 | Blizzard 128 | Cone of Cold 512
+    op: damage
+    kind: pct
+    vals: [2, 4, 6]
+    tooltip:
+    - Increases the damage done by your Frost spells by 2%.
+    - Increases the damage done by your Frost spells by 4%.
+    - Increases the damage done by your Frost spells by 6%.
+  - id: 18041
+    slug: cold_snap
+    name: Cold Snap
+    tab: 3
+    tier: 2
+    col: 1
+    icon: 'Spell_Frost_WizardMark'
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    # FINAL REVIEW 2026-09-06 (G-45) — re-pointed from STOCK 11958 to the Vanilla clone **932335**.
+    # Live 11958 is an 8-min cooldown; Vanilla's Cold Snap is 10 min. See the 932335 helper block
+    # (incl. why it needs the module script `era_mag_cold_snap` rather than a core rebind). A
+    # Vanilla mage that already learned stock 11958 sheds it via the `kEraMagVanillaStockSwaps`
+    # row {18041, 11958} in EraTalents.cpp.
+    grants: {1: [932335]}
+    tooltip:
+    - When activated, this spell finishes the cooldown on all of your Frost spells.
+  - id: 18042
+    slug: improved_blizzard
+    name: Improved Blizzard
+    tab: 3
+    tier: 2
+    col: 3
+    icon: 'Spell_Frost_IceStorm'
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    # Blizzard hit -> apply a chill at the authentic Vanilla slow (30/50/65%). Blizzard deals damage
+    # through triggered sub-spell 42208, which carries Blizzard's OWN family mask (524416), so a
+    # family-restricted proc catches every tick (attrMask 2 = PROC_ATTR_TRIGGERED_CAN_PROC lets it
+    # fire off that triggered tick). Per-rank trigger = our custom Chilled helpers 932980/1/2 (the
+    # stock Chilled 12484-6 is only 25/40/50%). chance 100 = every tick refreshes the chill; the
+    # chill is 1.5s and refreshes each tick, so it persists for the whole channel (retail behaviour).
+    mechanic: proc
+    proc:
+      flags: 65536
+      chance: 100
+      trigger: [932980, 932981, 932982]
+      hitMask: 0
+      attrMask: 2
+      affects: [Blizzard]
+      # FINAL REVIEW 2026-09-06 (I-27): Blizzard's UNIQUE bit 7 only. Its full identity 524416 also
+      # carries the SHARED bit 19 that Frost Armor / Ice Armor carry, so an identity-OR mask made
+      # casting either armor eligible to apply the chill.
+      affectsMask: { a: 128, b: 0, c: 0 }   # 0x80 — Blizzard's bit 7 only (bit 19 is shared)
+    tooltip:
+    - Adds a chill effect to your Blizzard spell. This effect lowers the target's movement speed by 30%. Lasts 1.50 sec.
+    - Adds a chill effect to your Blizzard spell. This effect lowers the target's movement speed by 50%. Lasts 1.50 sec.
+    - Adds a chill effect to your Blizzard spell. This effect lowers the target's movement speed by 65%. Lasts 1.50 sec.
+  - id: 18043
+    slug: arctic_reach
+    name: Arctic Reach
+    tab: 3
+    tier: 3
+    col: 0
+    icon: 'Spell_Shadow_DarkRitual'
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 15
+    # +range on the ranged nukes (Frostbolt/Blizzard) AND +radius on the PBAoE controls
+    # (Frost Nova/Cone of Cold) — two distinct SpellModOps, one passive.
+    # FINAL REVIEW 2026-09-06 (I-27): the RANGE half is pinned to Blizzard's unique bit 7 (its full
+    # identity 524416 carries the shared bit 19 of Frost Armor / Ice Armor). The RADIUS half needs
+    # no override — Frost Nova 64 and Cone of Cold 512 are both unique bits.
+    mechanic: multi
+    effects:
+      - type: spellmod
+        affects: [Frostbolt, Blizzard]
+        affectsMask: { a: 160, b: 0, c: 0 }   # 0xa0 — Frostbolt 32 | Blizzard 128
+        op: range
+        kind: pct
+        vals: [10, 20]
+      - type: spellmod
+        affects: ["Frost Nova", "Cone of Cold"]
+        op: radius
+        kind: pct
+        vals: [10, 20]
+    tooltip:
+    - Increases the range of your Frostbolt and Blizzard spells and the radius of your Frost Nova and Cone of Cold spells
+      by 10%.
+    - Increases the range of your Frostbolt and Blizzard spells and the radius of your Frost Nova and Cone of Cold spells
+      by 20%.
+  - id: 18044
+    slug: frost_channeling
+    name: Frost Channeling
+    tab: 3
+    tier: 3
+    col: 1
+    icon: 'Spell_Frost_Stun'
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    # FINAL REVIEW 2026-09-06 (I-27): both halves pinned to Blizzard's unique bit 7 — its full
+    # identity 524416 carries the shared bit 19, which would have discounted Frost/Ice Armor too.
+    mechanic: multi
+    effects:
+      - type: spellmod
+        affects: [Frostbolt, Blizzard, "Cone of Cold", "Frost Nova"]
+        affectsMask: { a: 736, b: 0, c: 0 }   # 0x2e0 — Frostbolt 32 | Frost Nova 64 | Blizzard 128 | Cone of Cold 512
+        op: cost
+        kind: pct
+        vals: [-5, -10, -15]
+      - type: spellmod
+        affects: [Frostbolt, Blizzard, "Cone of Cold", "Frost Nova"]
+        affectsMask: { a: 736, b: 0, c: 0 }   # 0x2e0 — same set as the cost half
+        op: threat
+        kind: pct
+        vals: [-10, -20, -30]
+    tooltip:
+    - Reduces the mana cost of your frost spells by 5% and reduces the threat caused by your Frost spells by 10%.
+    - Reduces the mana cost of your frost spells by 10% and reduces the threat caused by your Frost spells by 20%.
+    - Reduces the mana cost of your frost spells by 15% and reduces the threat caused by your Frost spells by 30%.
+  - id: 18045
+    slug: shatter
+    name: Shatter
+    tab: 3
+    tier: 3
+    col: 2
+    icon: 'Spell_Frost_FrostShock'
+    maxRank: 5
+    prereqTalentId: 18038
+    prereqPoints: 15
+    # Crit chance vs FROZEN targets — conditional crit that no aura/SpellModOp expresses, so it
+    # rides an era-talents CORE PATCH (patches/0018). The passive is a bare SPELL_AURA_DUMMY (aura 4)
+    # marker: EffectMiscValue 1 = the "crit vs frozen" era-hook opcode, base points = the % bonus.
+    # Unit::SpellTakenCritChance (patched) sums, when the victim is frozen, every dummy aura on the
+    # caster whose spell id is in the reserved era band [920000,950000) AND misc==1, adding its
+    # amount to crit. The band check makes the marker collision-proof against stock dummies.
+    # The band was widened to 950000 in Phase 9 (TBC mage, 2026-09-05) so the TBC Shatter node
+    # 20857's own auto-passives 942856-942860 arm the same hunk. These Vanilla passives
+    # (920360-920364) sat inside the old [920000,933000) window and did not move; misc 1 is now a
+    # MECHANIC flag shared by both eras (workflow lesson 25's rule), not an identity flag.
+    mechanic: stat
+    aura: 4
+    school: 1
+    vals: [10, 20, 30, 40, 50]
+    tooltip:
+    - Increases the critical strike chance of all your spells against frozen targets by 10%.
+    - Increases the critical strike chance of all your spells against frozen targets by 20%.
+    - Increases the critical strike chance of all your spells against frozen targets by 30%.
+    - Increases the critical strike chance of all your spells against frozen targets by 40%.
+    - Increases the critical strike chance of all your spells against frozen targets by 50%.
+  - id: 18046
+    slug: ice_block
+    name: Ice Block
+    tab: 3
+    tier: 4
+    col: 1
+    icon: 'Spell_Frost_Frost'
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 20
+    grants: {1: [45438]}
+    tooltip:
+    - You become encased in a block of ice, protecting you from all physical attacks and
+      spells for 10 sec, but during that time you cannot attack, move or cast spells.
+  - id: 18047
+    slug: improved_cone_of_cold
+    name: Improved Cone of Cold
+    tab: 3
+    tier: 4
+    col: 2
+    icon: 'Spell_Frost_Glacier'
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 20
+    mechanic: spellmod
+    affects: ["Cone of Cold"]
+    op: damage
+    kind: pct
+    vals: [15, 25, 35]
+    tooltip:
+    - Increases the damage dealt by your Cone of Cold spell by 15%.
+    - Increases the damage dealt by your Cone of Cold spell by 25%.
+    - Increases the damage dealt by your Cone of Cold spell by 35%.
+  - id: 18048
+    slug: winter_s_chill
+    name: Winter's Chill
+    tab: 3
+    tier: 5
+    col: 2
+    icon: 'Spell_Frost_ChillingBlast'
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 25
+    # Frost damage spell hit -> chance to apply a stacking Winter's Chill debuff (+2% FROST crit
+    # taken, up to 5 stacks). Family-restricted to frost damage spells.
+    # FIXED 2026-09-05 (TBC Phase 9 re-audit) — `proc.trigger` re-pointed from STOCK 12579 to the era
+    # clone **932764**. The comment above used to call 12579 "the stock stacking Winter's Chill
+    # debuff"; on this core it is not the era one. Live 12579 is `aura 179
+    # MOD_ATTACKER_SPELL_CRIT_CHANCE misc **126** val **1**` — +1% crit taken, ALL schools — where
+    # wago 2.5.4 12579 is `misc 16` (frost) `val 2`, which is what this node's tooltip promises. So
+    # the shipped node advertised the era debuff and delivered the WotLK one at half the magnitude.
+    # vanilla_fix_rows[18048]. See the 932764 helper block (incl. the `singleAuraStack` lesson-14 fix).
+    # The DEBUFF gets NO `spell_proc` row of its own — it is a plain aura-179 debuff that never procs,
+    # and stock 12579 has none either; the `-11180` proc contract belongs to THIS node (Amendment C.3,
+    # the same slip the ref carried for Fire Vulnerability). The proc contract below is otherwise
+    # UNCHANGED from the shipped, real-client-verified row.
+    # PER-ERA IDENTITY: the TBC node 20862 uses its OWN clone 948960 — never share one helper.
+    mechanic: proc
+    proc:
+      flags: 65536
+      chance: [20, 40, 60, 80, 100]
+      trigger: 932764
+      hitMask: 0
+      attrMask: 2   # also proc off Blizzard's triggered damage tick (PROC_ATTR_TRIGGERED_CAN_PROC)
+      affects: [Frostbolt, Blizzard, "Cone of Cold"]
+      # FINAL REVIEW 2026-09-06 (I-27): Blizzard by its UNIQUE bit 7; the shared bit 19 in its full
+      # identity also belongs to Frost Armor / Ice Armor.
+      affectsMask: { a: 672, b: 0, c: 0 }   # 0x2a0 — Frostbolt 32 | Blizzard 128 | Cone of Cold 512
+    tooltip:
+    - Gives your Frost damage spells a 20% chance to apply the Winter's Chill effect, which increases the chance a Frost spell
+      will critically hit the target by 2%. Stacks up to 5 times.
+    - Gives your Frost damage spells a 40% chance to apply the Winter's Chill effect, which increases the chance a Frost spell
+      will critically hit the target by 2%. Stacks up to 5 times.
+    - Gives your Frost damage spells a 60% chance to apply the Winter's Chill effect, which increases the chance a Frost spell
+      will critically hit the target by 2%. Stacks up to 5 times.
+    - Gives your Frost damage spells a 80% chance to apply the Winter's Chill effect, which increases the chance a Frost
+      spell will critically hit the target by 2%. Stacks up to 5 times.
+    - Gives your Frost damage spells a 100% chance to apply the Winter's Chill effect, which increases the chance a Frost
+      spell will critically hit the target by 2%. Stacks up to 5 times.
+  - id: 18049
+    slug: ice_barrier
+    name: Ice Barrier
+    tab: 3
+    tier: 6
+    col: 1
+    icon: 'Spell_Ice_Lament'
+    maxRank: 1
+    prereqTalentId: 18046
+    prereqPoints: 30
+    # FIXED 2026-09-05 (TBC Phase 9 re-audit, spec Amendment **A.7**; USER DECISION 2026-09-05 — ships
+    # this generation) — grant changed from STOCK 11426 to the era clone chain root **932331**.
+    # The DBC rows read LIVE_MATCH on all fourteen families, which is why the sweep missed this: the
+    # divergence is in CORE CODE. Live's `spell_mage_ice_barrier_aura` adds 80.68% of spell power
+    # (spell_mage.cpp:627) while 1.12's absorb is BASE POINTS ONLY — cmangos `mangos-classic` has no
+    # `spell_bonus_data` subsystem at all, `SPELL_AURA_SCHOOL_ABSORB` maps to the empty
+    # `HandleNoImmediateEffect`, and `CalculateDamageAbsorbAndResist` reads the stored base amount
+    # with no SP term. So the shipped grant handed a Vanilla mage a WotLK-scaled shield.
+    # The clones bind NO script, which IS the fix: a band id is outside the `-11426` chain the stock
+    # scripts bind, so the absorb stays its base value. See the 932331-932334 helper block.
+    # r2-r4 (932332-932334) are trainer-taught at Task 5; nothing is deleted (the stock chain roots
+    # at 11426, which a Vanilla mage never holds, so it self-gates). The TBC twin is node 20863,
+    # whose clones bind `era_mag_ice_barrier_tbc` for TBC's own 0.1 coefficient.
+    grants: {1: [932331]}
+    tooltip:
+    - Instantly shields you, absorbing 438 damage. Lasts 1 min. While the shield holds,
+      spells will not be interrupted.

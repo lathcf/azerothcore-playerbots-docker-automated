@@ -11,7 +11,7 @@ class Player;
 namespace PBChatterAmbientPrompt
 {
     // Content modes (match the weight knobs).
-    enum Mode { MODE_GENERIC = 0, MODE_REACT = 1, MODE_FLAVOR = 2, MODE_EVENT = 3 };
+    enum Mode { MODE_GENERIC = 0, MODE_REACT = 1, MODE_FLAVOR = 2, MODE_EVENT = 3, MODE_BANTER = 4 };
 
     // World thread (MODE_FLAVOR reads live state via ContextBuilder).
     //   kind:    AMB_ZONE / AMB_GROUP / AMB_GUILD (names the channel for tone)

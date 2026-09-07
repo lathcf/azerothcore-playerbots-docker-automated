@@ -50,8 +50,10 @@ namespace
 
     bool IsBot(Player* p)
     {
+        // upstream 17214b3 renamed PlayerbotAI::IsRealPlayer() (which meant "selfbot") to the
+        // free IsSelfBot(Player*); the free IsRealPlayer(Player*) now means "no bot AI at all".
         PlayerbotAI* ai = GET_PLAYERBOT_AI(p);
-        return ai && !ai->IsRealPlayer();
+        return ai && !IsSelfBot(p);
     }
 
     Player* FindByCounter(uint64_t counter)
@@ -169,14 +171,16 @@ namespace
 
     int PickMode(bool haveBuffer, bool haveEvent)
     {
+        uint32_t wB = g_PBChatAmbientWBanter;
         uint32_t wG = g_PBChatAmbientWGeneric;
         uint32_t wR = haveBuffer ? g_PBChatAmbientWReact  : 0;
         uint32_t wF = g_PBChatAmbientWFlavor;
         uint32_t wE = haveEvent  ? g_PBChatAmbientWEvent  : 0;
-        uint32_t total = wG + wR + wF + wE;
+        uint32_t total = wB + wG + wR + wF + wE;
         if (!total)
             return PBChatterAmbientPrompt::MODE_GENERIC;
         uint32_t roll = urand(0, total - 1);
+        if (roll < wB) return PBChatterAmbientPrompt::MODE_BANTER;  roll -= wB;
         if (roll < wG) return PBChatterAmbientPrompt::MODE_GENERIC; roll -= wG;
         if (roll < wR) return PBChatterAmbientPrompt::MODE_REACT;   roll -= wR;
         if (roll < wF) return PBChatterAmbientPrompt::MODE_FLAVOR;

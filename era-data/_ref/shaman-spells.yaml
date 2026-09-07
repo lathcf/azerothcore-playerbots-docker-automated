@@ -1,0 +1,440 @@
+# Stock Shaman spell reference — live-verified from Spell.dbc (SpellClassSet=11,
+# SPELLFAMILY_SHAMAN) + `lookup spell`/`lookup skill` on the dev-box worldserver console
+# (2026-08-21) + this fork's OWN headers (never from memory). See druid-spells.yaml /
+# paladin-spells.yaml for the shape this mirrors and the general verification method.
+#
+# CLASS/FAMILY INVERSION WARNING (framework §Adding a class): Shaman = **class id 7, spell
+# family 11** — the MIRROR of Druid (class id 11, spell family 7). A bare `7` means Shaman as a
+# class token but Druid's family in a family-mask sweep, and a bare `11` inverts it. Every
+# player-cast spell below dumped SpellClassSet=11; the datasets author `class: 7`.
+#
+# Verification method (Phase 10 Task 3):
+#   - Spell.dbc / SkillLine.dbc / SkillLineAbility.dbc pulled live out of the running container:
+#       docker exec ac-worldserver cat /azerothcore/env/dist/data/dbc/Spell.dbc > .../Spell.dbc
+#     (the running worldserver was built BEFORE shaman content exists — irrelevant: Task 3 reads
+#      only STOCK, era-independent spells/DBC.)
+#   - spells: flagsA/flagsB/flagsC = SpellClassMask_1/_2/_3 (the spell's OWN identity mask — what
+#     a SPELLMOD's EffectSpellClassMask must intersect to bind it), read straight from that DBC via
+#       python3 tools/dump_spell_family.py <Spell.dbc> tools/spell_dbc_columns.txt --names "..."
+#     (EXACT Name_Lang_enUS, comma-separated; matches EXACT strings case-insensitively, NOT
+#      substrings). Every homonym returned was inspected; the recorded mask is the SHARED mask
+#      across the real player-cast ranks. family=0 / other-family homonyms are noise (creature and
+#      cross-class spells) and are NOT recorded unless they collide on a bit.
+#   - Effect-level detail (Effect_N / EffectAura_N / EffectBasePoints_N / EffectMiscValue_N /
+#     EffectTriggerSpell_N / EffectSpellClassMaskA/B/C_N / ProcChance / ProcTypeMask / RecoveryTime
+#     / Category / CategoryRecoveryTime / DurationIndex / ManaCost / ManaCostPct / ProcCharges) via
+#       python3 tools/dump_spell_effects.py <Spell.dbc> tools/spell_dbc_columns.txt --ids <id> --cols ...
+#     Aura/effect/spellmod numbers resolved against the fork's OWN headers, never memory:
+#       SPELL_AURA_*   -> azerothcore-wotlk/src/server/game/Spells/Auras/SpellAuraDefines.h
+#       SPELL_EFFECT_* -> azerothcore-wotlk/src/server/shared/SharedDefines.h
+#       SPELLMOD_*     -> azerothcore-wotlk/src/server/game/Spells/SpellDefines.h
+#         (0 DAMAGE, 7 CRITICAL_CHANCE, 8 ALL_EFFECTS, 10 CASTING_TIME, 12 EFFECT2, 14 COST,
+#          15 CRIT_DAMAGE_BONUS)
+#       SPELLFAMILY_SHAMAN = 11 (SharedDefines.h)
+#   - grants:/triggers: stock ids + survival: verdicts resolved on the LIVE dev-box worldserver via
+#       python3 tools/wgconsole.py <out> "lookup spell <name>" "wait:N" ...   (FIRST arg = OUTFILE)
+#     Raw output kept at /tmp/claude-1000/sham_family.out, sham_lookup.out.
+#   - skillLines: SkillLineAbility.dbc (spell->skillLine) + SkillLine.dbc (skillLine->name) parsed
+#     with a short inline WDBC reader (same layout as dump_spell_family.py).
+#   - Vanilla behaviour/magnitudes cross-checked against the imported skeleton tooltips
+#     (era-data/_skeletons/vanilla-shaman.skeleton.yaml) — the project's canonical 1.12 source for
+#     this pass — plus wowhead/warcraft.wiki Classic where the skeleton was silent.
+#
+# NB DBC value convention: a stock aura/effect stores value-1 with DieSides=1 (roll adds 1..1), so
+# the effective magnitude = EffectBasePoints_N + 1 (confirmed against druid Sharpened Claws
+# basePoints 1/3/5 -> +2/4/6%). Recorded magnitudes below already apply the +1.
+# ProcChance == 101 is the DBC "not a proc-chance spell" sentinel (>100), not a real 101% chance.
+#
+# ID-SPACE LEGEND (two conventions used throughout this file):
+#   - A bare id after a SPELL name (e.g. "Stormstrike 17364", `id: 403`) = a live Spell.dbc spell id.
+#   - A parenthetical id after a TALENT name (e.g. "Restorative Totems (18840)", "node 18800") = the
+#     imported skeleton's TALENT-NODE id (the 18800-18845 band, from vanilla-shaman.skeleton.yaml),
+#     NOT a Spell.dbc id. These never appear in a `lookup spell`. When both matter for one ability,
+#     the text says "spell NNNNN" vs "node NNNNN" explicitly.
+#
+# HELPER-ID CHECK (Task 3 Step 1) — run 2026-08-21, result ALL FREE:
+#   grep -rn "9324[0-9][0-9]" era-data/ modules/mod-era-talents/data/sql/
+#     client-addons-src/EraTalents/data/  -> no hits. (Shaman's reserved helper band is
+#   932400-932499 per the framework registry; the 9324xx range is clear for Tasks 6-9.)
+
+familyName: 11           # SHAMAN (confirmed: every player-cast spell below dumped SpellClassSet=11)
+
+skillLines:              # live-confirmed via SkillLineAbility.dbc + SkillLine.dbc (see method).
+                         # A wrong skillLine just misplaces a reconstruction's spellbook tab.
+  elemental: 375         # "Elemental Combat" — confirmed via 403 (Lightning Bolt), 16164 (Elemental
+                         #   Focus), 16166 (Elemental Mastery) all resolve to SkillLine 375.
+  enhancement: 373       # "Enhancement" — confirmed via 17364 (Stormstrike), 8017 (Rockbiter Weapon),
+                         #   16256 (Flurry) all resolve to SkillLine 373.
+  restoration: 374       # "Restoration" (SHAMAN) — confirmed via 16178 (Purification), 331 (Healing
+                         #   Wave), 29206 (Healing Way), 16194 (Tidal Mastery) all resolve to 374.
+                         # WARNING (the mirror of druid-spells.yaml's warning): SkillLine.dbc has TWO
+                         # records literally named "Restoration" — 374 (SHAMAN, this one) and 573
+                         # (DRUID). `lookup skill Restoration` returns both with no way to tell them
+                         # apart by name; SHAMAN spells resolve to 374 via SkillLineAbility — use 374,
+                         # never 573. (574="Balance", 573="Restoration" are the druid pair.)
+
+spells:                  # SpellClassMask_1..3 identity of each stock base spell a SPELLMOD `affects:`
+                         # would bind by family mask (rank-1 id, or min id among identical-mask ranks).
+                         # Bit position in the comment. (family=11 unless noted.)
+  # --- Elemental nukes / shocks (word A) ----------------------------------------------------------
+  "Lightning Bolt":       { id: 403,   flagsA: 1,          flagsB: 0,        flagsC: 0 }  # A bit0. ranks 403/529/548/915/943/6041/10391/10392/15207/15208/25448/25449/49237-49240 identical.
+  "Chain Lightning":      { id: 421,   flagsA: 2,          flagsB: 0,        flagsC: 0 }  # A bit1. ranks 421/930/2860/10605/25439/25442/49268-49271 identical.
+  "Earth Shock":          { id: 8042,  flagsA: 1048576,    flagsB: 0,        flagsC: 0 }  # A bit20. ranks 8042/8044/8045/8046/10412/10413/10414/25454/49230/49231 identical.
+  "Flame Shock":          { id: 8050,  flagsA: 268435456,  flagsB: 0,        flagsC: 0 }  # A bit28. (all Flame Shock ranks family=11 bit28)
+  "Frost Shock":          { id: 8056,  flagsA: 2147483648, flagsB: 0,        flagsC: 0 }  # A bit31 (0x80000000; DBC-signed -2147483648, recorded as the unsigned uint32 per the paladin/druid-ref convention).
+  "Lightning Shield":     { id: 324,   flagsA: 1024,       flagsB: 0,        flagsC: 0 }  # A bit10. The (0,0,0) homonyms are the shield-orb DAMAGE pulses (Improved Lightning Shield 18820 boosts orb damage — bind the pulse, not this summon; pulse ids share the shield's family but carry no wordA bit10 identity).
+  "Ghost Wolf":           { id: 2645,  flagsA: 2048,       flagsB: 0,        flagsC: 0 }  # A bit11. Improved Ghost Wolf (18819) reduces cast time -> SPELLMOD_CASTING_TIME bind wordA bit11.
+  # --- Heals (word A) -----------------------------------------------------------------------------
+  "Healing Wave":         { id: 331,   flagsA: 64,         flagsB: 0,        flagsC: 0 }  # A bit6.
+  "Lesser Healing Wave":  { id: 8004,  flagsA: 128,        flagsB: 0,        flagsC: 0 }  # A bit7.
+  "Chain Heal":           { id: 1064,  flagsA: 256,        flagsB: 0,        flagsC: 0 }  # A bit8.
+  # heal SPELLMOD set: A 448 (=64|128|256 = HW+LHW+CH) is the set Purification (16178) binds; the
+  # "all healing spells" cost/crit set (Tidal Focus/Healing Focus/Nature's Guidance) also wants
+  # Healing Stream/Mana Spring pulses if strict — see survival.purification + the totem pulses below.
+  # --- Weapon imbues ------------------------------------------------------------------------------
+  "Rockbiter Weapon":     { id: 8017,  flagsA: 4194304,    flagsB: 0,        flagsC: 0 }  # A bit22. UNIQUE (no other imbue shares it). ranks 8017/8018/8019/10399.
+  "Flametongue Weapon":   { id: 8024,  flagsA: 0,          flagsB: 2048,     flagsC: 0 }  # B bit11. **SHARED** — see note below.
+  "Frostbrand Weapon":    { id: 8033,  flagsA: 0,          flagsB: 2048,     flagsC: 0 }  # B bit11. **SHARED** with Flametongue+Windfury Weapon.
+  "Windfury Weapon":      { id: 8232,  flagsA: 0,          flagsB: 2048,     flagsC: 0 }  # B bit11. **SHARED**. Effect_1=54 ENCHANT_ITEM_TEMPORARY (misc 283 enchant), SchoolMask 8 (nature). The (0,0,0) homonyms (32911/35886) are proc/passive helpers, not the imbue identity.
+  # WEAPON-IMBUE OVER-BIND: Flametongue + Frostbrand + Windfury Weapon ALL carry word-B bit11 (2048)
+  # and share NO distinguishing family bit among the three; Rockbiter alone is word-A bit22. So a
+  # spellmod binding word-B bit11 hits all three of FT/FB/WF Weapon at once (see survival.elemental_weapons).
+  # --- Enhancement actives ------------------------------------------------------------------------
+  "Stormstrike":          { id: 17364, flagsA: 0,          flagsB: 16777232, flagsC: 0 }  # B bits {4,24} (16=bit4, 16777216=bit24). [talent] the player ability. Effect_1 aura271 MOD_DAMAGE_FROM_CASTER +20% nature (mask A 1049603), Effect_2/3=64 TRIGGER_SPELL -> 32175/32176. See survival — DIVERGED cd/cost.
+  "Reincarnation":        { id: 20608, flagsA: 512,        flagsB: 0,        flagsC: 0 }  # A bit9. Improved Reincarnation (18833) reduces cooldown -> spellmod bind wordA bit9. Baseline self-res both eras.
+  "Water Shield":         { id: 23575, flagsA: 0,          flagsB: 32,       flagsC: 0 }  # B bit5 (32). CORRECTED 2026-08-21: 23575 and EVERY real Water Shield rank dump mask (0,32,0) — flagsA is 0. The stray (1024,0,0)/wordA bit10 belongs to a DIFFERENT id, 34828 (an unrelated Water-Shield-named entry, SpellClassMask_1=1024), NOT the player buff. Not a talent target; recorded for completeness. (NOT in Vanilla 1.12 — WotLK/late-vanilla addition; ignore for era binding.)
+  # --- Talent actives that DIVERGED (see survival for the verdict) --------------------------------
+  "Elemental Mastery":    { id: 16166, flagsA: 0,          flagsB: 16384,    flagsC: 0 }  # B bit14. [talent]. Category 1202, CategoryRecoveryTime 180000 (3-min cd). DIVERGED mechanic — see survival.
+  "Nature's Swiftness":   { id: 16188, flagsA: 0,          flagsB: 128,      flagsC: 0 }  # B bit7. [talent]. WARNING: 17116 "Nature's Swiftness" is family=7 (DRUID) — same tooltip, DIFFERENT class/id; use 16188 for shaman. Category 1202, CategoryRecoveryTime **120000 (2-min cd)** — DIVERGES from Vanilla's 3-min (see survival).
+
+  # --- Enhancement Task-6 binding targets (added 2026-08-21; totem PULSE/effect + imbue identities
+  #     that Enhancement spellmods `affects:` — the summon/talent entries above lack these). --------
+  "Stoneskin Totem Effect": { id: 8072,  flagsA: 32768,     flagsB: 0,       flagsC: 0 }  # A bit15 UNIQUE — the Stoneskin damage-reduction PULSE (all ranks share it). Guardian Totems (18817) op:allEffects boosts it.
+  "Grounding Totem":        { id: 8177,  flagsA: 537133056, flagsB: 0,       flagsC: 0 }  # A bits {18,29}. bit29 SHARED — Guardian Totems binds the cooldown via affectsMask {a:262144} (bit18 only) to avoid the totem over-bind.
+  "Strength of Earth":      { id: 8076,  flagsA: 65536,     flagsB: 0,       flagsC: 0 }  # A bit16 UNIQUE — the SoE strength BUFF effect (stock Enhancing Totems 16259 Effect_1 binds this bit). Grace of Air ABSENT (missingSpells).
+  "Windfury Totem Buff":    { id: 8515,  flagsA: 0,         flagsB: 2097152, flagsC: 0 }  # B bit21 UNIQUE — WF Totem melee-AP PULSE. Improved Weapon Totems (18826) binds the pulse, not the bit29 summon.
+  "Flametongue Totem Buff": { id: 52109, flagsA: 33554432,  flagsB: 0,       flagsC: 0 }  # A bit25 UNIQUE — FT Totem attack/damage PULSE. Improved Weapon Totems binds the pulse, not the bit29 summon.
+  "Windfury Attack":        { id: 25504, flagsA: 8388608,   flagsB: 0,       flagsC: 0 }  # A bit23 UNIQUE — the WF Weapon extra-attack. Elemental Weapons (18827) boosts the WF half via THIS bit (FT/FB/WF Weapon all share word-B bit11, never bound — see the 2026-08-23 redesign in survival.elemental_weapons).
+  "Flametongue Attack":     { id: 10444, flagsA: 2097152,   flagsB: 0,       flagsC: 0 }  # A bit21 UNIQUE (dbc sweep 2026-08-23) — the REAL Flametongue damage cast, CastCustomSpell'd from the hidden passive 10400 WITH a caster, so it (not 8024's shared bit11) is what Elemental Weapons must bind. See survival.elemental_weapons.
+  "Frostbrand Attack":      { id: 8034,  flagsA: 16777216,  flagsB: 0,       flagsC: 0 }  # A bit24 UNIQUE (dbc sweep 2026-08-23) — the REAL Frostbrand damage cast, fired by Player::CastItemCombatSpell's generic combat-spell-enchant loop with a normal player caster, so it (not 8033's shared bit11) is what Elemental Weapons must bind. See survival.elemental_weapons.
+
+  # --- Restoration Task-7 totem SUMMON identities (added 2026-08-23) — cost/radius spellmods
+  #     (Totemic Focus 18835 / Totemic Mastery 18838) `affects:` these SUMMON buttons. OR of the five
+  #     = 537399320 = the exact stock Totemic Focus 16173 mask (all totems; bit29 sweeps the shared-bit
+  #     totem group). Mana Spring + Healing Stream are ALSO Restorative Totems (18840) targets — but that
+  #     node binds their PULSE bits (52031 bit14 / 52041 bit13 = affectsMask {a:24576}), not these summon
+  #     bits, because the mana/health restored lives on the pulse the totem casts. See totemSpells below.
+  "Stoneclaw Totem":        { id: 5730,  flagsA: 8,          flagsB: 0,       flagsC: 0 }  # A bit3 UNIQUE (summon).
+  "Searing Totem":          { id: 3599,  flagsA: 16,         flagsB: 0,       flagsC: 0 }  # A bit4 UNIQUE (summon).
+  "Magma Totem":            { id: 8190,  flagsA: 4096,       flagsB: 0,       flagsC: 0 }  # A bit12 UNIQUE (summon).
+  "Mana Spring Totem":      { id: 5675,  flagsA: 524288,     flagsB: 0,       flagsC: 0 }  # A bit19 (summon; SHARED with Healing Stream summon only).
+  "Healing Stream Totem":   { id: 5394,  flagsA: 524288,     flagsB: 0,       flagsC: 0 }  # A bit19 (summon; SHARED with Mana Spring summon only).
+  "Strength of Earth Totem": { id: 8075, flagsA: 536870912,  flagsB: 0,       flagsC: 0 }  # A bit29 SHARED totem bit (summon; sweeps WF/FT/Mana Tide/Grounding/Earthbind/Stoneskin/Nature Resist/Fire Nova).
+
+  # --- Restoration Task-10 Totemic Mastery (18838) pulse-RADIUS binding targets (added 2026-08-24) ---
+  #     Totemic Mastery's +10yd radius lives on each friendly totem's PULSE area-aura (see the fix-round
+  #     investigation). affectsMask {a:67231744, c:98304} = the OR of these pulse bits + Stoneskin Totem
+  #     Effect (8072 A15) + Strength of Earth (8076 A16) + Mana Spring/Healing Stream pulses (A14/A13).
+  #     Resistance pulses SHARE A bit26; Grace of Air / Windwall bits are MINTED on the from-scratch era
+  #     pulses (no 3.3.5a stock id — recorded here by their era clone ids). Dumped from generated SQL.
+  "Frost Resistance Totem":  { id: 8182,   flagsA: 67108864, flagsB: 0,       flagsC: 0 }      # A bit26 (era pulse 931170; SHARED bit26).
+  "Fire Resistance Totem":   { id: 8185,   flagsA: 67108864, flagsB: 0,       flagsC: 0 }      # A bit26 (era pulse 931230; SHARED bit26).
+  "Nature Resistance Totem": { id: 10596,  flagsA: 67108864, flagsB: 0,       flagsC: 0 }      # A bit26 (era pulse 931310; SHARED bit26).
+  "Grace of Air Totem":      { id: 931330, flagsA: 0,        flagsB: 0,       flagsC: 32768 }  # C bit15 MINTED (from-scratch era pulse 931330).
+  "Windwall Totem":          { id: 931350, flagsA: 0,        flagsB: 0,       flagsC: 65536 }  # C bit16 MINTED (from-scratch era pulse 931350).
+
+  # --- Elemental Combat Task-8 binding targets (added 2026-08-23) — Earth's Grasp / Call of Flame. ---
+  "Earthbind":              { id: 3600,  flagsA: 0,          flagsB: 1,       flagsC: 0 }  # word-B bit0 UNIQUE — the Earthbind Totem SLOW-field PULSE (NOT the 2484 summon, which is bit29-shared + carries no radius). Earth's Grasp (18802) op:radius binds this (stock Earth's Grasp 16043 Effect_2 binds exactly B bit0). The totem's slow-cast resolves the owner's spellmods.
+  "Fire Nova Totem":        { id: 27623, flagsA: 671088640,  flagsB: 0,       flagsC: 0 }  # A bits {27,29} (summon; SHARES totem bit29). Named only in Call of Flame (18804) `affects:` for the addon display — the real fire-totem-DAMAGE bind is affectsMask {a:1073741824,b:262144} = Searing Attack 3606 + Magma pulse 8187 (A bit30) | Fire Nova blast 8349 (B bit18). Fire-totem damage spells (verified 2026-08-23): "Attack" 3606 (Searing NPC fire attack, A bit30), Magma pulse 8187 (A bits 2+30), Fire Nova blast 8349 (B bits 18+31). A bit30 is Searing+Magma (stock Call of Flame 16038 binds it); B bit18/31 are Fire-Nova-exclusive; A bit2 is Magma-only (Improved Fire Totems threat).
+
+totemSpells:             # Totems are two spells: a SUMMON (the player-cast button — what a cost/
+                         # cooldown/health SPELLMOD binds) and one or more PULSE/EFFECT spells the
+                         # summoned NPC casts (what an EFFECT-magnitude SPELLMOD must bind). Recorded
+                         # separately because the two carry DIFFERENT family masks. rank-1 ids.
+  # --- Fire totems --------------------------------------------------------------------------------
+  "Searing Totem":          { summon: 3599,  summonFlagsA: 16,         note: "A bit4. UNIQUE. Damage done by the Searing Totem NPC's attack." }
+  "Magma Totem":            { summon: 8190,  summonFlagsA: 4096,       pulse: 8187,  pulseFlagsA: 1073741828, note: "summon A bit12 (UNIQUE); pulse A bits {2,30} (1073741824|4=1073741828) = the periodic AoE fire damage." }
+  "Fire Nova Totem":        { summon: 27623, summonFlagsA: 671088640,  note: "A bits {27,29} (134217728|536870912). **SHARES the totem bit29** (see over-bind note). The nova blast is this spell's own AoE effect." }
+  # --- Earth totems -------------------------------------------------------------------------------
+  "Stoneclaw Totem":        { summon: 5730,  summonFlagsA: 8,          note: "A bit3 (UNIQUE). id 55277 (A bit0) is the WotLK stoneclaw absorb-shield pulse (no Vanilla analog)." }
+  "Earthbind Totem":        { summon: 2484,  summonFlagsA: 536870912,  summonFlagsC: 32, note: "A bit29 (SHARED) + C bit5. Earth's Grasp (18802) boosts its radius." }
+  "Strength of Earth Totem": { summon: 8075, summonFlagsA: 536870912,  note: "A bit29 — **SHARED totem bit**, no UNIQUE identity bit in any word (see over-bind note; Enhancing Totems can NOT scope to SoE alone by family mask)." }
+  "Grounding Totem":        { summon: 8177,  summonFlagsA: 537133056,  note: "A bits {18,29} (536870912|262144). SHARES bit29. Guardian Totems (18817) reduces its cooldown." }
+  "Stoneskin Totem":        { summon: 8071,  summonFlagsA: 536870912,  note: "A bit29 (SHARED). Guardian Totems boosts its damage-reduction. (Vanilla Guardian Totems also cited 'Windwall Totem' — ABSENT from 3.3.5a, see missingSpells.)" }
+  "Nature Resistance Totem": { summon: 10595, summonFlagsA: 536870912, note: "A bit29 (SHARED). Not a talent target; recorded because it shares the totem bit and would be caught by an all-totem bind." }
+  # --- Air totems ---------------------------------------------------------------------------------
+  "Windfury Totem":         { summon: 8512,  summonFlagsA: 536870912,  pulse: 8515,  pulseFlagsB: 2097152, note: "summon A bit29 (SHARED); PULSE 8515 = word B bit21 (2097152), the melee-AP buff — UNIQUE, so Improved Weapon Totems (18826) should bind the PULSE, not the summon." }
+  "Flametongue Totem":      { summon: 8227,  summonFlagsA: 536870912,  pulse: 52109, pulseFlagsA: 33554432, note: "summon A bit29 (SHARED); PULSE 52109 = word A bit25 (33554432), the attack/damage buff — UNIQUE, bind the PULSE for Improved Weapon Totems / Elemental Weapons FT-totem." }
+  # Grace of Air Totem: ABSENT from 3.3.5a — see missingSpells (merged into Strength of Earth in WotLK).
+  # --- Water totems -------------------------------------------------------------------------------
+  "Mana Spring Totem":      { summon: 5675,  summonFlagsA: 524288,     pulse: 52031, pulseFlagsA: 67125248, note: "summon A bit19 (524288) — SHARED with Healing Stream summon ONLY; PULSE 52031 = A bits {14,26} (67108864|16384). Restorative Totems (18840) boosts the pulse mana." }
+  "Healing Stream Totem":   { summon: 5394,  summonFlagsA: 524288,     pulse: 52041, pulseFlagsA: 67117056, note: "summon A bit19 (524288) — SHARED with Mana Spring summon ONLY; PULSE 52041 = A bits {13,26} (67108864|8192). Restorative Totems boosts the pulse healing." }
+  "Mana Tide Totem":        { summon: 16190, summonFlagsA: 536870912,  pulse: 39610, pulseFlagsA: 67108864, altPulse: 39609, note: "[talent] summon A bit29 (SHARED); pulse 39610 (A bit26 67108864) + energize 39609 (family=0, Effect_1=30 ENERGIZE base -1 = %-CALCULATED). See survival — pulse REWORKED %-max-mana, standout reconstruction." }
+
+totemOverBind:           # THE recorded resolution of the Task-3 totem-family-bit question.
+  sharedBit29:
+    value: 536870912     # word A bit29 (0x20000000) = the shared "totem" family bit.
+    carriedBy: ["Strength of Earth Totem", "Windfury Totem", "Flametongue Totem", "Mana Tide Totem",
+                "Grounding Totem", "Earthbind Totem", "Stoneskin Totem", "Nature Resistance Totem",
+                "Fire Nova Totem (bit29|bit27)"]
+    consequence: >
+      A spellmod binding word-A bit29 by full identity OVER-BINDS onto EVERY totem above (core
+      SpellInfo::IsAffected ANDs the flag words, so a shared bit matches all carriers — the
+      paladin-aura precedent). Any talent that must hit a SUBSET of these totems can NOT be scoped
+      by the summon's family mask alone (there is no unique word-A/B/C bit for SoE, Stoneskin, or
+      Grounding at the SUMMON level). Tasks 6-8 MUST use `affectsMask` on the totem's UNIQUE PULSE
+      spell, or a non-spellmod mechanism, for: Enhancing Totems (SoE + the absent GoA), Guardian
+      Totems (Stoneskin + Grounding + the absent Windwall), Improved Weapon Totems (WF + FT totems
+      — their pulses 8515 wordB bit21 / 52109 wordA bit25 ARE unique, so bind those), Improved Fire
+      Totems / Call of Flame (Fire Nova shares bit29; Searing bit4 + Magma bit12 are unique).
+  cleanBit19:
+    value: 524288        # word A bit19.
+    carriedBy: ["Mana Spring Totem (summon)", "Healing Stream Totem (summon)"]
+    alsoCarriedByNpcOnly: ["Corrupted Healing Stream Totem (23422/32135)", "Corrupted Air Totem (32137)", "Rejuvinating Totem (62699)"]
+    consequence: >
+      CORRECTED 2026-08-21 (full family=11 sweep): bit19 is NOT exclusive to the two player totems —
+      three NPC-only spells also carry mask (524288,0,0): Corrupted Healing Stream Totem (23422/32135),
+      Corrupted Air Totem (32137), Rejuvinating Totem (62699). BUT the only PLAYER-CASTABLE spells that
+      carry bit19 are Mana Spring + Healing Stream Totem, so Restorative Totems (18840, "Mana Spring +
+      Healing Stream effect") binding bit19 is still SAFE — the NPC totems are never player-reachable,
+      so the over-bind is inert in practice. It boosts the EFFECT (mana/health restored) which lives on the PULSE
+      spells (52031 / 52041), whose shared bit is A bit26 (67108864) — but bit26 is ALSO on the Mana
+      Tide pulse (39610), so binding the pulses by bit26 would leak onto Mana Tide. Prefer the
+      unique per-pulse bits (Mana Spring pulse A bit14 16384 / Healing Stream pulse A bit13 8192) or
+      the clean summon bit19. Recorded so Task 9 does not re-investigate.
+  allTotemsCostMod: >
+    Totemic Focus (18835, -mana of ALL totems) and Totemic Mastery (18838, +radius of friendly
+    totems) WANT every totem, so over-binding among totems is harmless — author them with a broad
+    `affects:` totem list (SPELLMOD_COST / radius). There is no single mask covering every totem
+    (summon bits are diverse: bit4/bit12/bit29/bit19/bit3), so the emitted EffectSpellClassMask is
+    the OR of all listed totem summons.
+
+grants:                  # stock WotLK ids a Bound node GRANTS when the WotLK spell == the Vanilla
+                         # form in behaviour AND magnitude (verified below). Rank-1 [talent] id unless
+                         # noted; Tasks 6-9 finalize chains.
+  purification:      { 1: 16178, 2: 16210, 3: 16211, 4: 16212, 5: 16213 }  # aura136 MOD_HEALING_DONE_PERCENT +2/4/6/8/10% (basePoints 1/3/5/7/9, misc127 all-schools, mask A 448). EXACT Vanilla values (2/4/6/8/10%). GRANT (or `mechanic: stat`).
+  tidal_mastery:     { 1: 16194, 2: 16218, 3: 16219, 4: 16220, 5: 16221 }  # aura107 ADD_FLAT_MODIFIER misc7 CRITICAL_CHANCE +1/2/3/4/5% (basePoints 0/../4, mask A 1475 = LB/CL/HW/LHW/CH/LightningShield set). EXACT Vanilla (1-5% crit of healing+lightning). GRANT.
+  elemental_devastation: { 1: 30160, 2: 29179, 3: 29180 }  # proc aura42 -> buffs 30165/29177/29178 = aura52 MOD_WEAPON_CRIT_PERCENT +3/6/9% (basePoints 2/5/8), 10s, ProcTypeMask 65536 (offensive spell crit), ProcChance 100. EXACT Vanilla (3/6/9%). GRANT.
+  elemental_fury:    { 1: 60188 }   # **GRANT THE WotLK RANK-5 id 60188** for the single Vanilla rank. 60188 = aura108 ADD_PCT_MODIFIER misc15 CRIT_DAMAGE_BONUS +100% (basePoints 99) on the fire/frost/nature+fire-totem set (maskA -785383421). WotLK made Elemental Fury a 5-rank chain 20/40/60/80/100% (16089/60184/60185/60187/60188); rank-1 16089 is only +20% — do NOT grant it. Vanilla = 1 rank +100%; rank-5 60188 matches it exactly. GRANT 60188.
+  # NOTE: Nature's Swiftness (16188) is deliberately NOT in this map — it is a CLONE, not a grant
+  # (WotLK shaman cd = 2 min vs Vanilla 3 min; project decision is to clone 16188 and restore the
+  # 3-min cd). Its full record is survival.nature_swiftness (disposition: clone). Do NOT bind the
+  # stock 16188 as a grant — that would ship the wrong 2-min cooldown.
+
+triggers:                # stock ids a data-proc/trigger node's granted passive casts (recorded for
+                         # the owning-tab tasks; live-verified against the DBC).
+  stormstrike_nature_debuff: { charge1: 32175, charge2: 32176 }  # Stormstrike 17364 Effect_2/3 TRIGGER these = the 2 "next nature source +20%" debuff charges (Effect_1=58 WEAPON_DAMAGE stubs; the +20% itself is 17364's own aura271 MOD_DAMAGE_FROM_CASTER).
+  elemental_focus_clearcasting: 16246   # Elemental Focus 16164 Effect_1 aura42 PROC -> 16246 Clearcasting = aura108 ADD_PCT_MODIFIER misc14 COST -40%, ProcCharges 2. WotLK shape (see survival — Vanilla wants -100% / 1 charge -> clone target).
+  elemental_mastery_haste: 64701       # Elemental Mastery 16166 Effect_2 TRIGGER -> 64701 = aura65 MOD_CASTING_SPEED_NOT_STACK +15% haste (NOT crit). WotLK-only; Vanilla EM had no haste (see survival).
+  ancestral_healing_buff: { 1: 16177, 2: 16236, 3: 16237 }   # Ancestral Healing 16176/16235/16240 proc -> these buffs = aura87 MOD_DAMAGE_PERCENT_TAKEN (WotLK rework, NOT armor — see survival).
+  flurry_haste_buff: { 1: 16257, 2: 16277, 3: 16278, 4: 16279, 5: 16280 }  # Flurry 16256/16281-16284 proc -> these = aura138 MOD_MELEE_HASTE +6/12/18/24/30% (basePoints 5/11/17/23/29). WotLK values; Vanilla = 10/15/20/25/30% (see survival -> clone).
+
+survival:                # THE PIVOTAL DELIVERABLE — per divergence target: does the Vanilla spell/
+                         # mechanic SURVIVE in this 3.3.5a store, in what form, and the initial Task
+                         # 6-9 disposition (grant | spellmod | clone | script). Confirmed empirically
+                         # against the DBC + `lookup`, cross-checked vs the skeleton's Vanilla tooltip.
+  mana_tide_totem:
+    survives: partial    # the SUMMON survives; the mana-restore PULSE is reworked.
+    stock_ids: [16190, 39609, 39610]   # 16190 [talent] summon (Effect_1=28 SUMMON, totem NPC entry misc 10467, Category 591, DurationIndex 564 = 12s); 39609/39610 the NPC's mana-restore pulses.
+    form: >
+      WotLK Mana Tide pulse = %-of-max-mana: 39609 Effect_1=30 ENERGIZE basePoints -1 (=CALCULATED,
+      the % rework), family=0. Vanilla Mana Tide restored a FLAT amount per 3s (skeleton: '170 mana
+      every 3 seconds', 12s life). The summon button itself (16190) is faithful; the divergence is
+      entirely in the pulse magnitude formula.
+    disposition: clone   # STANDOUT RECONSTRUCTION. Rebuild the flat-energize pulse (170/3s) — the
+                         # totem is a summoned NPC casting the pulse, so the clean route is a custom
+                         # pulse spell (flat SPELL_EFFECT_ENERGIZE) + retargeting the summoned totem
+                         # to cast it (creature-template / summon-effect wiring). FLAG for a Task-9
+                         # design decision: either (a) custom totem creature + custom flat-energize
+                         # pulse, or (b) accept the WotLK %-mana pulse as a beneficial divergence.
+                         # Not resolvable as a plain grant/spellmod.
+  purification:
+    survives: true
+    stock_ids: [16178, 16210, 16211, 16212, 16213]   # [talent][passive], 5 ranks
+    form: "aura136 MOD_HEALING_DONE_PERCENT +2/4/6/8/10% (basePoints 1/3/5/7/9, misc127 all-schools). EXACT Vanilla (2/4/6/8/10% healing effectiveness)."
+    disposition: grant   # or `mechanic: stat` (a plain %-healing-done aura). No divergence.
+  elemental_mastery:
+    survives: false      # mechanic diverged; only the 3-min cd survives.
+    stock_ids: [16166]   # [talent], single rank. Category 1202, CategoryRecoveryTime 180000 (3-min cd).
+    form: >
+      WotLK 16166 = next Fire/Frost/Nature spell INSTANT (Effect_1 aura108 misc10 CASTING_TIME
+      -100%) + trigger 64701 (aura65 +15% HASTE). Vanilla EM (skeleton) = next Fire/Frost/Nature
+      spell 100% CRIT + 100% MANA-COST reduction, NO instant/haste. Completely different components.
+    disposition: clone   # reconstruct Vanilla: a guaranteed-crit (SPELLMOD_CRITICAL_CHANCE +100% on
+                         # the fire/frost/nature set, per Player.cpp:10028 the >=100 flat = guaranteed)
+                         # + SPELLMOD_COST -100%, instant activate, 3-min cd. Task 8 designs the exact
+                         # aura shape; NOT a grant.
+  elemental_focus:
+    survives: false      # mechanic + magnitude diverged.
+    stock_ids: [16164, 16246]   # 16164 [talent][passive] the proc; 16246 the Clearcasting buff.
+    form: >
+      WotLK 16164 = 100% chance on a Fire/Frost/Nature CRIT (ProcTypeMask 87376, ProcChance 100) ->
+      16246 Clearcasting = aura108 misc14 COST -40%, ProcCharges 2 (next 2 spells). Vanilla (skeleton)
+      = 10% chance after CASTING any Fire/Frost/Nature damage spell -> Clearcasting -100% cost on the
+      NEXT (1) spell.
+    disposition: clone   # Omen-of-Clarity / druid-Clearcasting analog. Clone BOTH: a proc passive at
+                         # ~10% on-cast (not on-crit) + a Clearcasting buff at -100% cost / 1 charge.
+                         # Reserve helper ids in the 9324xx band.
+  elemental_devastation:
+    survives: true
+    stock_ids: [30160, 29179, 29180]   # [talent][passive], 3 ranks; buffs 30165/29177/29178
+    form: "proc aura42 (ProcTypeMask 65536 offensive-spell-crit, ProcChance 100) -> aura52 MOD_WEAPON_CRIT_PERCENT +3/6/9% for 10s (buff basePoints 2/5/8). EXACT Vanilla (3/6/9% melee crit on spell crit)."
+    disposition: grant   # fully faithful.
+  elemental_fury:
+    survives: true       # as the WotLK RANK-5 id.
+    stock_ids: [16089, 60184, 60185, 60187, 60188]   # WotLK 5-rank chain 20/40/60/80/100% crit-damage
+    form: "aura108 ADD_PCT_MODIFIER misc15 CRIT_DAMAGE_BONUS on the fire/frost/nature+fire-totem set (maskA -785383421). WotLK = 5 ranks 20/40/60/80/100% (basePoints 19/39/59/79/99). Vanilla = 1 rank +100%. Rank-5 60188 (=+100%) matches the single Vanilla rank exactly."
+    disposition: grant   # GRANT 60188 for the single Vanilla node — do NOT grant rank-1 16089 (+20%).
+  stormstrike:
+    survives: false      # ability exists but cooldown + cost diverged.
+    stock_ids: [17364]   # [talent], single rank. Effect_1 aura271 MOD_DAMAGE_FROM_CASTER +20% nature (2 charges via 32175/32176), Effect_2/3 TRIGGER the debuff charges.
+    form: >
+      WotLK 17364 = 8s cooldown (RecoveryTime 8000), ManaCostPct 8 (%-of-base cost), instant, both-
+      weapon strike + '+20% nature, next 2 sources'. Vanilla (skeleton) = 20s cooldown, 319 FLAT mana,
+      extra attack + '+20% nature, next 2 sources, 12s'. The +20% nature-debuff mechanic is faithful;
+      the cooldown (8s vs 20s) and cost (% vs flat 319) diverge.
+    disposition: clone   # clone 17364 overriding RecoveryTime 20000 + flat ManaCost 319 (manaCostPct
+                         # 0), keep the aura271 debuff + trigger charges. Task 7. FLAG: confirm whether
+                         # the Vanilla 'extra attack' vs WotLK 'both-weapon strike' matters to the owner.
+  flurry:
+    survives: true       # mechanic faithful; VALUES diverged.
+    stock_ids: [16256, 16281, 16282, 16283, 16284]   # [talent][passive] procs -> buffs 16257/16277/16278/16279/16280
+    form: "proc (family=0, ProcTypeMask 20 = melee/ranged crit, 3 charges) -> aura138 MOD_MELEE_HASTE. WotLK buff values +6/12/18/24/30% (basePoints 5/11/17/23/29). Vanilla = +10/15/20/25/30%."
+    disposition: clone   # SOLVED CLONE PATTERN — mirror the Warrior Flurry clone (framework registry
+                         # 932810-814: clone the family-0 haste buff, 3 charges, on-crit). Author the
+                         # Vanilla 10/15/20/25/30% buff chain + a proc passive; helper ids in 9324xx.
+  ancestral_healing:
+    survives: false      # WotLK reworked the buff from armor% to damage-taken%.
+    stock_ids: [16176, 16235, 16240]   # [talent][passive], 3 ranks; buffs 16177/16236/16237
+    form: >
+      proc aura42 on a healing CRIT (ProcTypeMask 87376, ProcChance 100) -> buff aura87
+      MOD_DAMAGE_PERCENT_TAKEN basePoints -4/-8/-11 (= roughly -5/-9/-12% damage taken), 15s.
+      Vanilla (skeleton) = +8/16/25% ARMOR on the heal target for 15s. Same proc trigger, DIFFERENT
+      buff aura (damage-taken% vs armor%) and magnitude.
+    disposition: clone   # the proc STRUCTURE survives; clone the triggered BUFF to a +8/16/25% armor
+                         # aura (MOD_BASE_RESISTANCE_PCT 142 misc1 armor — the paladin LoH-rider
+                         # precedent) and point the proc at it. Task 9; helper ids in 9324xx.
+  healing_way:
+    survives: false      # WotLK rework: flat passive vs Vanilla proc-stack.
+    stock_ids: [29206, 29205, 29202]   # [talent][passive], 3 ranks (r1/r2/r3)
+    form: >
+      WotLK = a FLAT PASSIVE aura108 ADD_PCT_MODIFIER misc0 (heal amount) +8/16/25% to Healing Wave
+      (basePoints 7/15/24, mask A 64 = Healing Wave). Vanilla (skeleton) = a PROC: Healing Wave has
+      33/66/100% chance to apply a +6% Healing-Wave-received buff to the target, STACKING up to 3x
+      (=18% max), 15s.
+    disposition: clone   # reconstruct the Vanilla proc-stack: a proc passive (33/66/100% on Healing
+                         # Wave cast) + a stacking (CumulativeAura 3) +6% received-Healing-Wave buff on
+                         # the target. Behaviour data can express this (no script needed — a stacking
+                         # aura that boosts incoming Healing Wave). Task 9; helper ids in 9324xx.
+  nature_swiftness:
+    survives: partial    # mechanic faithful; COOLDOWN diverged.
+    stock_ids: [16188]   # [talent], single rank (SHAMAN — NOT druid 17116)
+    form: >
+      aura108 ADD_PCT_MODIFIER misc10 CASTING_TIME -100% on the nature-spell set (maskA 2499), instant
+      activate. WotLK cd = 120000 (2 min, Category 1202 CategoryRecoveryTime). Vanilla (skeleton) =
+      3-min cd. The 'next nature spell instant' mechanic is faithful; only the cooldown differs.
+    disposition: clone   # DECIDED: clone 16188 overriding CategoryRecoveryTime/RecoveryTime -> 180000
+                         # (3-min), like the rogue Adrenaline-Rush cd-only clone (932770). The project
+                         # decision is to restore the Vanilla 3-min cd (NOT grant the stock 2-min). NB
+                         # the druid NS 17116 stayed 3-min in WotLK — the 2-min is shaman-specific.
+  tidal_mastery:
+    survives: true
+    stock_ids: [16194, 16218, 16219, 16220, 16221]   # [talent][passive], 5 ranks
+    form: "aura107 ADD_FLAT_MODIFIER misc7 CRITICAL_CHANCE +1/2/3/4/5% (basePoints 0/1/2/3/4) on the LB/CL/HW/LHW/CH/Lightning-Shield set (maskA 1475). EXACT Vanilla (1-5% crit of healing+lightning)."
+    disposition: grant   # fully faithful.
+  windfury_weapon:
+    survives: true       # base spell — not itself a divergence, recorded because Elemental Weapons targets it.
+    stock_ids: [8232, 8235, 10486, 16362, 25505]   # ranks 1-5 (58801/58803/58804 = WotLK ranks 6-8, ignore for Vanilla)
+    form: "Effect_1=54 ENCHANT_ITEM_TEMPORARY (nature), family=11 word-B bit11 (SHARED with FT/FB Weapon). The imbue's extra-attack AP scales off the enchant, boosted by Elemental Weapons — see below."
+    disposition: n/a     # base spell; the talent is Elemental Weapons.
+  elemental_weapons:
+    survives: false      # WotLK rework — scope + per-weapon %s differ.
+    stock_ids: [16266, 29079, 29080]   # [talent][passive], 3 ranks
+    form: >
+      WotLK 16266 (r1) = three aura108 ADD_PCT_MODIFIER effects. REAL masks (dumped 2026-08-21):
+      Effect_1 misc12 (SPELLMOD_EFFECT2), maskB 2097152 (word-B bit21) + maskC 8388608 (word-C bit23);
+      Effect_2 misc12, maskA 1048576 (word-A bit20); Effect_3 misc0, ALL masks 0. CORRECTION: these do
+      NOT resolve to the weapon-imbue identities — the imbues are Flametongue/Frostbrand/Windfury Weapon
+      = word-B bit11 (2048) and Rockbiter = word-A bit22 (4194304), NONE of which appears in 16266's
+      masks. Word-B bit21 (2097152) is the Windfury TOTEM pulse's bit (8515), NOT a weapon; and word-C
+      bit23 (8388608) matches ZERO spells anywhere in Spell.dbc as an identity bit (swept — 0 hits), so
+      it resolves to no known imbue. The WotLK spell is opaquely reworked and does not map onto the
+      Vanilla scope. Vanilla (skeleton) = DISTINCT per-weapon %s: Rockbiter AP +7/14/20%, Windfury
+      Weapon effect +13/27/40%, Flametongue+Frostbrand Weapon damage +5/10/15%.
+    disposition: clone   # NOT expressible as a grant (the Vanilla per-weapon %s differ, and FT/FB/WF
+                         # Weapon SHARE word-B bit11 so one spellmod can't give them different %s from
+                         # each other). Task 7 needs per-weapon effects: Rockbiter (unique wordA bit22)
+                         # gets its own +7/14/20% AP mod; Windfury Weapon its +13/27/40% (bind the WF
+                         # imbue's effect, not the shared bit11 alone); FT+FB share bit11 at +5/10/15%
+                         # (a single mod is CORRECT for those two since they take the same %). FLAG as
+                         # a multi-effect reconstruction; helper ids in 9324xx if a clone is chosen.
+    redesign_2026_08_23: >
+      Task-10-blocking review found the Task-6 authoring above (bind Rockbiter's own bit22 + the FT/FB
+      imbue-passive shared bit11) does NOT reach any of the three magnitudes at runtime — traced against
+      Player::UpdateDamageDoneMods/CastItemCombatSpell (Player.cpp/PlayerStorage.cpp),
+      spell_sha_flametongue_weapon/spell_sha_windfury_weapon (spell_shaman.cpp), and
+      SpellEffectInfo::CalcValue/Unit::ApplyEffectModifiers (SpellInfo.cpp/Unit.cpp):
+        - Rockbiter (8017): AP is a FLAT SpellItemEnchantment.dbc value consumed by
+          `UpdateDamageDoneMods`'s `case ITEM_ENCHANTMENT_TYPE_DAMAGE: amount += enchantmentEntry->
+          amount[i]` — no spell cast, no CalcValue, ZERO spellmod path. A bind here is CODE-VERIFIED
+          INERT (not just unobserved). ACCEPTED GAP, core-patch-flagged (not written); no effect
+          authored.
+        - Windfury: `spell_sha_windfury_weapon::HandleProc` computes the bonus via
+          `sSpellMgr->GetSpellInfo(8232)->Effects[EFFECT_1].CalcValue(player)` — caster IS passed, so
+          this resolves against **Windfury WEAPON 8232's own identity (word-B bit11)**, the SAME bit
+          Flametongue/Frostbrand Weapon carry. The old FT/FB bit11 mod (+5/10/15%) therefore ALSO hit
+          this call, stacking onto Windfury's own +13/27/40% mod on Windfury Attack (25504/33750, word-A
+          bit23, UNIQUE) — measured 5+13=18%, 10+27=37%, 15+40=55% (r1/r2/r3), matching the reported
+          leak exactly. Windfury Attack's bit23 bind was already correct and is unchanged; the fix is to
+          stop binding bit11 at all.
+        - Flametongue: the hidden passive DUMMY aura (10400, `spell_script_names` row "-10400") computes
+          its raw magnitude via `GetSpellInfo()->Effects[EFFECT_0].CalcValue()` — ZERO ARGUMENTS,
+          caster=nullptr, so `SpellEffectInfo::CalcValue`'s `if (caster) {...ApplyEffectModifiers...}`
+          never runs — INERT regardless of bound bit. The script's result is re-cast via
+          `CastCustomSpell(10444 Flametongue Attack, SPELLVALUE_BASE_POINT0, totalDamage, ...)`, a
+          normal cast WITH caster=player, so CalcValue DOES run ApplyEffectModifiers there — against
+          **Flametongue Attack 10444's own identity (word-A bit21, UNIQUE among real family=11 spells —
+          dbc sweep 2026-08-23 clean except 10400 itself, unreachable via caster, and an orphaned unused
+          "Flametongue Weapon Proc" 8026 with no live caller)**.
+        - Frostbrand: has NO custom AuraScript; its attack (8034, word-A bit24, UNIQUE) is cast directly
+          by `Player::CastItemCombatSpell`'s generic `ITEM_ENCHANTMENT_TYPE_COMBAT_SPELL` loop with a
+          normal player caster throughout, so its own identity resolves spellmods normally.
+      FIX (shipped in node 18827): bind ONLY Windfury Attack (bit23, unchanged) + Flametongue Attack
+      (10444, bit21) + Frostbrand Attack (8034, bit24) in one `op:allEffects` effect for the FT/FB pair.
+      Rockbiter authors no effect — documented gap, per-case core-patch decision flagged to the user,
+      none written.
+
+missingSpells:           # Vanilla totems/spells a talent references that are ABSENT from the 3.3.5a
+                         # DBC (WotLK removed/merged them) — a reconstruction target, not a grant.
+  grace_of_air_totem: >
+    NOT FOUND by exact name in Spell.dbc. WotLK (3.0.2) MERGED Grace of Air Totem (Agility) into
+    Strength of Earth Totem (which became Str+Agi) and removed the standalone GoA. Enhancing Totems
+    (18821, "Strength of Earth + Grace of Air effect") therefore has only ONE surviving target (SoE)
+    — Task 7 must decide: reconstruct a GoA totem, redirect Enhancing Totems to the merged SoE, or
+    scope it to SoE only. FLAG for a Task-7 design decision.
+  windwall_totem: >
+    NOT FOUND by exact name. Guardian Totems (18817, "Stoneskin + Windwall damage reduction") loses
+    its Windwall half (WotLK removed Windwall Totem). Task 8: scope Guardian Totems to Stoneskin +
+    Grounding, or reconstruct Windwall. FLAG.
+  tranquil_air_totem: >
+    NOT FOUND by exact name (WotLK removed it). Not referenced by any imported talent node, recorded
+    only to note the general WotLK totem cull.
+
+baselineLeakCandidates: >
+  NONE positively identified. Per the framework §"Vanilla-talent-that-became-baseline", a leak is a
+  spell that was a Vanilla TALENT but a WotLK trainer/level BASELINE (obtainable without the talent).
+  All four ACTIVE shaman talents — Stormstrike (spell 17364), Elemental Mastery (spell 16166),
+  Nature's Swiftness (spell 16188), Mana Tide Totem (spell 16190) — remained TALENT-gated in WotLK
+  (each `lookup` shows the ability as [talent], with only glyphs/set-bonuses/higher-internal-ranks
+  alongside), so none leaks via a trainer. (Their skeleton talent-node ids are 18830/18814/18843/18845
+  respectively — do not confuse the two id-spaces; see the header legend.) The remaining nodes are passives (spellmods/stats/procs) whose talent spell is never
+  trainable. The base spells the spellmods target (Lightning Bolt, shocks, heals, totems, weapon
+  imbues) are baseline shaman abilities in BOTH eras — correct to be freely available, not leaks.
+  ACTION for Tasks 6-9: none required, BUT verify at authoring time that Stormstrike (17364) and
+  Mana Tide Totem (16190) have no ungated `trainer_spell` row for a Vanilla shaman (the checked
+  precedent — warrior Shield Slam / mage Ice Block were trainer-baseline leaks). If a clone replaces
+  the stock active (EM/NS/Stormstrike/Mana-Tide all clone), apply the standard version-swap gate
+  (strip the stock id in Vanilla, grant the clone) per the framework's CUSTOM-rank discipline.
+
+renamed: {}              # No confirmed same-spell renames found (the missing GoA/Windwall/Tranquil
+                         # Air totems are REMOVALS/merges, recorded under missingSpells, not renames).

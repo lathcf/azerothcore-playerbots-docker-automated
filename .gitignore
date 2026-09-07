@@ -20,3 +20,10 @@ webreg/acore-webreg
 lore-sidecar/.venv/
 **/__pycache__/
 *.pyc
+client-patch/out/patch-4.MPQ
+client-patch/out/patch-V.mpq
+client-patch/mpqread
+client-patch/mpqpack
+
+# StormLib clone/build made by client-patch/build-mpqpack.sh
+deps/

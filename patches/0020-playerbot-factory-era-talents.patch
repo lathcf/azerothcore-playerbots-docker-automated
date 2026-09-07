@@ -1,0 +1,431 @@
+diff --git a/modules/mod-playerbots/src/Ai/Base/Actions/AutoMaintenanceOnLevelupAction.cpp b/modules/mod-playerbots/src/Ai/Base/Actions/AutoMaintenanceOnLevelupAction.cpp
+index 7588abd..68d44ca 100644
+--- a/modules/mod-playerbots/src/Ai/Base/Actions/AutoMaintenanceOnLevelupAction.cpp
++++ b/modules/mod-playerbots/src/Ai/Base/Actions/AutoMaintenanceOnLevelupAction.cpp
+@@ -75,12 +75,20 @@ void AutoMaintenanceOnLevelupAction::LearnSpells(std::ostringstream* out)
+         LearnQuestSpells(out);
+ }
+ 
++// mod-era-talents (patch 0020): post-trainer-walk fixup — see the extern's comment in
++// PlayerbotFactory.cpp. InitAvailableSpells() is gated on CLASS ONLY (no faction, no trainer
++// ReqLevel), and THIS caller is an AI-tick action that runs AFTER the whole factory pass, so it is
++// the last thing to re-teach both TBC paladin faction seals and any above-level trainer spell to a
++// re-levelled bot. Without the call here the module's strips are silently undone.
++extern void EraTalentBots_PostTrainerWalk(Player* bot);
++
+ void AutoMaintenanceOnLevelupAction::LearnTrainerSpells(std::ostringstream* /*out*/)
+ {
+     PlayerbotFactory factory(bot, bot->GetLevel());
+     factory.InitSkills();
+     factory.InitClassSpells();
+     factory.InitAvailableSpells();
++    EraTalentBots_PostTrainerWalk(bot);
+     factory.InitPet();
+ }
+ 
+diff --git a/modules/mod-playerbots/src/Bot/Factory/AiFactory.cpp b/modules/mod-playerbots/src/Bot/Factory/AiFactory.cpp
+index d2fafcb..1f6bc26 100644
+--- a/modules/mod-playerbots/src/Bot/Factory/AiFactory.cpp
++++ b/modules/mod-playerbots/src/Bot/Factory/AiFactory.cpp
+@@ -38,6 +38,12 @@ constexpr uint32 SPELL_CAT_FORM = 768;
+ constexpr uint32 SPELL_DRUID_THICK_HIDE = 16931;
+ }
+ 
++// mod-era-talents (patch 0020/0021 support): era-transparent spell lookup — returns the id
++// this character KNOWS for a stock spell (stock itself, or its same-name Vanilla-era clone),
++// else 0. Drop-in for HasSpell/HasAura(id) truthiness on era-swapped discriminators.
++extern uint32 EraTalentBots_ResolveSpellId(Player* bot, uint32 stockSpellId);
++static inline uint32 EraKnown(Player* bot, uint32 spellId) { return EraTalentBots_ResolveSpellId(bot, spellId); }
++
+ AiObjectContext* AiFactory::createAiObjectContext(Player* player, PlayerbotAI* botAI)
+ {
+     switch (player->getClass())
+@@ -112,6 +118,24 @@ uint8 AiFactory::GetPlayerSpecTab(Player* bot)
+ std::map<uint8, uint32> AiFactory::GetPlayerSpecTabs(Player* bot)
+ {
+     std::map<uint8, uint32> tabs = {{0, 0}, {0, 0}, {0, 0}};
++
++    // mod-era-talents (patch 0020): a managed-era bot's talents live in era_character_talent
++    // rows, not the native talent map (stripped by the era reconcile) — without this every
++    // downstream spec consumer (GetPlayerSpecTab, IsTank/IsHeal, strategy init,
++    // StatsWeightCalculator gear scoring, raid triggers) reads the bot as untalented and
++    // falls back to a dps-ish class default (a prot-built warrior gears/plays Arms). The
++    // module caches per guid, so this is a memory read on the hot paths; it returns false
++    // for real players, unmanaged bands, and when the module/knob is off.
++    extern bool EraTalentBots_SpecTabs(Player* bot, uint32* tabs3);
++    uint32 eraTabs[3] = {0, 0, 0};
++    if (EraTalentBots_SpecTabs(bot, eraTabs))
++    {
++        tabs[0] = eraTabs[0];
++        tabs[1] = eraTabs[1];
++        tabs[2] = eraTabs[2];
++        return tabs;
++    }
++
+     PlayerTalentMap const& talentMap = bot->GetTalentMap();
+     for (PlayerTalentMap::const_iterator i = talentMap.begin(); i != talentMap.end(); ++i)
+     {
+@@ -357,7 +381,7 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
+                 engine->addStrategiesNoInit("resto", "cure", "dps assist", "tranquility", nullptr);
+             else
+             {
+-                if (player->HasSpell(SPELL_CAT_FORM) && !player->HasAura(SPELL_DRUID_THICK_HIDE))
++                if (player->HasSpell(SPELL_CAT_FORM) && !player->HasAura(EraKnown(player, SPELL_DRUID_THICK_HIDE)))
+                     engine->addStrategiesNoInit("cat", "aoe", "cc", "dps assist", "feral charge", nullptr);
+                 else
+                     engine->addStrategiesNoInit("bear", "tank assist", "pull", "pull back", "feral charge", nullptr);
+@@ -559,7 +583,7 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
+         case CLASS_DRUID:
+             if (tab == DRUID_TAB_FERAL)
+             {
+-                if (player->GetLevel() >= 20 && !player->HasAura(SPELL_DRUID_THICK_HIDE))
++                if (player->GetLevel() >= 20 && !player->HasAura(EraKnown(player, SPELL_DRUID_THICK_HIDE)))
+                     nonCombatEngine->addStrategy("dps assist", false);
+                 else
+                     nonCombatEngine->addStrategiesNoInit("tank assist", "pull", nullptr);
+@@ -574,15 +598,27 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
+                 nonCombatEngine->addStrategy("dps assist", false);
+             break;
+         case CLASS_WARLOCK:
++        {
++            // mod-era-talents (patch 0020): Vanilla-era stones are relic-slot EQUIPPABLES —
++            // the bag-use spellstone/firestone strategies can't operate them (the item-use
++            // packet is rejected unequipped -> a per-tick "Cannot find the item" spam loop).
++            // An era-managed bot skips the stone strategy; everything else is unchanged.
++            uint32 eraTabs[3] = {0, 0, 0};
++            extern bool EraTalentBots_SpecTabs(Player* bot, uint32* tabs3);
++            bool eraManaged = EraTalentBots_SpecTabs(player, eraTabs);
+             if (tab == WARLOCK_TAB_AFFLICTION)
+-                nonCombatEngine->addStrategiesNoInit("felhunter", "spellstone", nullptr);
++                eraManaged ? nonCombatEngine->addStrategiesNoInit("felhunter", nullptr)
++                           : nonCombatEngine->addStrategiesNoInit("felhunter", "spellstone", nullptr);
+             else if (tab == WARLOCK_TAB_DEMONOLOGY)
+-                nonCombatEngine->addStrategiesNoInit("felguard", "spellstone", nullptr);
++                eraManaged ? nonCombatEngine->addStrategiesNoInit("felguard", nullptr)
++                           : nonCombatEngine->addStrategiesNoInit("felguard", "spellstone", nullptr);
+             else if (tab == WARLOCK_TAB_DESTRUCTION)
+-                nonCombatEngine->addStrategiesNoInit("imp", "firestone", nullptr);
++                eraManaged ? nonCombatEngine->addStrategiesNoInit("imp", nullptr)
++                           : nonCombatEngine->addStrategiesNoInit("imp", "firestone", nullptr);
+ 
+             nonCombatEngine->addStrategiesNoInit("dps assist", "ss self", nullptr);
+             break;
++        }
+         case CLASS_DEATH_KNIGHT:
+             if (tab == DEATH_KNIGHT_TAB_BLOOD)
+                 nonCombatEngine->addStrategiesNoInit("tank assist", "pull", nullptr);
+diff --git a/modules/mod-playerbots/src/Bot/Factory/PlayerbotFactory.cpp b/modules/mod-playerbots/src/Bot/Factory/PlayerbotFactory.cpp
+index e0005bd..e5b16aa 100644
+--- a/modules/mod-playerbots/src/Bot/Factory/PlayerbotFactory.cpp
++++ b/modules/mod-playerbots/src/Bot/Factory/PlayerbotFactory.cpp
+@@ -63,6 +63,41 @@ std::vector<uint32> PlayerbotFactory::enchantGemIdCache;
+ std::unordered_map<uint32, std::vector<uint32>> PlayerbotFactory::trainerIdCache;
+ std::vector<uint32> PlayerbotFactory::ccBreakTrinketCache;
+ 
++// mod-era-talents (patch 0020): era-transparent spell lookup — returns the id this character
++// KNOWS for a stock spell (stock itself, or its same-name Vanilla-era clone), else 0.
++extern uint32 EraTalentBots_ResolveSpellId(Player* bot, uint32 stockSpellId);
++static inline uint32 EraKnown(Player* bot, uint32 spellId) { return EraTalentBots_ResolveSpellId(bot, spellId); }
++
++// mod-era-talents (patch 0020): era-legal CONSUMABLE check. The item-id thresholds
++// InitEquipment/GetAmmo use are right for GEAR, but TBC/WotLK consumables carry LOW entry ids
++// (Super Mana Potion 22832, McWeaksauce, injectors) that slip under them, and the id range is
++// interleaved Vanilla/TBC — so consumables gate on RequiredLevel, capped to the era band's top
++// real consumable tier (Vanilla simple potions cap at Major Mana req 49; TBC ~req 62-68),
++// UNIONed with the id-threshold as a backstop for low-req high-entry items. Same-req cross-era
++// FOOD (e.g. McWeaksauce req 49 vs Vanilla req 49) is an accepted miss: no server-side signal
++// separates it. Poisons are NOT gated here — RequiredLevel > botLevel already era-caps them.
++static inline bool IsEraLegalConsumable(uint32 botLevel, uint32 requiredLevel, uint32 itemId)
++{
++    if (!sPlayerbotAIConfig.limitGearExpansion)
++        return true;
++    if (botLevel <= 60)
++        return requiredLevel <= 49 && itemId < 23728;   // Vanilla band
++    if (botLevel <= 70)
++        return requiredLevel <= 69 && itemId < 35570;   // TBC band
++    return true;
++}
++
++// mod-era-talents (patch 0020): glyphs are WotLK-era only for era-managed bots — the
++// module decides (Vanilla/TBC band blocked, DKs exempt, true when the gate is off).
++extern bool EraGlyphGate_BotGlyphsAllowed(Player* bot);
++
++// mod-era-talents (patch 0020): post-trainer-walk fixup. InitAvailableSpells() walks the trainer
++// tables gated on CLASS ONLY, so it re-teaches BOTH TBC paladin faction seals (Seal of Blood /
++// Seal of Vengeance) to a TBC-band paladin bot every time it runs — after the module's mid-build
++// reconcile has already dropped the wrong one. This is the only strip site that runs AFTER the
++// walk. Inert unless EraTalents.BotTalents is on and the bot's band era is managed.
++extern void EraTalentBots_PostTrainerWalk(Player* bot);
++
+ namespace
+ {
+ constexpr uint32 SPELL_DRUID_THICK_HIDE = 16931;
+@@ -710,6 +745,7 @@ void PlayerbotFactory::Randomize(bool incremental)
+     pmo = sPerfMonitor.start(PERF_MON_RNDBOT, "PlayerbotFactory_Spells2");
+     LOG_DEBUG("playerbots", "Initializing spells (step 2)...");
+     InitAvailableSpells();
++    EraTalentBots_PostTrainerWalk(bot);   // mod-era-talents (patch 0020) — see the extern above
+     if (pmo)
+         pmo->finish();
+ 
+@@ -896,6 +932,7 @@ void PlayerbotFactory::Refresh()
+     InitSkills();
+     InitClassSpells();
+     InitAvailableSpells();
++    EraTalentBots_PostTrainerWalk(bot);   // mod-era-talents (patch 0020) — see the extern above
+     InitReputation();
+     InitSpecialSpells();
+     InitMounts();
+@@ -932,7 +969,7 @@ void PlayerbotFactory::InitConsumables()
+                 for (uint32 itemId : wizard_oils)
+                 {
+                     ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+-                    if (proto->RequiredLevel > level || level > 75)
++                    if (proto->RequiredLevel > level || level > 75 || !IsEraLegalConsumable(level, proto->RequiredLevel, itemId))
+                         continue;
+                     items.push_back({itemId, 2});
+                     break;
+@@ -945,7 +982,7 @@ void PlayerbotFactory::InitConsumables()
+                 for (uint32 itemId : mana_oils)
+                 {
+                     ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+-                    if (proto->RequiredLevel > level || level > 75)
++                    if (proto->RequiredLevel > level || level > 75 || !IsEraLegalConsumable(level, proto->RequiredLevel, itemId))
+                         continue;
+                     items.push_back({itemId, 2});
+                     break;
+@@ -960,7 +997,7 @@ void PlayerbotFactory::InitConsumables()
+             for (uint32 itemId : wizard_oils)
+             {
+                 ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+-                if (proto->RequiredLevel > level || level > 75)
++                if (proto->RequiredLevel > level || level > 75 || !IsEraLegalConsumable(level, proto->RequiredLevel, itemId))
+                     continue;
+                 items.push_back({itemId, 2});
+                 break;
+@@ -976,7 +1013,7 @@ void PlayerbotFactory::InitConsumables()
+                 for (uint32 itemId : wizard_oils)
+                 {
+                     ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+-                    if (proto->RequiredLevel > level || level > 75)
++                    if (proto->RequiredLevel > level || level > 75 || !IsEraLegalConsumable(level, proto->RequiredLevel, itemId))
+                         continue;
+                     items.push_back({itemId, 2});
+                     break;
+@@ -993,7 +1030,7 @@ void PlayerbotFactory::InitConsumables()
+                 for (uint32 itemId : sharpening_stones)
+                 {
+                     ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+-                    if (proto->RequiredLevel > level || level > 75)
++                    if (proto->RequiredLevel > level || level > 75 || !IsEraLegalConsumable(level, proto->RequiredLevel, itemId))
+                         continue;
+                     items.push_back({itemId, 20});
+                     break;
+@@ -1001,7 +1038,7 @@ void PlayerbotFactory::InitConsumables()
+                 for (uint32 itemId : weightstones)
+                 {
+                     ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+-                    if (proto->RequiredLevel > level || level > 75)
++                    if (proto->RequiredLevel > level || level > 75 || !IsEraLegalConsumable(level, proto->RequiredLevel, itemId))
+                         continue;
+                     items.push_back({itemId, 20});
+                     break;
+@@ -1014,7 +1051,7 @@ void PlayerbotFactory::InitConsumables()
+                 for (uint32 itemId : mana_oils)
+                 {
+                     ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+-                    if (proto->RequiredLevel > level || level > 75)
++                    if (proto->RequiredLevel > level || level > 75 || !IsEraLegalConsumable(level, proto->RequiredLevel, itemId))
+                         continue;
+                     items.push_back({itemId, 2});
+                     break;
+@@ -1031,7 +1068,7 @@ void PlayerbotFactory::InitConsumables()
+                 for (uint32 itemId : mana_oils)
+                 {
+                     ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+-                    if (proto->RequiredLevel > level || level > 75)
++                    if (proto->RequiredLevel > level || level > 75 || !IsEraLegalConsumable(level, proto->RequiredLevel, itemId))
+                         continue;
+                     items.push_back({itemId, 2});
+                     break;
+@@ -1048,7 +1085,7 @@ void PlayerbotFactory::InitConsumables()
+                 for (uint32 itemId : sharpening_stones)
+                 {
+                     ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+-                    if (proto->RequiredLevel > level || level > 75)
++                    if (proto->RequiredLevel > level || level > 75 || !IsEraLegalConsumable(level, proto->RequiredLevel, itemId))
+                         continue;
+                     items.push_back({itemId, 20});
+                     break;
+@@ -1056,7 +1093,7 @@ void PlayerbotFactory::InitConsumables()
+                 for (uint32 itemId : weightstones)
+                 {
+                     ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+-                    if (proto->RequiredLevel > level || level > 75)
++                    if (proto->RequiredLevel > level || level > 75 || !IsEraLegalConsumable(level, proto->RequiredLevel, itemId))
+                         continue;
+                     items.push_back({itemId, 20});
+                     break;
+@@ -1077,7 +1114,7 @@ void PlayerbotFactory::InitConsumables()
+             for (uint32 itemId : sharpening_stones)
+             {
+                 ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+-                if (proto->RequiredLevel > level || level > 75)
++                if (proto->RequiredLevel > level || level > 75 || !IsEraLegalConsumable(level, proto->RequiredLevel, itemId))
+                     continue;
+                 items.push_back({itemId, 20});
+                 break;
+@@ -1085,7 +1122,7 @@ void PlayerbotFactory::InitConsumables()
+             for (uint32 itemId : weightstones)
+             {
+                 ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+-                if (proto->RequiredLevel > level || level > 75)
++                if (proto->RequiredLevel > level || level > 75 || !IsEraLegalConsumable(level, proto->RequiredLevel, itemId))
+                     continue;
+                 items.push_back({itemId, 20});
+                 break;
+@@ -1504,7 +1541,7 @@ uint32 PlayerbotFactory::InitTalentsTree(bool increment /*false*/, bool use_temp
+         /// @todo: fix cat druid hardcode
+         if (bot->getClass() == CLASS_DRUID && specTab == DRUID_TAB_FERAL && bot->GetLevel() >= 20)
+         {
+-            bool isCat = !bot->HasAura(SPELL_DRUID_THICK_HIDE);
++            bool isCat = !bot->HasAura(EraKnown(bot, SPELL_DRUID_THICK_HIDE));
+             if (!isCat && bot->GetLevel() == 20)
+             {
+                 uint32 bearP = sPlayerbotAIConfig.randomClassSpecProb[cls][1];
+@@ -1543,6 +1580,22 @@ uint32 PlayerbotFactory::InitTalentsTree(bool increment /*false*/, bool use_temp
+             LOG_ERROR("playerbots", "Fail to select spec num for bot {}! Set to 0.", bot->GetName());
+         }
+     }
++    // mod-era-talents (patch 0020): a bot inside a managed era band (level 1-60 = Vanilla)
++    // gets an era talent build instead of the WotLK template. The module tears down stale
++    // era rows on the way OUT of a band too, so this single choke point covers factory
++    // randomize AND mod-player-bot-level-brackets moves in both directions. Hard link-time
++    // dependency on mod-era-talents (always built in this overlay, like roster->IP).
++    extern bool EraTalentBots_FactoryReconcile(Player* bot, int specTab);
++    if (EraTalentBots_FactoryReconcile(bot, specTab == 3 ? 1 : int(specTab)))  // 3 = cat pseudo-spec -> feral tree
++    {
++        if (bot->getClass() == CLASS_SHAMAN && bot->HasSpell(SPELL_SHAMAN_DUAL_WIELD))
++        {
++            bot->SetSkill(SKILL_DUAL_WIELD, 0, 1, 1);
++            bot->SetCanDualWield(true);
++        }
++        bot->SendTalentsInfoData(false);
++        return sPlayerbotAIConfig.randomClassSpecIndex[cls][specTab];
++    }
+     if (reset)
+     {
+         bot->resetTalents(true);
+@@ -2625,7 +2678,15 @@ void PlayerbotFactory::InitBags(bool destroyOld)
+ {
+     for (uint8 slot = INVENTORY_SLOT_BAG_START; slot < INVENTORY_SLOT_BAG_END; ++slot)
+     {
+-        uint32 newItemId = 51809;
++        // mod-era-talents (patch 0020): 51809 is a WotLK item — band the bag to the era.
++        uint32 newItemId = 51809;                    // Papa's Brand New Bag (WotLK, 20-slot)
++        if (sPlayerbotAIConfig.limitGearExpansion)
++        {
++            if (bot->GetLevel() <= 60)
++                newItemId = 4500;                    // Traveler's Backpack (Vanilla, 16-slot)
++            else if (bot->GetLevel() <= 70)
++                newItemId = 21841;                   // Netherweave Bag (TBC, 16-slot)
++        }
+         Item* old_bag = bot->GetItemByPos(INVENTORY_SLOT_BAG_0, slot);
+         if (old_bag && old_bag->GetTemplate()->ItemId == newItemId)
+             continue;
+@@ -3356,11 +3417,16 @@ void PlayerbotFactory::InitClassSpells()
+ 
+ void PlayerbotFactory::InitSpecialSpells()
+ {
+-    for (std::vector<uint32>::iterator i = sPlayerbotAIConfig.randomBotSpellIds.begin();
+-         i != sPlayerbotAIConfig.randomBotSpellIds.end(); ++i)
++    // mod-era-talents (patch 0020): the config default is Cold Weather Flying 54197
++    // (WotLK, unusable below 77 anyway) — era-gate the config list to the WotLK band.
++    if (!sPlayerbotAIConfig.limitGearExpansion || bot->GetLevel() > 70)
+     {
+-        uint32 spellId = *i;
+-        bot->learnSpell(spellId);
++        for (std::vector<uint32>::iterator i = sPlayerbotAIConfig.randomBotSpellIds.begin();
++             i != sPlayerbotAIConfig.randomBotSpellIds.end(); ++i)
++        {
++            uint32 spellId = *i;
++            bot->learnSpell(spellId);
++        }
+     }
+     // to leave DK starting area
+     if (bot->getClass() == CLASS_DEATH_KNIGHT)
+@@ -3956,6 +4022,10 @@ void PlayerbotFactory::InitFood()
+         if (proto->Area || proto->Map || proto->RequiredCityRank || proto->RequiredHonorRank)
+             continue;
+ 
++        // mod-era-talents (patch 0020): no TBC/WotLK food for Vanilla/TBC-band bots.
++        if (!IsEraLegalConsumable(bot->GetLevel(), proto->RequiredLevel, itemId))
++            continue;
++
+         items[proto->Spells[0].SpellCategory].push_back(itemId);
+     }
+ 
+@@ -4213,6 +4283,15 @@ void PlayerbotFactory::InitGlyphs(bool increment)
+         }
+     }
+ 
++    // mod-era-talents (patch 0020): glyphs are WotLK-era only — the module gate covers
++    // Vanilla/TBC-band bots (DKs exempt). The wipe above still ran, so a managed bot
++    // ends glyph-free here.
++    if (!EraGlyphGate_BotGlyphsAllowed(bot))
++    {
++        bot->SendTalentsInfoData(false);
++        return;
++    }
++
+     if (sPlayerbotAIConfig.limitTalentsExpansion && bot->GetLevel() <= 70)
+     {
+         bot->SendTalentsInfoData(false);
+@@ -4378,7 +4457,7 @@ void PlayerbotFactory::InitGlyphs(bool increment)
+     if (bot->getClass() == CLASS_DRUID)
+     {
+         // Cat PvE (spec index 3): If the bot is Feral spec, level 20 or higher, and does NOT have the Thick Hide talent
+-        if (tab == DRUID_TAB_FERAL && bot->GetLevel() >= 20 && !bot->HasAura(SPELL_DRUID_THICK_HIDE))
++        if (tab == DRUID_TAB_FERAL && bot->GetLevel() >= 20 && !bot->HasAura(EraKnown(bot, SPELL_DRUID_THICK_HIDE)))
+             tab = 3;
+         // Balance PvP (spec index 4): If the bot has the Owlkin Frenzy talent
+         else if (bot->HasAura(SPELL_OWLKIN_FRENZY))
+diff --git a/modules/mod-playerbots/src/Mgr/Item/RandomItemMgr.cpp b/modules/mod-playerbots/src/Mgr/Item/RandomItemMgr.cpp
+index 137ef1e..e81bc25 100644
+--- a/modules/mod-playerbots/src/Mgr/Item/RandomItemMgr.cpp
++++ b/modules/mod-playerbots/src/Mgr/Item/RandomItemMgr.cpp
+@@ -997,7 +997,33 @@ uint32 RandomItemMgr::GetRandomPotion(uint32 level, uint32 effect) const
+     if (effectItr == levelItr->second.end() || effectItr->second.empty())
+         return 0;
+ 
+-    return Acore::Containers::SelectRandomContainerElement(effectItr->second);
++    std::vector<uint32> const& potions = effectItr->second;
++    if (!sPlayerbotAIConfig.limitGearExpansion)
++        return Acore::Containers::SelectRandomContainerElement(potions);
++
++    // mod-era-talents (patch 0020): the potionCache is keyed on RequiredLevel only, so
++    // TBC/WotLK potions reach lower-era bots (the reported Super Mana Potion 22832 leak: entry
++    // 22832 sits BELOW the TBC gear id-threshold, req 55). Consumables gate on a per-band
++    // RequiredLevel ceiling (Vanilla simple potions cap at Major Mana req 49; TBC ~req 62-68),
++    // UNIONed with the id-threshold as a backstop — the same rule as InitConsumables/InitFood.
++    uint32 maxEntryId, maxReqLevel;
++    if (level <= 60)      { maxEntryId = 23728; maxReqLevel = 49; }  // Vanilla band
++    else if (level <= 70) { maxEntryId = 35570; maxReqLevel = 69; }  // TBC band
++    else                  { return Acore::Containers::SelectRandomContainerElement(potions); }
++    std::vector<uint32> legal;
++    legal.reserve(potions.size());
++    for (uint32 entry : potions)
++    {
++        if (entry >= maxEntryId)
++            continue;
++        ItemTemplate const* proto = sObjectMgr->GetItemTemplate(entry);
++        if (!proto || proto->RequiredLevel > maxReqLevel)
++            continue;
++        legal.push_back(entry);
++    }
++    if (legal.empty())
++        return 0;
++    return Acore::Containers::SelectRandomContainerElement(legal);
+ }
+ 
+ uint32 RandomItemMgr::GetRandomFood(uint32 level, uint32 category) const

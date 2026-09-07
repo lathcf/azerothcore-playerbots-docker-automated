@@ -1,0 +1,284 @@
+# TBC Paladin stock spell reference + survival map — TBC Phase 1, Task 3 (2026-08-27).
+# THE PIVOTAL DELIVERABLE the authoring tasks (nodes/seals/leaks) read INSTEAD of re-investigating.
+# Mirrors era-data/_ref/paladin-spells.yaml (Vanilla) in shape; adds a TBC-scoped methodology + a
+# per-node `survival:` verdict, a `seal_ledger:`, and a `baseline_leaks:` block.
+#
+# ============================ Verification method (era-scoped) ============================
+# ERA OF RECORD: TBC 2.4.3.  The wago 2.5.4.44833 (TBC Classic) `SpellEffect`/`SpellMisc` DB2s are the
+# MAGNITUDES of record (the numbers a TBC-faithful build must match). The LIVE 3.3.5a store is the
+# final word on what THIS server actually has. A spell "survives" iff its stock id is present in the
+# live 3.3.5a Spell.dbc with a TBC-compatible shape; the wago row is the mechanized first pass, the live
+# store overrules it, and every DIVERGED/absent verdict below was live-confirmed (never assumed).
+#
+#   - Live 3.3.5a Spell.dbc pulled out of the running container (kept for the authoring tasks):
+#       docker exec ac-worldserver cat /azerothcore/env/dist/data/dbc/Spell.dbc > <scratch>/dbc/Spell.dbc
+#   - wago 2.5.4.44833 CSVs (curl -A "Mozilla/5.0"), FULL-table fetch worked (no 403, ~3.3MB/2.2MB):
+#       https://wago.tools/db2/SpellEffect/csv?build=2.5.4.44833   (join key = last col `SpellID`;
+#         `EffectIndex` is 0-based; per-effect cols Effect / EffectAura / EffectBasePoints /
+#         EffectMiscValue_0 / EffectSpellClassMask_0..3 / EffectTriggerSpell)
+#       https://wago.tools/db2/SpellMisc/csv?build=2.5.4.44833    (CastingTimeIndex / DurationIndex /
+#         RangeIndex / SchoolMask, join key `SpellID`)
+#   - BASE-POINTS CONVENTION (verified): BOTH the wago 2.5.4 DB2 and the 3.3.5a DBC store value-1
+#     (displayed = EffectBasePoints + 1). Divine Strength wago 1/3/5/7/9 = +2/4/6/8/10% (TBC) vs live
+#     2/5/8/11/14 = +3/6/9/12/15% (WotLK) — a real magnitude divergence, not a convention artifact.
+#   - Effect-level detail: python3 tools/dump_spell_effects.py <Spell.dbc> tools/spell_dbc_columns.txt
+#       --ids <id>  ;  family identity: python3 tools/dump_spell_family.py <Spell.dbc> ... --names/--ids
+#     Aura/effect numbers resolve against the fork headers (SpellAuraDefines.h / SharedDefines.h).
+#   - Live name/absence checks: python3 tools/wgconsole.py <out> "lookup spell <name>" "wait:2" ...
+#   - Trainer-leak verdicts: the PRISTINE stock trainer table
+#       azerothcore-wotlk/data/sql/base/db_world/trainer_spell.sql
+#     (the live acore_world `trainer_spell` is CONFOUNDED — the Vanilla-era gate SQL already DELETED the
+#     leak rows, so a live query returns 0 rows for BoK; the base SQL is the un-gated ground truth.)
+#   - Raw artifacts kept under the Task-3 scratchpad: node_diff.txt (per-node wago-vs-live), live_effects.txt,
+#     SpellEffect_2.5.4.csv / SpellMisc_2.5.4.csv, lookup.out.
+#
+# HELPER-ID CHECK (Task 3 Step 1) — run 2026-08-27, result **946000-946255 ALL FREE**:
+#   grep -rn "9460[0-9][0-9]\|9461[0-9][0-9]\|9462[0-5][0-9]" era-data/ modules/mod-era-talents/data/sql/
+#     client-addons-src/EraTalents/data/  -> no hits. Paladin's TBC helper slice [946000,946255] is clean.
+
+familyName: 10           # PALADIN (every player-cast paladin spell below dumps SpellClassSet=10)
+
+skillLines:              # unchanged from Vanilla (paladin tree spellbook tabs; live-confirmed):
+  holy: 594              # "594 - Holy"        (56 = Priest Holy, 772 = DK Unholy — different classes)
+  protection: 267        # "267 - Protection"  (257 = Warrior Protection — different class)
+  retribution: 184       # "184 - Retribution" (paladin-only)
+
+# ============================ spells: identity masks (SpellClassMask_1/2/3) ============================
+# The identity each stock BASE spell a SPELLMOD `affects:` binds by family mask (rank-1 id). Family masks
+# are a property of the 3.3.5a STORE and are therefore era-INVARIANT — the shared entries below are copied
+# verbatim from the live-verified Vanilla _ref (same DBC), and the TBC-specific ones (seals, Cleanse/Purify,
+# Divine Shield, capstones) were dumped fresh for this file. flagsA bit31 is recorded UNSIGNED (0x80000000).
+spells:
+  # --- Holy caster / heal SPELLMOD targets ---------------------------------------------------------
+  "Holy Light":          { id: 635,   flagsA: 2147483648, flagsB: 0,         flagsC: 0 }  # A bit31. Spiritual Focus / Healing Light / Sanctified Light / Light's Grace / Illumination target.
+  "Flash of Light":      { id: 19750, flagsA: 1073741824, flagsB: 0,         flagsC: 0 }  # A bit30. Spiritual Focus / Healing Light / Illumination target.
+  "Holy Shock":          { id: 20473, flagsA: 2097152,    flagsB: 0,         flagsC: 0 }  # A bit21 (heal form); DAMAGE ids 25903/25913/... carry (0,65536,0)=B bit16.
+  "Lay on Hands":        { id: 633,   flagsA: 32768,      flagsB: 0,         flagsC: 0 }  # A bit15. Improved LoH cooldown target.
+  "Consecration":        { id: 26573, flagsA: 32,         flagsB: 0,         flagsC: 0 }  # A bit5. Purifying Power cost target. (TRAINER-baseline in both TBC & WotLK — NOT a talent node in TBC.)
+  "Exorcism":            { id: 879,   flagsA: 0,          flagsB: 2,         flagsC: 0 }  # B bit1. Purifying Power crit target.
+  "Holy Wrath":          { id: 2812,  flagsA: 0,          flagsB: 2097152,   flagsC: 0 }  # B bit21. Purifying Power crit target.
+  "Cleanse":             { id: 4987,  flagsA: 4096,       flagsB: 0,         flagsC: 0 }  # A bit12. Purifying Power cost target. (dumped 2026-08-27)
+  "Purify":              { id: 1152,  flagsA: 4096,       flagsB: 0,         flagsC: 0 }  # A bit12 — SHARES bit12 with Cleanse (Purifying Power binds both via the shared bit). (dumped 2026-08-27)
+  "Divine Favor":        { id: 20216, flagsA: 0,          flagsB: 256,       flagsC: 0 }  # B bit8. single rank [talent].
+  # --- Seals (the seal AURA carries the mask; the judgement proc often a separate one) --------------
+  "Seal of Righteousness": { id: 20154, flagsA: 134217728, flagsB: 536870912, flagsC: 0 } # A bit27 + B bit29. Improved SoR binds BOTH; but see survival — the TBC node binds the REUSED Vanilla SoR CLONE (maskC 1024), not stock.
+  "Seal of Command":     { id: 20375, flagsA: 33554432,   flagsB: 0,         flagsC: 0 }  # A bit25. Ret talent BOTH eras. Benediction/Sanctified-Seals target (via the reused Vanilla clone 932606).
+  "Seal of Justice":     { id: 20164, flagsA: 134217728,  flagsB: 0,         flagsC: 0 }  # A bit27 (shares bit27 with SoR).
+  "Seal of Light":       { id: 20165, flagsA: 0,          flagsB: 33554432,  flagsC: 0 }  # B bit25 (seal aura).
+  "Seal of Wisdom":      { id: 20166, flagsA: 0,          flagsB: 67108864,  flagsC: 0 }  # B bit26 (seal aura).
+  "Seal of Blood":       { id: 31892, flagsA: 0,          flagsB: 1024,      flagsC: 0 }  # B bit10 (TBC Horde/BE DPS seal — SURVIVES in 3.3.5a; dumped 2026-08-27). aura4 DUMMY 39/9/trig-31897.
+  "Seal of Vengeance":   { id: 31801, flagsA: 0,          flagsB: 2048,      flagsC: 0 }  # B bit11 (TBC Alliance DPS seal — SURVIVES but WotLK-reworked to Holy Vengeance DoT; dumped 2026-08-27).
+  "Judgement":           { id: 20271, flagsA: 8388608,    flagsB: 0,         flagsC: 0 }  # A bit23 = the Judgement ACTIVE identity. Improved/Sanctified Judgement + Benediction bind bit23. In this 3.3.5a DBC 20271 is NAMED "Judgement of Light" (WotLK 3-way split); the TBC single-"Judgement" model uses the reused Vanilla clone 932746 (also bit23).
+  "Judgement of Blood":  { id: 31898, flagsA: 8388608,    flagsB: 8,         flagsC: 16 } # A bit23 + B bit3 + C bit4 (JoB — SURVIVES but DIVERGED: TBC flat 294 Holy vs WotLK weapon%+eff58; dumped 2026-08-27).
+  "Judgement of Vengeance": { id: 31804, flagsA: 8388608, flagsB: 4194312,   flagsC: 0 } # A bit23 + B bits (JoV — SURVIVES; dumped 2026-08-27).
+  # --- Reconstructed / reused Vanilla-clone seals (custom band, NOT stock 3.3.5a) -------------------
+  "Seal of the Crusader":      { id: 932634, flagsA: 0, flagsB: 0, flagsC: 512 }  # C bit9 (custom). Base castable ABSENT from 3.3.5a; reuse the Vanilla clone chain 932634-639 (seal) + 932640-645 (JotC). Improved SotC binds C bit9.
+  "Judgement of the Crusader": { id: 932640, flagsA: 0, flagsB: 0, flagsC: 512 }  # C bit9 (custom). JotC r1 932640, chain 932640-645.
+  # --- Blessings -----------------------------------------------------------------------------------
+  "Blessing of Might":   { id: 19740, flagsA: 2,          flagsB: 0,         flagsC: 0 }  # A bit1. Improved BoM target.
+  "Blessing of Wisdom":  { id: 19742, flagsA: 65536,      flagsB: 0,         flagsC: 0 }  # A bit16. Improved BoW target.
+  "Blessing of Kings":   { id: 20217, flagsA: 16777216,   flagsB: 0,         flagsC: 0 }  # A bit24. BASELINE LEAK (see baseline_leaks). Greater BoK 25898 = (285212672,0,0).
+  "Blessing of Sanctuary": { id: 20911, flagsA: 268435456, flagsB: 0,        flagsC: 0 }  # A bit28. [talent] both eras — NOT a leak. TBC reworked vs WotLK (see survival).
+  "Hand of Protection":  { id: 1022,  flagsA: 128,        flagsB: 0,         flagsC: 0 }  # A bit7. the 3.3.5a "Blessing of Protection". Guardian's Favor cooldown target.
+  "Hand of Freedom":     { id: 1044,  flagsA: 16,         flagsB: 0,         flagsC: 0 }  # A bit4. the 3.3.5a "Blessing of Freedom". Guardian's Favor duration target.
+  "Divine Shield":       { id: 642,   flagsA: 4194304,    flagsB: 0,         flagsC: 0 }  # A bit22. Sacred Duty cooldown target. (dumped 2026-08-27)
+  # --- Auras (all carry C bit5 = 32, the shared "paladin aura" identity — bind by the UNIQUE A bit) --
+  "Devotion Aura":       { id: 465,   flagsA: 64,         flagsB: 0,         flagsC: 32 } # A bit6 + C bit5. Improved Devotion Aura binds A bit6 ONLY (C bit5 leaks onto Ret/Concentration).
+  "Retribution Aura":    { id: 7294,  flagsA: 8,          flagsB: 0,         flagsC: 32 } # A bit3 + C bit5. Improved Retribution Aura binds A bit3 ONLY.
+  "Concentration Aura":  { id: 19746, flagsA: 131072,     flagsB: 0,         flagsC: 32 } # A bit17 + C bit5. Improved Concentration Aura binds A bit17 ONLY.
+  # --- Misc actives / self-buffs -------------------------------------------------------------------
+  "Righteous Fury":      { id: 25780, flagsA: 1,          flagsB: 0,         flagsC: 0 }  # A bit0. Improved Righteous Fury threat spellmod target. (dumped 2026-08-27)
+  "Hammer of Justice":   { id: 853,   flagsA: 2048,       flagsB: 0,         flagsC: 0 }  # A bit11. Improved Hammer of Justice cooldown target.
+  "Repentance":          { id: 20066, flagsA: 4,          flagsB: 0,         flagsC: 0 }  # A bit2. [talent] both eras.
+  "Holy Shield":         { id: 20925, flagsA: 0,          flagsB: 64,        flagsC: 0 }  # B bit6. [talent]. Improved Holy Shield binds B bit6. (dumped 2026-08-27)
+  "Avenger's Shield":    { id: 31935, flagsA: 16384,      flagsB: 0,         flagsC: 0 }  # A bit14. Prot capstone. (dumped 2026-08-27)
+  "Crusader Strike":     { id: 35395, flagsA: 0,          flagsB: 32768,     flagsC: 0 }  # B bit15. Ret capstone. (dumped 2026-08-27)
+  "Sanctity Aura":       { id: 932602, flagsA: 0, flagsB: 0, flagsC: 32 }  # C bit5 (REUSED Vanilla clone — stock 20218 REMOVED in WotLK; live lookup returns ONLY 932602). Improved Sanctity Aura binds it.
+
+# ============================ grants: stock ids a Bound node GRANTS ============================
+# Rank-1 [talent] id unless noted; live-verified present in 3.3.5a. See survival for grant vs clone.
+grants:
+  divine_favor:          { 1: 20216 }   # IDENTICAL wago==live (aura107 +99 crit next HL/FoL). grant.
+  light_s_grace:         { 1: 31833 }   # IDENTICAL (proc chain 31833/31835/31836 -> 31834 cast-time buff). grant.
+  blessed_life:          { 1: 31828 }   # IDENTICAL (proc chain 31828-830 -> 31934 half-damage). grant.
+  divine_illumination:   { 1: 31842 }   # IDENTICAL (aura72 -51% cost 15s). grant, capstone.
+  repentance:            { 1: 20066 }   # IDENTICAL (aura12 stun). Ret talent BOTH eras — NOT a leak. grant.
+  reckoning:             { 1: 20177 }   # IDENTICAL (proc 20177/20179/20181/20180/20182 -> 20178). TBC proc chance 2/4/6/8/10% == WotLK stock — grant the STOCK chain (do NOT reuse the Vanilla 20/40/60/80/100% clone 932629-633).
+  illumination:          { 1: 20210 }   # stock chain 20210/20212-215 + core spell_pal_illumination. MAG-FLAG: TBC refunds 60% base cost (wago E2 base 59), WotLK 30% (live base 29) — grant relies on the core script; a strict-TBC 60% needs a clone (author decision, see survival).
+  blessing_of_kings:     { 1: 20217 }   # grant + BASELINE-LEAK gate (already globally trainer-deleted from Vanilla). TBC reconcile arm grants on node 20025.
+  # grant-OR-clone (stock present but TBC magnitude differs — see survival for the fresh-clone option):
+  holy_shock:            { 1: 20473 }   # DUMMY shape IDENTICAL; TBC dmg 277-299 / heal 351-379 differs from WotLK ~314-340. Vanilla precedent cloned (932646-654). Author: grant stock OR fresh TBC clone.
+  seal_of_command:       { 1: 20375 }   # IDENTICAL wago==live; Ret talent BOTH eras (NOT a leak). REUSE the Vanilla single-target clone 932606 (TBC-faithful 70% weapon Holy) — preferred over stock 20375 whose 20424 proc cleaves.
+  avengers_shield:       { 1: 31935 }   # SHAPE close; TBC 269-330 dmg vs WotLK 439 (E1 base 269 vs 439). NOT a leak. Author: grant stock OR fresh TBC clone at 269-330.
+  crusader_strike:       { 1: 35395 }   # DIVERGED (TBC 110% weapon; WotLK E2 75% + E3 dummy). NOT a leak. Author: grant stock OR fresh TBC clone at 110% weapon dmg.
+
+# ============================ survival: THE PIVOTAL PER-NODE VERDICT ============================
+# For every one of the 64 nodes: does its stock per-rank spell SURVIVE in this 3.3.5a store, in what form,
+# and the recommended disposition. `stock`= the per-rank ids the node identifies (skeleton rankSpells).
+# disposition legend:
+#   grant       - grant a stock 3.3.5a id as-is (TBC value == WotLK, or acceptable).
+#   spellmod    - mechanic:spellmod auto-passive (936xxx); the stock rank id is only an identity ref, the
+#                 era generator authors the passive from the TBC magnitude — so a MAG-DIVERGE here is just
+#                 "use the wago number in the dataset", still a spellmod (no helper).
+#   stat        - mechanic:stat/multi auto-passive; same note as spellmod re MAG-DIVERGE.
+#   reuse       - grant/bind a shipped VANILLA clone (932xxx) — the reuse-first path (§3 of the design).
+#   clone       - FRESH TBC-band clone (946xxx) at the wago value (stock diverged/absent, castable/proc).
+#   reconstruct - FRESH TBC-band reconstruction, may need an AuraScript (stock fundamentally reworked/absent).
+# COUNTS (primary disposition): grant 8 · grant|clone 4 (HS 20016, AS 20041, CS 20063, Illum flag) ·
+#   spellmod 15 · stat 15 · reuse 6 · clone 2 (Holy Shield 20038, Vengeance 20057) · reconstruct 8.
+# RECONSTRUCTIONS (helper-band clones): Aura Mastery 20005, Stoicism 20029, Spell Warding 20032,
+#   Sacred Duty 20035, Ardent Defender 20039 (+AuraScript), Pursuit of Justice 20050, Sanctified Judgement
+#   20058 (proc), Divine Purpose 20061.  UNRESOLVED: none (all 64 have a firm verdict).
+
+survival:
+  # ---------- HOLY ----------
+  divine_strength:       { node: 20000, stock: [20262-20266], survives: true,  form: "aura6/137 MOD_TOTAL_STAT_PERCENTAGE Str", disposition: stat,     magDiverge: "TBC +2/4/6/8/10% (wago 1/3/5/7/9) vs WotLK +3/6/9/12/15% (live 2/5/8/11/14) — use TBC" }
+  divine_intellect:      { node: 20001, stock: [20257-20261], survives: true,  form: "aura137 Int, misc3",                       disposition: stat,     note: "IDENTICAL both eras (+2/4/6/8/10%)" }
+  spiritual_focus:       { node: 20002, stock: [20205-20209], survives: true,  form: "aura108 SPELLMOD misc9 notLoseCastingTime on FoL+HL", disposition: spellmod, note: "IDENTICAL. affects: [Holy Light, Flash of Light]" }
+  improved_seal_of_righteousness: { node: 20003, stock: [20224,20225,20330-20332], survives: "via-reuse", form: "spellmod +3/6/9/12/15% SoR/JoR dmg", disposition: spellmod, note: "binds the REUSED Vanilla SoR/JoR clone (932708-723) via affectsMask {c:1024}; stock 20224 (WotLK 2-effect) is irrelevant to the bind." }
+  healing_light:         { node: 20004, stock: [20237-20239], survives: true,  form: "aura108 SPELLMOD +heal on FoL+HL", disposition: spellmod, note: "IDENTICAL (+4/8/12%). affects: [Holy Light, Flash of Light]" }
+  aura_mastery:          { node: 20005, stock: [31821], survives: false, form: "TBC = PASSIVE aura107 SPELLMOD misc6 RADIUS +9 (auras -> 40yd); WotLK 31821 = 3-effect aura108 ACTIVE cooldown", disposition: reconstruct, note: "§2b prior CONFIRMED (passive vs active). Author a TBC-band passive radius spellmod on the paladin auras (helper 946xxx). Do NOT grant stock 31821 (the WotLK active)." }
+  improved_lay_on_hands: { node: 20006, stock: [20234,20235], survives: true,  form: "E1 aura42 proc->20233/20236 armor rider; E2 aura107 SPELLMOD misc11 LoH cooldown", disposition: spellmod, magDiverge: "TBC cooldown -10min/-20min (wago -600001/-1200001) vs WotLK -2min/-4min (live -120001/-240001) — use TBC. Mirror the Vanilla procPassive: armor-rider pattern." }
+  unyielding_faith:      { node: 20007, stock: [9453,25836], survives: true,  form: "TBC aura117 (fear/disorient resist, misc5/2) +5/10%; WotLK aura232 mechanic-DURATION-resist", disposition: stat, note: "aura-number DIVERGE (117 vs 232) — author a TBC-band stat clone at aura117 +5/10% (helper only if aura117 needs a custom row; else a plain stat)." }
+  illumination:          { node: 20008, stock: [20210,20212-20215], survives: true, form: "E1 aura42 proc->18350; E2 aura112 mana-refund misc2689", disposition: grant, magDiverge: "TBC refund 60% base cost (wago E2 base 59) vs WotLK 30% (live base 29). Grant stock chain + core spell_pal_illumination (Vanilla precedent) accepts WotLK 30%; a strict-TBC 60% needs a clone — AUTHOR DECISION." }
+  improved_blessing_of_wisdom: { node: 20009, stock: [20244,20245], survives: true, form: "aura108 SPELLMOD misc8 on BoW", disposition: spellmod, note: "IDENTICAL (+10/20%). affects: [Blessing of Wisdom]" }
+  pure_of_heart:         { node: 20010, stock: [31822,31823,31824], survives: "partial", form: "TBC aura178 (curse/disease resist misc2/3) +5/10/15%; WotLK aura246 + extra school", disposition: stat, note: "rank3 31824 ABSENT-live (ranks 1/2 present); aura-number DIVERGE (178 vs 246). Author TBC-band stat clone, 3 ranks +5/10/15% curse+disease." }
+  divine_favor:          { node: 20011, stock: [20216], survives: true, form: "aura107 +99 crit next HL/FoL/HS", disposition: grant, note: "IDENTICAL. single rank." }
+  sanctified_light:      { node: 20012, stock: [20359-20361], survives: true, form: "aura107 SPELLMOD misc7 CRITICAL_CHANCE on HL", disposition: spellmod, note: "IDENTICAL (+2/4/6%). affects: [Holy Light]" }
+  purifying_power:       { node: 20013, stock: [31825,31826], survives: true, form: "TBC E1 aura108 SPELLMOD cost misc14 -5/10% (Cleanse/Purify/Consecration); E2 aura107 SPELLMOD crit misc7 +10/20% (Exorcism/Holy Wrath)", disposition: spellmod, note: "SHAPE-DIVERGE: WotLK E2 = aura108 misc11 (different). Author a multi-spellmod at TBC shape. affects cost: [Cleanse, Purify, Consecration]; affects crit: [Exorcism, Holy Wrath]." }
+  holy_power:            { node: 20014, stock: [5923-5926,25829], survives: true, form: "aura71 MOD_HOLY_CRIT? misc2 +1/2/3/4/5%", disposition: stat, note: "IDENTICAL both eras." }
+  light_s_grace:         { node: 20015, stock: [31833,31835,31836], survives: true, form: "aura42 proc->31834 (HL cast-time -0.5s)", disposition: grant, note: "IDENTICAL. grant stock chain." }
+  holy_shock:            { node: 20016, stock: [20473], survives: true, form: "Effect3 DUMMY heal-or-damage branch", disposition: "grant|clone", magDiverge: "DUMMY shape IDENTICAL; TBC 277-299 dmg / 351-379 heal differs from WotLK ~314-340. BASELINE-LEAK STATUS: NOT a trainer leak (20473 r1 is talent-only in WotLK too; higher ranks 20929/20930 gate ReqAbility1=20473). Author: grant stock OR fresh TBC clone (Vanilla precedent 932646-654)." }
+  blessed_life:          { node: 20017, stock: [31828-31830], survives: true, form: "aura42 proc->31934 half-damage", disposition: grant, note: "IDENTICAL. grant stock chain." }
+  holy_guidance:         { node: 20018, stock: [31837-31841], survives: true, form: "E1 aura174 spellpower-from-Int misc126; E2 aura175 misc3", disposition: stat, magDiverge: "TBC +7/14/21/28/35% (wago 6/13/20/27/34) vs WotLK +4/8/12/16/19% (live 3/7/11/15/19) — use TBC. multi (two effects)." }
+  divine_illumination:   { node: 20019, stock: [31842], survives: true, form: "aura72 MOD_POWER_COST_SCHOOL_PCT -51%", disposition: grant, note: "IDENTICAL. capstone. grant." }
+  # ---------- PROTECTION ----------
+  improved_devotion_aura: { node: 20020, stock: [20138-20142], survives: "partial", form: "TBC aura108 SPELLMOD misc8 +8/16/24/32/40% on Devotion Aura", disposition: spellmod, note: "ranks 20141/20142 ABSENT-live, and stock 20138 SHAPE-DIVERGE (WotLK 2-effect). Author spellmod at TBC +8/16/24/32/40%, affectsMask {a:64} (Devotion Aura unique bit — C bit5 leaks)." }
+  redoubt:               { node: 20021, stock: [20127,20130,20135,20136,20137], survives: "partial", form: "aura42 proc->block-buff (20128...) ; WotLK adds aura150 block-value passive", disposition: reuse, note: "ranks 20136/20137 ABSENT-live; SHAPE-DIVERGE. REUSE the Vanilla Redoubt clones 932619-628 (proc passives + block-chance buffs, 5 ranks). TBC proc 10% / +6/12/18/24/30% block — confirm vs the Vanilla clone at authoring." }
+  precision:             { node: 20022, stock: [20189,20192,20193], survives: false, form: "TBC aura54 melee-hit + aura55 spell-hit +1/2/3%", disposition: stat, note: "ALL 3 ABSENT-live (WotLK reused these ids for Frost DK). Author a fresh TBC-band multi stat (aura54+aura55) +1/2/3% (helper if the multi needs one row; else `multi`)." }
+  guardian_s_favor:      { node: 20023, stock: [20174,20175], survives: true, form: "E1 aura107 SPELLMOD cooldown misc11 on Hand of Protection; E2 aura107 SPELLMOD duration misc1 on Hand of Freedom", disposition: spellmod, note: "IDENTICAL. multi spellmod. affects: [Hand of Protection] (cooldown) + [Hand of Freedom] (duration)." }
+  toughness:             { node: 20024, stock: [20143-20147], survives: true, form: "aura142 MOD_BASE_RESISTANCE_PCT armor misc1 +2/4/6/8/10%", disposition: stat, note: "stock SHAPE-DIVERGE (WotLK adds aura232 slow-resist) — author the aura142 half only at TBC value." }
+  blessing_of_kings:     { node: 20025, stock: [20217], survives: true, form: "aura137 +10% all stats", disposition: grant, note: "BASELINE LEAK — see baseline_leaks. Already globally trainer-deleted (Vanilla). TBC reconcile arm grants on node 20025; Greater BoK 25898 also gated." }
+  improved_righteous_fury: { node: 20026, stock: [20468-20470], survives: true, form: "TBC E1 aura108 SPELLMOD misc8 threat +16/33/50% on Righteous Fury; E2 aura107 damage-taken misc12 -2/4/6%", disposition: spellmod, note: "SHAPE-DIVERGE: WotLK dropped E1 (threat). Author multi = threat spellmod (op effect on Righteous Fury) + damage-taken stat. affects: [Righteous Fury]." }
+  shield_specialization: { node: 20027, stock: [20148-20150], survives: false, form: "aura150 MOD_SHIELD_BLOCKVALUE_PCT +10/20/30%", disposition: stat, note: "ALL 3 ABSENT-live (WotLK reused ids). Author a fresh TBC-band stat aura150 +10/20/30% (absorb-by-shield %)." }
+  anticipation:          { node: 20028, stock: [20096-20100], survives: false, form: "TBC aura98 MOD_SKILL Defense misc95 +4/8/12/16/20; WotLK live aura49 (repurposed)", disposition: stat, note: "stock ids present but SHAPE-DIVERGE (WotLK aura49) — author a fresh TBC-band stat aura98 defense-skill +4/8/12/16/20 (do NOT grant stock)." }
+  stoicism:              { node: 20029, stock: [31844,31845], survives: false, form: "TBC E1 aura117 stun-resist +5/10% + E2 aura107 SPELLMOD misc28 dispel-resist +15/30%; WotLK aura232+aura107", disposition: reconstruct, note: "§2b prior CONFIRMED (reworked). Author a TBC-band reconstruction (helper 946xxx) — stun-resist + spell-dispel-resist at TBC values." }
+  improved_hammer_of_justice: { node: 20030, stock: [20487,20488,20489], survives: "partial", form: "aura107 SPELLMOD misc11 HoJ cooldown", disposition: spellmod, magDiverge: "rank3 20489 ABSENT-live; TBC -5/-10/-15s (wago -5001/-10001/-15001) vs WotLK -10/-20s. Author 3-rank spellmod at TBC values. affects: [Hammer of Justice]." }
+  improved_concentration_aura: { node: 20031, stock: [20254-20256], survives: true, form: "3x aura107 (misc3 aura-effect +/ misc12/misc23 silence-duration)", disposition: stat, note: "IDENTICAL both eras (multi). Binds Concentration Aura implicitly via the aura-effect modifier." }
+  spell_warding:         { node: 20032, stock: [31846,31847], survives: false, form: "aura87 MOD_DAMAGE_PERCENT_TAKEN all-schools misc126 -2/4%", disposition: reconstruct, note: "§2b prior CONFIRMED (merged/reworked away in WotLK — ABSENT-live). Author a TBC-band clone (helper 946xxx) aura87 -2/4% all spell damage." }
+  blessing_of_sanctuary: { node: 20033, stock: [20911], survives: true, form: "TBC E1 aura14 MOD_DAMAGE_TAKEN -10 all + E2 aura43 proc block-dmg 13 Holy; WotLK E1 aura4 DUMMY -4 + triggered mana/stat", disposition: reuse, note: "SHAPE-DIVERGE (WotLK rework). NOT a leak (BoS r1 talent-only; only Greater BoS 25899 trainer-gated behind it). REUSE the Vanilla BoS clone chain 932617/932661-667 (data-only aura14 + block-damage proc) — TBC-faithful. Confirm reduction values (TBC 10/14/19/24) at authoring." }
+  reckoning:             { node: 20034, stock: [20177,20179,20181,20180,20182], survives: true, form: "aura42 proc->20178 extra-attack", disposition: grant, note: "IDENTICAL. TBC proc chance 2/4/6/8/10% == WotLK stock -> GRANT the STOCK chain (do NOT reuse the Vanilla 20/40/60/80/100% clone — that was a Vanilla-only retune)." }
+  sacred_duty:           { node: 20035, stock: [31848,31849], survives: "partial", form: "TBC E1 aura107 SPELLMOD Divine Shield cooldown -30/-60s + E2 aura108 attack-speed-penalty -51/-101% + E3 aura137 Stamina% +3/6%; WotLK dropped E2", disposition: reconstruct, note: "SHAPE-DIVERGE. Author a TBC-band reconstruction (helper 946xxx): the Stamina% is a plain stat; the DS-cooldown is a spellmod on Divine Shield (A bit22); the -attack-speed-penalty half needs the E2 aura108 — author all three. §2b prior CONFIRMED." }
+  one_handed_weapon_specialization: { node: 20036, stock: [20196-20200], survives: "partial", form: "aura79 MOD_DAMAGE_PERCENT_DONE misc127 all-schools", disposition: stat, magDiverge: "ranks 20199/20200 ABSENT-live; TBC +1/2/3/4/5% (wago 0/1/2/3/4) vs WotLK +3/6/9% (live 3/6/9). Author 5-rank stat at TBC +1/2/3/4/5% (equipClass gate 1H)." }
+  improved_holy_shield:  { node: 20037, stock: [41021,41026], survives: false, form: "TBC E1 aura108 SPELLMOD Holy-Shield-dmg misc0 +10/20% + E2 aura107 SPELLMOD charges misc4 +2/4", disposition: spellmod, note: "BOTH ABSENT-live. Author a TBC-band multi spellmod binding the REUSED Vanilla Holy Shield clone (932615) — damage% + charges. See holy_shield below re the clone." }
+  holy_shield:           { node: 20038, stock: [20925], survives: true, form: "aura51 block% +30 + aura43 proc block-damage + aura189 rating", disposition: clone, magDiverge: "stock present but block-damage MAG-DIVERGE (TBC 58 wago vs WotLK 78 live) AND the Vanilla clone 932615 is 1.12 values (40 Holy r1) != TBC (59 Holy r1). Author a FRESH TBC clone at TBC magnitude (block +30%, 59 Holy, 4 charges) OR extend the Vanilla clone with TBC ranks — reuse-vs-fresh AUTHOR DECISION (values differ -> lean fresh)." }
+  ardent_defender:       { node: 20039, stock: [31850-31854], survives: false, form: "TBC aura87 MOD_DAMAGE_PERCENT_TAKEN misc127 -6/12/18/24/30% (5 ranks, gated <35% HP); WotLK aura69 SCHOOL_ABSORB + aura4 DUMMY cheat-death (66233)", disposition: reconstruct, note: "§2b prior CONFIRMED (WotLK cheat-death bundle vs TBC damage-floor). ranks 31853/31854 ABSENT-live (WotLK is 3 ranks). Author a TBC-band clone (helper 946xxx) aura87 -6/12/18/24/30%, 5 ranks, + an AuraScript that zeros the reduction above 35% HP (within AuraScript reach, NO core patch — the design's one script-heavy node)." }
+  combat_expertise:      { node: 20040, stock: [31858-31862], survives: "partial", form: "TBC E1 aura240 MOD_EXPERTISE +1/2/3/4/5 + E2 aura137 Stamina% +2/4/6/8/10%; WotLK adds E3 aura290 crit", disposition: stat, note: "ranks 31861/31862 ABSENT-live; SHAPE-DIVERGE (WotLK adds crit). Author a TBC-band multi stat (expertise + stamina%), drop the WotLK crit E3." }
+  avengers_shield:       { node: 20041, stock: [31935], survives: true, form: "E1 SCHOOL_DAMAGE + E2 aura33 (Daze); jumps 3 targets", disposition: "grant|clone", magDiverge: "TBC 269-330 dmg (wago E1 base 269) vs WotLK 439 (live E1 439). BASELINE-LEAK STATUS: NOT a trainer leak (31935 r1 talent-only; rank2 32699 gates ReqAbility1=31935). Author: grant stock OR fresh TBC clone at 269-330." }
+  # ---------- RETRIBUTION ----------
+  improved_blessing_of_might: { node: 20042, stock: [20042,20045-20048], survives: "partial", form: "aura108 SPELLMOD misc8 on Blessing of Might", disposition: spellmod, magDiverge: "ranks 20046-20048 ABSENT-live; TBC +4/8/12/16/20% (wago 3/7/11/15/19) vs WotLK bigger. Author 5-rank spellmod at TBC values. affects: [Blessing of Might]." }
+  benediction:           { node: 20043, stock: [20101-20105], survives: true, form: "aura108 SPELLMOD misc14 cost on Judgement+Seals", disposition: spellmod, magDiverge: "TBC -3/6/9/12/15% (wago -4/-7/-10/-13/-16) vs WotLK -3/5/7/9/11% (live). Binds the reused Vanilla Judgement clone 932746 + seal clones. affects: [Judgement, <all seals>]." }
+  improved_judgement:    { node: 20044, stock: [25956,25957], survives: true, form: "aura107 SPELLMOD misc11 Judgement cooldown -1/-2s", disposition: spellmod, note: "IDENTICAL. binds Judgement (A bit23 -> the reused Vanilla clone 932746). affects: [Judgement]." }
+  improved_seal_of_the_crusader: { node: 20045, stock: [20335-20337], survives: "via-reuse", form: "spellmod +1/2/3% JotC crit-taken", disposition: spellmod, note: "stock 20335 SHAPE-DIVERGE (WotLK aura4). Base SotC/JotC ABSENT-live -> binds the REUSED Vanilla SotC/JotC clone (932634-645) via affectsMask {c:512} op effect1 (the shipped Vanilla pattern)." }
+  deflection:            { node: 20046, stock: [20060-20064], survives: true, form: "aura47 MOD_PARRY_PERCENT +1/2/3/4/5%", disposition: stat, note: "IDENTICAL both eras." }
+  vindication:           { node: 20047, stock: [9452,26016,26021], survives: "partial", form: "aura42 proc->attribute-reduction debuff; TBC -5/10/15% attributes (3 ranks); WotLK 9452/26016 reduce AP (2 ranks)", disposition: reuse, note: "§2b prior CONFIRMED. rank3 26021 ABSENT-live. REUSE the Vanilla Vindication clone 932603-605 (aura80 Str/Agi -5/10/15%) — TBC is 3 ranks matching. Confirm the 3rd-rank value at authoring." }
+  conviction:            { node: 20048, stock: [20117-20121], survives: true, form: "TBC aura52 melee-crit +1/2/3/4/5%; WotLK adds aura57 spell-crit", disposition: stat, note: "SHAPE-DIVERGE (WotLK adds spell-crit E2). Author the aura52 melee-crit half only at TBC value." }
+  seal_of_command:       { node: 20049, stock: [20375], survives: true, form: "aura42 proc->20424 + Effect3 DUMMY 20424", disposition: reuse, note: "IDENTICAL wago==live. BASELINE-LEAK STATUS: NOT a leak (Ret talent BOTH eras; 20375 appears ZERO times in stock trainer_spell). REUSE the Vanilla single-target clone 932606 (70% weapon Holy -> 932607) — more TBC-faithful than stock 20375's cleaving 20424 proc." }
+  pursuit_of_justice:    { node: 20050, stock: [26022,26023,44414], survives: "partial", form: "TBC E1 aura31 speed +4/9/14% + E2 aura172 mounted-speed + E3 aura211 + E4 aura186 -spell-hit; WotLK collapsed to aura31+aura234", disposition: reconstruct, note: "SHAPE-DIVERGE; rank3 44414 ABSENT-live. §2b prior CONFIRMED. Author a TBC-band reconstruction (helper 946xxx OR multi stat): movement+mounted speed +5/10/15% & anti-spell-hit -1/2/3%, 3 ranks." }
+  eye_for_an_eye:        { node: 20051, stock: [9799,25988], survives: true, form: "aura4 DUMMY reflect % of spell crit", disposition: reuse, magDiverge: "TBC 15/30% (wago base 14/29) vs WotLK 5/10% (live base 4/9). §2b prior CONFIRMED. REUSE the Vanilla EfaE clone 932608/932609 (base 14/29 = 15/30%, stock spell_pal_eye_for_an_eye re-bound) — TBC == Vanilla value." }
+  improved_retribution_aura: { node: 20052, stock: [20091,20092], survives: false, form: "aura108 SPELLMOD misc8 +25/50% on Retribution Aura", disposition: spellmod, note: "BOTH ABSENT-live (WotLK removed this node). Author a TBC-band 2-rank spellmod +25/50%, affectsMask {a:8} (Retribution Aura unique bit — C bit5 leaks). affects: [Retribution Aura]." }
+  crusade:               { node: 20053, stock: [31866-31868], survives: true, form: "TBC aura168 MOD_DAMAGE_DONE_VERSUS creature-mask 108 (Humanoid|Demon|Undead|Elemental) +1/2/3%; WotLK adds aura79 all-damage", disposition: stat, note: "§2b prior CONFIRMED (TBC creature-type-masked; WotLK widened to all). Author the aura168 creature-versus half only (misc 108), drop WotLK E2 aura79." }
+  two_handed_weapon_specialization: { node: 20054, stock: [20111-20113], survives: true, form: "aura79 MOD_DAMAGE_PERCENT_DONE misc1 (2H) +2/4/6%", disposition: stat, note: "IDENTICAL both eras. equipClass gate 2H." }
+  sanctity_aura:         { node: 20055, stock: [20218], survives: false, form: "+10% Holy party area-aura (aura79 via effect35 APPLY_AREA_AURA_PARTY)", disposition: reuse, note: "§2b prior CONFIRMED — stock 20218 REMOVED in WotLK (live lookup returns ONLY the Vanilla clone 932602). REUSE the Vanilla Sanctity Aura clone 932602." }
+  improved_sanctity_aura: { node: 20056, stock: [31869,31870], survives: "partial", form: "+1/2% damage of Sanctity-Aura-affected targets", disposition: spellmod, note: "rank2 31870 ABSENT-live; SHAPE-DIVERGE. Author a TBC-band 2-rank spellmod/stat that binds the reused Sanctity Aura clone 932602 (+1/2%)." }
+  vengeance:             { node: 20057, stock: [20049,20056,20057,20058,20059], survives: "partial", form: "aura42 proc->physical+holy-damage buff, 30s, stacks 3", disposition: clone, note: "ranks 20058/20059 ABSENT-live (stock is 3 ranks). TBC is 5 ranks at +1/2/3/4/5% (skeleton tooltip) — DIFFERS from both WotLK stock AND the Vanilla clone 932610-614 (+3/6/9/12/15%). Author a FRESH TBC clone at +1/2/3/4/5%, 5 ranks (reuse-vs-fresh -> FRESH)." }
+  sanctified_judgement:  { node: 20058, stock: [31876-31878], survives: "partial", form: "TBC aura4 DUMMY 33/66/100% chance to return 80% of the judged seal's mana; WotLK live retuned (4/39/59)", disposition: reconstruct, note: "MAG-DIVERGE (TBC 33/66/100% via wago base 32/65/99 vs WotLK 4/39/59). Author a TBC-band proc reconstruction (helper 946xxx) hooked to the reused Judgement clone 932746 — mana-return on judge. Likely needs a small proc/AuraScript to read the judged seal's cost." }
+  sanctified_seals:      { node: 20059, stock: [32043,35396,35397], survives: true, form: "TBC E1 aura57 spell-crit + E2 aura107 SPELLMOD misc28 seal-dispel-resist +33/66/100% + E3 aura52 melee-crit; WotLK E2 aura108 (different)", disposition: stat, note: "SHAPE-DIVERGE. Author a TBC-band multi: +1/2/3% crit (spells+melee, aura57+aura52) + a spellmod reducing seal dispel chance (op on the seal set). Bind seals via affectsMask." }
+  repentance:            { node: 20060, stock: [20066], survives: true, form: "aura12 MOD_STUN incapacitate 6s", disposition: grant, note: "IDENTICAL. Ret talent BOTH eras — NOT a leak. grant 20066." }
+  divine_purpose:        { node: 20061, stock: [31871-31873], survives: false, form: "TBC aura203/204 MOD_ATTACKER_MELEE/RANGED_CRIT_DAMAGE -4/7/10%; WotLK 31871 REPURPOSED (aura186/185 +hit-reduction + aura4 dummy)", disposition: reconstruct, note: "§2b PRIOR CORRECTED: it is NOT a HoJ/stun-immunity proc — the skeleton tooltip + wago both show melee/ranged CRIT-DAMAGE-TAKEN reduction. rank3 31873 ABSENT-live; stock ids repurposed in WotLK. Author a TBC-band clone (helper 946xxx) aura203+aura204 -4/7/10%, 3 ranks." }
+  fanaticism:            { node: 20062, stock: [31879-31883], survives: "partial", form: "TBC E1 aura107 SPELLMOD Judgement-crit misc7 +3/6/9/12/15% + E2 aura10 MOD_THREAT misc127 -6/12/18/24/30%; WotLK 3 ranks retuned", disposition: stat, note: "§2b prior CONFIRMED. ranks 31882/31883 ABSENT-live (WotLK is 3 ranks). Author a TBC-band multi: a Judgement-crit spellmod (op crit, affects Judgement) + a threat-reduction stat (aura10), 5 ranks at TBC values." }
+  crusader_strike:       { node: 20063, stock: [35395], survives: true, form: "E1 NORMALIZED_WEAPON_DMG + E2 WEAPON_PERCENT_DAMAGE; TBC 110% weapon; WotLK E2 75% + E3 aura4 dummy", disposition: "grant|clone", note: "SHAPE-DIVERGE (WotLK reworked to 75%+refresh-judgements). BASELINE-LEAK STATUS: NOT a trainer leak (35395 appears ZERO times in stock trainer_spell — WotLK Ret talent). Author: grant stock OR fresh TBC clone at 110% weapon dmg." }
+
+# ============================ seal_ledger: reuse-first per the design §3 ============================
+# The Vanilla phase reconstructed the EXACT TBC seal model — single "Judgement" unleash button + on-hit
+# seals you swap + Seal of the Crusader/JotC (absent from 3.3.5a) — as custom family-10 clones (932600-753).
+# So the TBC seal-modifying talents bind to that reconstructed substrate, never to stock WotLK seals.
+#
+# VALUE-EQUALITY IS THE REUSE GATE (design §3): grant a shipped Vanilla clone to a TBC paladin ONLY where
+# its baked value == TBC 2.4.3 (wago). Any per-rank divergence forces a fresh 946xxx clone (NEVER mutate a
+# shipped Vanilla clone — era spells are per-character but spell ids are global).
+#
+# WHAT I VERIFIED (survival of the substrate pieces in 3.3.5a):
+#   - Seal of the Crusader base castable: ABSENT (only orphan passives 23300/28852/33557). The Vanilla
+#     clones 932634-639 (seal) + 932640-645 (JotC) EXIST and are reusable. Judgement of the Crusader base: ABSENT.
+#   - Sanctity Aura base 20218: ABSENT (removed WotLK). Vanilla clone 932602 present.
+#   - Seal of Blood 31892: SURVIVES near-identical (aura4 DUMMY 39/9/trig-31897; wago==live value set). B bit10.
+#   - Seal of Vengeance 31801: SURVIVES but WotLK-REWORKED (aura4 dummy + aura240 -> Holy Vengeance DoT). B bit11.
+#   - Judgement of Blood 31898: SURVIVES but DIVERGED (TBC flat 294 Holy vs WotLK weapon%+eff58). A bit23+B bit3+C bit4.
+#   - Judgement of Vengeance 31804: SURVIVES. A bit23 + B bits.
+#   - Seal of Command 20375: IDENTICAL wago==live; the Vanilla single-target clone 932606 is TBC-faithful.
+#
+# >>> OVERRIDE 2026-08-27 (Task 5b, USER DECISION): the REUSE verdicts below are SUPERSEDED for VALUES.
+# TBC seals now use wago 2.5.4.44833 END-TO-END, including the TBC-Classic ~2x seal rebalance vs original
+# 2.4.3. So the six STANDARD seals are authored as FRESH 946xxx clones for EVERY rank (low ranks included),
+# NOT reused from the Vanilla 932xxx clones. The structural model + era_pal_* scripts are unchanged; only the
+# ids/values/ranks differ. Value convention: authored basePoints = wago EffectBasePoints + 1 (confirmed:
+# SoC proc 69->70%, SotC attack-speed 39->+40%). STILL REUSED (kept): the single Judgement button 932746 +
+# Lay on Hands 932668-670. Authored in era-data/tbc/paladin.yaml `helpers:`; reconcile-granted by level in
+# EraTalents.cpp kTbcPalSealGrants; doctor recognizes 946000-946077 for a TBC paladin. Fresh 946xxx id map:
+#   SoR  seal 946000-008 / on-hit 946009-017 / JoR 946018-026   (9 ranks incl. TBC r9 L66)
+#   SoC  seal 946027-032 / shared 70% proc 946033               (6 ranks; node-granted, NOT the arm)
+#   SoL  seal 946034-038 / on-hit heal 946039-043 / JoL 946044-048 / carrier 946049  (5 ranks incl. r5 L69)
+#   SoW  seal 946050-053 / on-hit mana 946054-057 / JoW 946058-061 / carrier 946062  (4 ranks incl. r4 L67)
+#   SoJ  seal 946063 (r1) + 946079 (r2 L48) — both reuse stock stun 20170 + JoJ 20184 (Task 5c: r2 uses
+#        the SAME stock mechanic as r1, avoiding the unverified 31895/31896; no dangling DUMMY)
+#   SotC seal 946064-070 / JotC 946071-077                      (7 ranks incl. TBC r7 L61; AP ~2x = the rebalance)
+#   MARKER 946078 "Era: TBC Paladin" (Task 5c) — hidden seal-training marker (spell_dbc in 2026_08_27_02).
+# DONE in Task 5c (2026-08-27): the "Era: TBC Paladin" marker (946078), trainer_spell + spell_ranks for the
+# STANDARD seals (marker-rooted SoR/SoJ/SoL/SoW/SotC; SoC r2-6 talent-rooted at 946027), and the reconcile
+# arm converted from grant-all-ranks-by-level (5b interim) to grant-marker-only + strip. Seals are now
+# TRAINER-TAUGHT. STILL DEFERRED to Task 5d: SoB/SoV (faction seals) — they will add rows on THIS marker.
+# ON-HIT (Task 5c fold, USER DECISION 2026-08-27): the SoR on-hit flat base is now DERIVED FROM wago-2.5.4,
+# not carried from Vanilla. wago's on-hit is a DUMMY coefficient (107..2111) for a modern SP/AP formula
+# incompatible with the base-x-speed era_pal_seal_of_righteousness script, so we capture the TBC-Classic
+# rebalance MAGNITUDE (~2x, the same lift SotC AP got): flat base = Vanilla 1.12.1 DPS-base x2 (r1..r9 =
+# 6/14/24/38/56/78/102/130/162). ACCEPTED MAGNITUDE GAP: no SP/AP contribution. JoR flat = wago rebalance. <<<
+seal_ledger:
+  model: "TBC = Vanilla custom-seal model (single Judgement + swap-seals + SotC). REUSE-FIRST; the seal
+    talents (Improved SoR, Improved SotC, Seal of Command, Sanctified Seals, Sanctified Judgement, Improved
+    Judgement, Benediction, Vengeance) bind the reconstructed substrate, NOT stock WotLK seals."
+  reuse:                 # grant the shipped Vanilla clone to a TBC paladin (value-equality holds for the overlapping ranks)
+    seal_of_righteousness: { clones: "932700-707 seal / 932708-715 on-hit / 932716-723 JoR", verdict: REUSE, note: "1.12.1-derived; TBC did not retune the existing SoR ranks. Improved SoR binds via maskC 1024. CONFIRM per-rank value-equality vs wago at the seal-authoring task; author any 61-70 rank fresh (see below)." }
+    seal_of_command:       { clones: "932606 (+ 932750-753 r2-5), proc 932607", verdict: REUSE, note: "stock 20375 IDENTICAL; the single-target 70%-weapon-Holy clone is TBC-faithful." }
+    seal_of_light:         { clones: "932725-736", verdict: REUSE, note: "CONFIRM per-rank on-hit heal values vs wago at authoring." }
+    seal_of_wisdom:        { clones: "932737-745,932748", verdict: REUSE, note: "CONFIRM per-rank on-hit mana values vs wago at authoring." }
+    seal_of_justice:       { clones: "932724", verdict: REUSE }
+    seal_of_the_crusader:  { clones: "932634-639 seal / 932640-645 JotC", verdict: REUSE, note: "base castable ABSENT from 3.3.5a; the Vanilla reconstruction IS the TBC seal. Improved SotC binds maskC 512." }
+    judgement_single:      { clones: "932746 (+932747/932748 carriers)", verdict: REUSE, note: "the custom single-Judgement (consume-on-judge). Improved/Sanctified Judgement + Benediction bind A bit23." }
+    lay_on_hands:          { clones: "932668-672", verdict: REUSE, note: "not a seal, but part of the reused substrate; Improved LoH (node 20006) binds it." }
+  fresh:                 # author NEW 946xxx clones (TBC additions / verified retunes)
+    seal_of_blood:         { faction: "Horde / Blood Elf", stock_template: 31892, judgement: 31898, verdict: FRESH, done: "Task 5d 2026-08-27", ids: "seal 946080 / JoB 946081 / on-hit Holy carrier 946082 / self-dmg carrier 946083 (template 32221)", scripts: "era_pal_seal_of_blood (on-hit 35% weapon dmg Holy + 10% self) / era_pal_judgement_of_blood (flat 294 Holy + 33% self)", note: "FRESH 946xxx clones (NOT stock 31892/31898 — those have no player script on this WotLK core anyway). Seal = template 20375 => SPELL_SPECIFIC_SEAL (inherited SpellFamilyFlags[0] 0x02000000); E2 DUMMY=946081 so era_pal_judgement (932746) unleashes+consumes. Self-damage carrier byte-clones stock 32221 (SCHOOL_DAMAGE Holy, target self, Attributes 538968064). Self-damage bounded (10% of 35% of a swing; 33% of ~294) — cannot one-shot. Magnitudes = wago-2.5.4 (SoB E0 39 unused; 31893 WEAPON_PERCENT_DAMAGE 34->35%; JoB 294; SoB self 9->10%)." }
+    seal_of_vengeance:     { faction: "Alliance", stock_template: 31801, judgement: 31804, verdict: FRESH, done: "Task 5d 2026-08-27", ids: "seal 946084 / Holy Vengeance DoT 946085 / JoV 946086", scripts: "era_pal_seal_of_vengeance (on-hit applies/stacks the DoT) / era_pal_judgement_of_vengeance (base 120 Holy, +10% per stack, cap 5)", note: "FRESH 946xxx clones (stock 31801 is WotLK-reworked with a core AuraScript spell_pal_seal_of_vengeance_aura — NOT reusable). Holy Vengeance 946085 = aura3 PERIODIC_DAMAGE, period 3000, per-tick 30 (wago 29+1), stackAmount 5 (CumulativeAura; the core auto-scales the tick by GetStackAmount). JoV base 120 (wago 119+1) scaled by target Holy Vengeance stacks. wago SoV E0 DUMMY marker + E1 DUMMY 31803 (DoT ptr)." }
+    faction_gate:          { verdict: "trainer-split + reconcile strip", note: "Task 5d: SoB (946080) is on TrainerId 4 ONLY (Horde/Blood Elf paladin trainers, Silvermoon faction 1604) and SoV (946084) on TrainerId 3 ONLY (Alliance trainers, Stormwind/Ironforge/Exodar) — so a HUMAN sees only the faction-appropriate seal (physical trainer reachability; none on the neutral faction-35 TrainerId 5). BOTS bypass physical trainers — the factory trainer-walk InitAvailableSpells is CLASS-only-gated (Trainer::IsTrainerValidForPlayer checks class, not faction), so a bot learns BOTH; EraTalents::StripWrongFactionTbcPalSeal removes the wrong one by GetTeamId() on every bot login (OnBotLogin) + the human reconcile. Runtime-verified: an Alliance bot organically persists SoV only, wrong-faction seal never persists." }
+    seal_ranks_61_70:      { verdict: FRESH, note: "the Vanilla clones stop at the Vanilla max rank. Author the TBC-added 61-70 seal/Judgement ranks (SoR, SoL, SoW, SoJ, SoC, SotC, LoH) fresh in 946xxx, chained trainer-taught off the reused rank-N behind a new 'Era: TBC Paladin' seal-training marker (also 946xxx). Exact per-seal added-rank count = confirm from wago Spell rank rows at authoring." }
+  seal_training_marker:  { verdict: DONE, id: 946078, note: "Task 5c: 'Era: TBC Paladin' hidden seal-training marker, id 946078 (spell_dbc byte-copy of the Vanilla 932749 marker in 2026_08_27_02_era_talent_tbc_paladin_seal_substrate.sql; Attributes 262608 PASSIVE|hidden). Reconcile-granted to every TBC paladin (EraTalents.cpp TBC arm); anchors ReqAbility1 of every TBC standard-seal/Judgement rank-1 trainer_spell row on TrainerId 3/4/5. Vanilla's 932749 will not do — TBC's trainer set differs (added 61-70 ranks + SoB/SoV). Task 5d SoB/SoV rows attach to THIS marker." }
+
+# ============================ baseline_leaks: Step-5 verdict (empirically corrected) ============================
+# A spell is a "trainer-baseline LEAK" iff a WotLK paladin can obtain it from the trainer WITHOUT the talent
+# (an ungated `trainer_spell` row, ReqAbility1=0), so an era-managed TBC paladin would too unless gated.
+# GROUND TRUTH: the pristine stock table azerothcore-wotlk/data/sql/base/db_world/trainer_spell.sql (the live
+# acore_world table is confounded — the Vanilla gate SQL already deleted the BoK rows). Cross-checked against
+# spell_learn_spell (none), playercreateinfo_spell (none), IP grants (none — IP refs are cast-permission gates),
+# and the module's CLASS_PALADIN kBaselineSpellGates (only Consecration/BoK/GBoK).
+#
+# **RESULT: only 1 of the 5 design-§2c candidates is an actual trainer leak.** The other 4 are WotLK TALENT
+# spells (rank 1 not trainer-obtainable) — the survival-map task's job is to overrule the prior, and it does.
+baseline_leaks:
+  blessing_of_kings:     { id: 20217, node: 20025, leak: true,  evidence: "stock trainer_spell rows (TrainerIds 3/4/5, ReqLevel 20, ReqAbility1=0 = ungated); Greater BoK 25898 rows (L60, ungated)", disposition: "GATE. Already globally trainer-DELETED by the Vanilla gate (2026_08_18_32) — so TBC inherits the closed leak. TBC reconcile arm must GRANT 20217 (+25898 at L60) when node 20025 is taken. This is the ONLY real trainer leak among this task's nodes." }
+  holy_shock:            { id: 20473, node: 20016, leak: false, evidence: "ZERO trainer_spell SpellId rows for 20473; it appears only as ReqAbility1 on the trainer-taught higher ranks 20929/20930 — i.e. rank 1 is TALENT-granted in WotLK, gating the chain. Module comment (EraTalents.cpp:900): '20473 ... no longer in the paladin grant manifest'.", disposition: "NO trainer gate needed. Plain node grant/clone; the generic class+era orphan strip covers respec." }
+  seal_of_command:       { id: 20375, node: 20049, leak: false, evidence: "appears ZERO times in the entire stock trainer_spell.sql (WotLK Ret talent).", disposition: "NO trainer gate. Node grant (reuse Vanilla clone 932606)." }
+  avengers_shield:       { id: 31935, node: 20041, leak: false, evidence: "ZERO trainer SpellId rows; appears only as ReqAbility1 on rank-2 32699 (talent-granted r1 gates the chain).", disposition: "NO trainer gate. Node grant/clone." }
+  crusader_strike:       { id: 35395, node: 20063, leak: false, evidence: "appears ZERO times in stock trainer_spell.sql (WotLK Ret talent).", disposition: "NO trainer gate. Node grant/clone." }
+  blessing_of_sanctuary: { id: 20911, node: 20033, leak: false, evidence: "NO ungated trainer row; appears only as ReqAbility1 on Greater BoS 25899 (L60) — BoS r1 is talent-only.", disposition: "PLAIN node grant (confirmed NOT a leak, as the task expected). Reuse the Vanilla BoS clone." }
+  # For completeness (not in this task's node list but relevant to the TBC reconcile arm):
+  consecration:          { id: 26573, leak: true, evidence: "ungated stock trainer row L20 (Vanilla gate deleted it). In TBC 2.4.3 Consecration is TRAINER-baseline (not a talent), so a TBC paladin SHOULD have it — the TBC reconcile arm must RE-GRANT it by level, unlike Vanilla which gates it behind the Holy talent.", disposition: "TBC = grant-by-level (baseline), NOT talent-gated. Note for the reconcile task." }

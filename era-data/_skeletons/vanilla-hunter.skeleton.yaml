@@ -1,0 +1,698 @@
+era: 0
+class: 3
+eraName: Vanilla
+className: HUNTER
+tabs:
+- key: 1
+  name: Beast Mastery
+  background: HunterBeast Mastery
+  nodes:
+  - id: 18301
+    slug: improved_aspect_of_the_hawk
+    name: Improved Aspect of the Hawk
+    tab: 1
+    tier: 0
+    col: 1
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - While Aspect of the Hawk is active, all normal ranged attacks have a 1% chance of increasing ranged attack speed by
+      30% for 12 sec.
+    - While Aspect of the Hawk is active, all normal ranged attacks have a 2% chance of increasing ranged attack speed by
+      30% for 12 sec.
+    - While Aspect of the Hawk is active, all normal ranged attacks have a 3% chance of increasing ranged attack speed by
+      30% for 12 sec.
+    - While Aspect of the Hawk is active, all normal ranged attacks have a 4% chance of increasing ranged attack speed by
+      30% for 12 sec.
+    - While Aspect of the Hawk is active, all normal ranged attacks have a 5% chance of increasing ranged attack speed by
+      30% for 12 sec.
+  - id: 18302
+    slug: endurance_training
+    name: Endurance Training
+    tab: 1
+    tier: 0
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Increases the Health of your pets by 3%.
+    - Increases the Health of your pets by 6%.
+    - Increases the Health of your pets by 9%.
+    - Increases the Health of your pets by 12%.
+    - Increases the Health of your pets by 15%.
+  - id: 18303
+    slug: improved_eyes_of_the_beast
+    name: Improved Eyes of the Beast
+    tab: 1
+    tier: 1
+    col: 0
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases the duration of your Eyes of the Beast by 30 sec.
+    - Increases the duration of your Eyes of the Beast by 60 sec.
+  - id: 18304
+    slug: improved_aspect_of_the_monkey
+    name: Improved Aspect of the Monkey
+    tab: 1
+    tier: 1
+    col: 1
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases the Dodge bonus of your Aspect of the Monkey by 1%.
+    - Increases the Dodge bonus of your Aspect of the Monkey by 2%.
+    - Increases the Dodge bonus of your Aspect of the Monkey by 3%.
+    - Increases the Dodge bonus of your Aspect of the Monkey by 4%.
+    - Increases the Dodge bonus of your Aspect of the Monkey by 5%.
+  - id: 18305
+    slug: thick_hide
+    name: Thick Hide
+    tab: 1
+    tier: 1
+    col: 2
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases the Armor rating of your pets by 10%.
+    - Increases the Armor rating of your pets by 20%.
+    - Increases the Armor rating of your pets by 30%.
+  - id: 18306
+    slug: improved_revive_pet
+    name: Improved Revive Pet
+    tab: 1
+    tier: 1
+    col: 3
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Revive Pet's casting time is reduced by 3 sec, mana cost is reduced by 20%, and increases the health your pet returns
+      with by an additional 15%.
+    - Revive Pet's casting time is reduced by 6 sec, mana cost is reduced by 40%, and increases the health your pet returns
+      with by an additional 30%.
+  - id: 18307
+    slug: pathfinding
+    name: Pathfinding
+    tab: 1
+    tier: 2
+    col: 0
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Increases the speed bonus of your Aspect of the Cheetah and Aspect of the Pack by 3%.
+    - Increases the speed bonus of your Aspect of the Cheetah and Aspect of the Pack by 6%.
+  - id: 18308
+    slug: bestial_swiftness
+    name: Bestial Swiftness
+    tab: 1
+    tier: 2
+    col: 1
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Increases the outdoor movement speed of your pets by 30%.
+  - id: 18309
+    slug: unleashed_fury
+    name: Unleashed Fury
+    tab: 1
+    tier: 2
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Increases the damage done by your pets by 4%.
+    - Increases the damage done by your pets by 8%.
+    - Increases the damage done by your pets by 12%.
+    - Increases the damage done by your pets by 16%.
+    - Increases the damage done by your pets by 20%.
+  - id: 18310
+    slug: improved_mend_pet
+    name: Improved Mend Pet
+    tab: 1
+    tier: 3
+    col: 1
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Gives the Mend Pet spell a 15% chance of cleansing 1 Curse, Disease, Magic or Poison effect from the pet each tick.
+    - Gives the Mend Pet spell a 50% chance of cleansing 1 Curse, Disease, Magic or Poison effect from the pet each tick.
+  - id: 18311
+    slug: ferocity
+    name: Ferocity
+    tab: 1
+    tier: 3
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Increases the critical strike chance of your pets by 3%.
+    - Increases the critical strike chance of your pets by 6%.
+    - Increases the critical strike chance of your pets by 9%.
+    - Increases the critical strike chance of your pets by 12%.
+    - Increases the critical strike chance of your pets by 15%.
+  - id: 18312
+    slug: spirit_bond
+    name: Spirit Bond
+    tab: 1
+    tier: 4
+    col: 0
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - While your pet is active, you and your pet will regenerate 1% of total health every 10 sec.
+    - While your pet is active, you and your pet will regenerate 2% of total health every 10 sec.
+  - id: 18313
+    slug: intimidation
+    name: Intimidation
+    tab: 1
+    tier: 4
+    col: 1
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - 137 Mana 100 yd range Instant cast 1 min cooldown Command your pet to intimidate the target on the next successful melee
+      attack, causing a high amount of threat and stunning the target for 3 sec.
+  - id: 18314
+    slug: bestial_discipline
+    name: Bestial Discipline
+    tab: 1
+    tier: 4
+    col: 3
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Increases the Focus regeneration of your pets by 10%.
+    - Increases the Focus regeneration of your pets by 20%.
+  - id: 18315
+    slug: frenzy
+    name: Frenzy
+    tab: 1
+    tier: 5
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 18311
+    prereqPoints: 25
+    tooltip:
+    - Gives your pet a 20% chance to gain a 30% attack speed increase for 8 sec after dealing a critical strike.
+    - Gives your pet a 40% chance to gain a 30% attack speed increase for 8 sec after dealing a critical strike.
+    - Gives your pet a 60% chance to gain a 30% attack speed increase for 8 sec after dealing a critical strike.
+    - Gives your pet a 80% chance to gain a 30% attack speed increase for 8 sec after dealing a critical strike.
+    - Gives your pet a 100% chance to gain a 30% attack speed increase for 8 sec after dealing a critical strike.
+  - id: 18316
+    slug: bestial_wrath
+    name: Bestial Wrath
+    tab: 1
+    tier: 6
+    col: 1
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 18313
+    prereqPoints: 30
+    tooltip:
+    - 12% of Base Mana 100 yd range Instant cast 2 min cooldown Send your pet into a rage causing 50% additional damage for
+      18 sec. While enraged, the beast cannot be stopped unless killed.
+- key: 2
+  name: Marksmanship
+  background: HunterMarksmanship
+  nodes:
+  - id: 18317
+    slug: improved_concussive_shot
+    name: Improved Concussive Shot
+    tab: 2
+    tier: 0
+    col: 1
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Gives your Concussive Shot a 4% chance to stun the target for 3 sec.
+    - Gives your Concussive Shot a 8% chance to stun the target for 3 sec.
+    - Gives your Concussive Shot a 12% chance to stun the target for 3 sec.
+    - Gives your Concussive Shot a 16% chance to stun the target for 3 sec.
+    - Gives your Concussive Shot a 20% chance to stun the target for 3 sec.
+  - id: 18318
+    slug: efficiency
+    name: Efficiency
+    tab: 2
+    tier: 0
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Reduces the Mana cost of your Shots and Stings by 2%.
+    - Reduces the Mana cost of your Shots and Stings by 4%.
+    - Reduces the Mana cost of your Shots and Stings by 6%.
+    - Reduces the Mana cost of your Shots and Stings by 8%.
+    - Reduces the Mana cost of your Shots and Stings by 10%.
+  - id: 18319
+    slug: improved_hunter_s_mark
+    name: Improved Hunter's Mark
+    tab: 2
+    tier: 1
+    col: 1
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases the Ranged Attack Power bonus of your Hunter's Mark spell by 3%.
+    - Increases the Ranged Attack Power bonus of your Hunter's Mark spell by 6%.
+    - Increases the Ranged Attack Power bonus of your Hunter's Mark spell by 9%.
+    - Increases the Ranged Attack Power bonus of your Hunter's Mark spell by 12%.
+    - Increases the Ranged Attack Power bonus of your Hunter's Mark spell by 15%.
+  - id: 18320
+    slug: lethal_shots
+    name: Lethal Shots
+    tab: 2
+    tier: 1
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases your critical strike chance with ranged weapons by 1%.
+    - Increases your critical strike chance with ranged weapons by 2%.
+    - Increases your critical strike chance with ranged weapons by 3%.
+    - Increases your critical strike chance with ranged weapons by 4%.
+    - Increases your critical strike chance with ranged weapons by 5%.
+  - id: 18321
+    slug: aimed_shot
+    name: Aimed Shot
+    tab: 2
+    tier: 2
+    col: 0
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - 68 Mana 8-35 yd range 3 sec cast 6 sec cooldown Requires Ranged Weapon An aimed shot that increases ranged damage by
+      70.
+  - id: 18322
+    slug: improved_arcane_shot
+    name: Improved Arcane Shot
+    tab: 2
+    tier: 2
+    col: 1
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Reduces the cooldown of your Arcane Shot by 0.2 sec.
+    - Reduces the cooldown of your Arcane Shot by 0.4 sec.
+    - Reduces the cooldown of your Arcane Shot by 0.6 sec.
+    - Reduces the cooldown of your Arcane Shot by 0.8 sec.
+    - Reduces the cooldown of your Arcane Shot by 1 sec.
+  - id: 18323
+    slug: hawk_eye
+    name: Hawk Eye
+    tab: 2
+    tier: 2
+    col: 3
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Increases the range of your ranged weapons by 2 yards.
+    - Increases the range of your ranged weapons by 4 yards.
+    - Increases the range of your ranged weapons by 6 yards.
+  - id: 18324
+    slug: improved_serpent_sting
+    name: Improved Serpent Sting
+    tab: 2
+    tier: 3
+    col: 1
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Increases the damage done by your Serpent Sting by 2%.
+    - Increases the damage done by your Serpent Sting by 4%.
+    - Increases the damage done by your Serpent Sting by 6%.
+    - Increases the damage done by your Serpent Sting by 8%.
+    - Increases the damage done by your Serpent Sting by 10%.
+  - id: 18325
+    slug: mortal_shots
+    name: Mortal Shots
+    tab: 2
+    tier: 3
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 18320
+    prereqPoints: 15
+    tooltip:
+    - Increases your ranged weapon critical strike damage bonus by 6%.
+    - Increases your ranged weapon critical strike damage bonus by 12%.
+    - Increases your ranged weapon critical strike damage bonus by 18%.
+    - Increases your ranged weapon critical strike damage bonus by 24%.
+    - Increases your ranged weapon critical strike damage bonus by 30%.
+  - id: 18326
+    slug: scatter_shot
+    name: Scatter Shot
+    tab: 2
+    tier: 4
+    col: 0
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - 123 Mana 15 yd range Instant 30 sec cooldown Requires Ranged Weapon A short-range shot that deals 50% weapon damage
+      and confuses the target for 4 sec. Any damage caused will remove the effect.
+  - id: 18327
+    slug: barrage
+    name: Barrage
+    tab: 2
+    tier: 4
+    col: 1
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Increases the damage done by your Multi-Shot and Volley spells by 5%.
+    - Increases the damage done by your Multi-Shot and Volley spells by 10%.
+    - Increases the damage done by your Multi-Shot and Volley spells by 15%.
+  - id: 18328
+    slug: improved_scorpid_sting
+    name: Improved Scorpid Sting
+    tab: 2
+    tier: 4
+    col: 2
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Reduces the Stamina of targets affected by your Scorpid Sting by 10% of the amount of Strength reduced.
+    - Reduces the Stamina of targets affected by your Scorpid Sting by 20% of the amount of Strength reduced.
+    - Reduces the Stamina of targets affected by your Scorpid Sting by 30% of the amount of Strength reduced.
+  - id: 18329
+    slug: ranged_weapon_specialization
+    name: Ranged Weapon Specialization
+    tab: 2
+    tier: 5
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 25
+    tooltip:
+    - Increases the damage you deal with ranged weapons by 1%.
+    - Increases the damage you deal with ranged weapons by 2%.
+    - Increases the damage you deal with ranged weapons by 3%.
+    - Increases the damage you deal with ranged weapons by 4%.
+    - Increases the damage you deal with ranged weapons by 5%.
+  - id: 18330
+    slug: trueshot_aura
+    name: Trueshot Aura
+    tab: 2
+    tier: 6
+    col: 1
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 18327
+    prereqPoints: 30
+    tooltip:
+    - 325 Mana Instant cast Increases the Ranged and Melee Attack Power of party members within 45 yards by 50. Lasts 30 min.
+- key: 3
+  name: Survival
+  background: HunterSurvival
+  nodes:
+  - id: 18331
+    slug: monster_slaying
+    name: Monster Slaying
+    tab: 3
+    tier: 0
+    col: 0
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Increases all damage caused against Beast, Giants and Dragonkin targets by 1% and increases critical damage caused against
+      Beasts, Giants, and Dragonkin targets by an additional 1%.
+    - Increases all damage caused against Beast, Giants and Dragonkin targets by 2% and increases critical damage caused against
+      Beasts, Giants, and Dragonkin targets by an additional 2%.
+    - Increases all damage caused against Beast, Giants and Dragonkin targets by 3% and increases critical damage caused against
+      Beasts, Giants, and Dragonkin targets by an additional 3%.
+  - id: 18332
+    slug: humanoid_slaying
+    name: Humanoid Slaying
+    tab: 3
+    tier: 0
+    col: 1
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Increases all damage caused against Humanoid targets by 1% and increases critical damage caused against Humanoid targets
+      by an additional 1%.
+    - Increases all damage caused against Humanoid targets by 2% and increases critical damage caused against Humanoid targets
+      by an additional 2%.
+    - Increases all damage caused against Humanoid targets by 3% and increases critical damage caused against Humanoid targets
+      by an additional 3%.
+  - id: 18333
+    slug: deflection
+    name: Deflection
+    tab: 3
+    tier: 0
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Increases your Parry chance by 1%.
+    - Increases your Parry chance by 2%.
+    - Increases your Parry chance by 3%.
+    - Increases your Parry chance by 4%.
+    - Increases your Parry chance by 5%.
+  - id: 18334
+    slug: entrapment
+    name: Entrapment
+    tab: 3
+    tier: 1
+    col: 0
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Gives your Immolation Trap, Frost Trap, and Explosive Trap a 5% chance to entrap the target, preventing them from moving
+      for 5 sec.
+    - Gives your Immolation Trap, Frost Trap, and Explosive Trap a 10% chance to entrap the target, preventing them from moving
+      for 5 sec.
+    - Gives your Immolation Trap, Frost Trap, and Explosive Trap a 15% chance to entrap the target, preventing them from moving
+      for 5 sec.
+    - Gives your Immolation Trap, Frost Trap, and Explosive Trap a 20% chance to entrap the target, preventing them from moving
+      for 5 sec.
+    - Gives your Immolation Trap, Frost Trap, and Explosive Trap a 25% chance to entrap the target, preventing them from moving
+      for 5 sec.
+  - id: 18335
+    slug: savage_strikes
+    name: Savage Strikes
+    tab: 3
+    tier: 1
+    col: 1
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases the critical strike chance of Raptor Strike and Mongoose Bite by 10%.
+    - Increases the critical strike chance of Raptor Strike and Mongoose Bite by 20%.
+  - id: 18336
+    slug: improved_wing_clip
+    name: Improved Wing Clip
+    tab: 3
+    tier: 1
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Gives your Wing Clip ability a 4% chance to immobilize the target for 5 sec.
+    - Gives your Wing Clip ability a 8% chance to immobilize the target for 5 sec.
+    - Gives your Wing Clip ability a 12% chance to immobilize the target for 5 sec.
+    - Gives your Wing Clip ability a 16% chance to immobilize the target for 5 sec.
+    - Gives your Wing Clip ability a 20% chance to immobilize the target for 5 sec.
+  - id: 18337
+    slug: clever_traps
+    name: Clever Traps
+    tab: 3
+    tier: 2
+    col: 0
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Increases the duration of Freezing and Frost trap effects by 15% and the damage of Immolation and Explosive trap effects
+      by 15%.
+    - Increases the duration of Freezing and Frost trap effects by 30% and the damage of Immolation and Explosive trap effects
+      by 30%.
+  - id: 18338
+    slug: survivalist
+    name: Survivalist
+    tab: 3
+    tier: 2
+    col: 1
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Increases total health by 2%.
+    - Increases total health by 4%.
+    - Increases total health by 6%.
+    - Increases total health by 8%.
+    - Increases total health by 10%.
+  - id: 18339
+    slug: deterrence
+    name: Deterrence
+    tab: 3
+    tier: 2
+    col: 2
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Instant 5 min cooldown When activated, increases your Dodge and Parry chance by 25% for 10 sec.
+  - id: 18340
+    slug: trap_mastery
+    name: Trap Mastery
+    tab: 3
+    tier: 3
+    col: 0
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Decreases the chance enemies will resist trap effects by 5%.
+    - Decreases the chance enemies will resist trap effects by 10%.
+  - id: 18341
+    slug: surefooted
+    name: Surefooted
+    tab: 3
+    tier: 3
+    col: 1
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Increases hit chance by 1% and increases the chance movement impairing effects will be resisted by 5%.
+    - Increases hit chance by 2% and increases the chance movement impairing effects will be resisted by 10%.
+    - Increases hit chance by 3% and increases the chance movement impairing effects will be resisted by 15%.
+  - id: 18342
+    slug: improved_feign_death
+    name: Improved Feign Death
+    tab: 3
+    tier: 3
+    col: 3
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Reduces the chance your Feign Death ability will be resisted by 2%.
+    - Reduces the chance your Feign Death ability will be resisted by 4%.
+  - id: 18343
+    slug: killer_instinct
+    name: Killer Instinct
+    tab: 3
+    tier: 4
+    col: 1
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Increases your critical strike chance with all attacks by 1%.
+    - Increases your critical strike chance with all attacks by 2%.
+    - Increases your critical strike chance with all attacks by 3%.
+  - id: 18344
+    slug: counterattack
+    name: Counterattack
+    tab: 3
+    tier: 4
+    col: 2
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 18339
+    prereqPoints: 20
+    tooltip:
+    - 45 Mana 5 yd range Instant cast 5 sec cooldown A strike that becomes active after parrying an opponent's attack. This
+      attack deals 40 damage and immobilizes the target for 5 sec. Counterattack cannot be blocked, dodged, or parried.
+  - id: 18345
+    slug: lightning_reflexes
+    name: Lightning Reflexes
+    tab: 3
+    tier: 5
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 25
+    tooltip:
+    - Increases your Agility by 3%.
+    - Increases your Agility by 6%.
+    - Increases your Agility by 9%.
+    - Increases your Agility by 12%.
+    - Increases your Agility by 15%.
+  - id: 18346
+    slug: wyvern_sting
+    name: Wyvern Sting
+    tab: 3
+    tier: 6
+    col: 1
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 18343
+    prereqPoints: 30
+    tooltip:
+    - 115 Mana 8-35 yd range Attack speed 2 min cooldown A stinging shot that puts the target to sleep for 12 sec. Any damage
+      will cancel the effect. When the target wakes up, the Sting causes 300 Nature damage over 12 sec. Only usable out of
+      combat. Only one Sting per Hunter can be active on the target at a time.

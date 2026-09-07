@@ -1,10 +1,10 @@
 diff --git a/modules/mod-playerbots/src/Ai/Base/Actions/TradeStatusAction.cpp b/modules/mod-playerbots/src/Ai/Base/Actions/TradeStatusAction.cpp
-index 6a5945f..6c7cf94 100644
+index 96d66cb..d2d379a 100644
 --- a/modules/mod-playerbots/src/Ai/Base/Actions/TradeStatusAction.cpp
 +++ b/modules/mod-playerbots/src/Ai/Base/Actions/TradeStatusAction.cpp
-@@ -204,7 +204,14 @@ bool TradeStatusAction::CheckTrade()
-         return false;
+@@ -216,7 +216,16 @@ bool TradeStatusAction::CheckTrade()
      }
+ 
      uint32 accountId = bot->GetSession()->GetAccountId();
 -    if (!sPlayerbotAIConfig.IsInRandomAccountList(accountId))
 +    // Owner-trade bypass (patch 0017): a real player who owns this bot may freely take (or
@@ -12,7 +12,9 @@ index 6a5945f..6c7cf94 100644
 +    // customer. Same owner guard the master branch uses in Execute(). Our bots live on
 +    // rndbot-prefixed accounts, so IsInRandomAccountList() is true for them and they would
 +    // otherwise fall into the economic gate below.
-+    bool ownerTrade = botAI->HasActivePlayerMaster() && trader == GetMaster() &&
++    // upstream 17214b3 dropped PlayerbotAI::HasActivePlayerMaster(); the free
++    // IsRealPlayer(Player*) ("no bot AI attached") is its exact replacement.
++    bool ownerTrade = IsRealPlayer(GetMaster()) && trader == GetMaster() &&
 +                      botAI->GetSecurity()->CheckLevelFor(PLAYERBOT_SECURITY_ALLOW_ALL, true, trader);
 +    if (ownerTrade || !sPlayerbotAIConfig.IsInRandomAccountList(accountId))
      {

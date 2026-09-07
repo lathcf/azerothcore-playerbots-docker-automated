@@ -1,0 +1,1273 @@
+era: 1
+class: 7
+eraName: TBC
+className: SHAMAN
+tabs:
+- key: 1
+  name: Elemental
+  background: ShamanElementalCombat
+  nodes:
+  - id: 20200
+    slug: convection
+    name: Convection
+    tab: 1
+    tier: 0
+    col: 1
+    icon: spell_nature_wispsplode
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    rankSpells:
+    - 16039
+    - 16109
+    - 16110
+    - 16111
+    - 16112
+    tooltip:
+    - Reduces the mana cost of your Shock, Lightning Bolt and Chain Lightning spells
+      by 2%.
+    - Reduces the mana cost of your Shock, Lightning Bolt and Chain Lightning spells
+      by 4%.
+    - Reduces the mana cost of your Shock, Lightning Bolt and Chain Lightning spells
+      by 6%.
+    - Reduces the mana cost of your Shock, Lightning Bolt and Chain Lightning spells
+      by 8%.
+    - Reduces the mana cost of your Shock, Lightning Bolt and Chain Lightning spells
+      by 10%.
+  - id: 20201
+    slug: concussion
+    name: Concussion
+    tab: 1
+    tier: 0
+    col: 2
+    icon: spell_fire_fireball
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    rankSpells:
+    - 16035
+    - 16105
+    - 16106
+    - 16107
+    - 16108
+    tooltip:
+    - Increases the damage done by your Lightning Bolt, Chain Lightning and Shock
+      spells by 1%.
+    - Increases the damage done by your Lightning Bolt, Chain Lightning and Shock
+      spells by 2%.
+    - Increases the damage done by your Lightning Bolt, Chain Lightning and Shock
+      spells by 3%.
+    - Increases the damage done by your Lightning Bolt, Chain Lightning and Shock
+      spells by 4%.
+    - Increases the damage done by your Lightning Bolt, Chain Lightning and Shock
+      spells by 5%.
+  - id: 20202
+    slug: earth_s_grasp
+    name: Earth's Grasp
+    tab: 1
+    tier: 1
+    col: 0
+    icon: spell_nature_stoneclawtotem
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 16043
+    - 16130
+    tooltip:
+    - Increases the health of your Stoneclaw Totem by 25% and the radius of your Earthbind
+      Totem by 10%.
+    - Increases the health of your Stoneclaw Totem by 50% and the radius of your Earthbind
+      Totem by 20%.
+  - id: 20203
+    slug: elemental_warding
+    name: Elemental Warding
+    tab: 1
+    tier: 1
+    col: 1
+    icon: spell_nature_spiritarmor
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 28996
+    - 28997
+    - 28998
+    tooltip:
+    - Reduces damage taken from Fire, Frost and Nature effects by 4%.
+    - Reduces damage taken from Fire, Frost and Nature effects by 7%.
+    - Reduces damage taken from Fire, Frost and Nature effects by 10%.
+  - id: 20204
+    slug: call_of_flame
+    name: Call of Flame
+    tab: 1
+    tier: 1
+    col: 2
+    icon: spell_fire_immolation
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 16038
+    - 16160
+    - 16161
+    tooltip:
+    - Increases the damage done by your Fire Totems by 5%.
+    - Increases the damage done by your Fire Totems by 10%.
+    - Increases the damage done by your Fire Totems by 15%.
+  - id: 20205
+    slug: elemental_focus
+    name: Elemental Focus
+    tab: 1
+    tier: 2
+    col: 0
+    icon: spell_shadow_manaburn
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 16164
+    tooltip:
+    - After landing a critical strike with a Fire, Frost, or Nature damage spell,
+      you enter a Clearcasting state. The Clearcasting state reduces the mana cost
+      of your next 2 damage spells by 40%.
+  - id: 20206
+    slug: reverberation
+    name: Reverberation
+    tab: 1
+    tier: 2
+    col: 1
+    icon: spell_frost_frostward
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 16040
+    - 16113
+    - 16114
+    - 16115
+    - 16116
+    tooltip:
+    - Reduces the cooldown of your Shock spells by 0.2 sec.
+    - Reduces the cooldown of your Shock spells by 0.4 sec.
+    - Reduces the cooldown of your Shock spells by 0.6 sec.
+    - Reduces the cooldown of your Shock spells by 0.8 sec.
+    - Reduces the cooldown of your Shock spells by 1 sec.
+  - id: 20207
+    slug: call_of_thunder
+    name: Call of Thunder
+    tab: 1
+    tier: 2
+    col: 2
+    icon: spell_nature_callstorm
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 16041
+    - 16117
+    - 16118
+    - 16119
+    - 16120
+    tooltip:
+    - Increases the critical strike chance of your Lightning Bolt and Chain Lightning
+      spells by an additional 1%.
+    - Increases the critical strike chance of your Lightning Bolt and Chain Lightning
+      spells by an additional 2%.
+    - Increases the critical strike chance of your Lightning Bolt and Chain Lightning
+      spells by an additional 3%.
+    - Increases the critical strike chance of your Lightning Bolt and Chain Lightning
+      spells by an additional 4%.
+    - Increases the critical strike chance of your Lightning Bolt and Chain Lightning
+      spells by an additional 5%.
+  - id: 20208
+    slug: improved_fire_totems
+    name: Improved Fire Totems
+    tab: 1
+    tier: 3
+    col: 0
+    icon: spell_fire_sealoffire
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 15
+    rankSpells:
+    - 16086
+    - 16544
+    tooltip:
+    - Reduces the delay before your Fire Nova Totem activates by 1 sec. and decreases
+      the threat generated by your Magma Totem by 25%.
+    - Reduces the delay before your Fire Nova Totem activates by 2 sec. and decreases
+      the threat generated by your Magma Totem by 50%.
+  - id: 20209
+    slug: eye_of_the_storm
+    name: Eye of the Storm
+    tab: 1
+    tier: 3
+    col: 1
+    icon: spell_shadow_soulleech_2
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    rankSpells:
+    - 29062
+    - 29064
+    - 29065
+    tooltip:
+    - Gives you a 33% chance to gain the Focused Casting effect that lasts for 6 sec
+      after being the victim of a melee or ranged critical strike. The Focused Casting
+      effect prevents you from losing casting time on Shaman spells when taking damage.
+    - Gives you a 66% chance to gain the Focused Casting effect that lasts for 6 sec
+      after being the victim of a melee or ranged critical strike. The Focused Casting
+      effect prevents you from losing casting time on Shaman spells when taking damage.
+    - Gives you a 100% chance to gain the Focused Casting effect that lasts for 6
+      sec after being the victim of a melee or ranged critical strike. The Focused
+      Casting effect prevents you from losing casting time on Shaman spells when taking
+      damage.
+  - id: 20210
+    slug: elemental_devastation
+    name: Elemental Devastation
+    tab: 1
+    tier: 3
+    col: 3
+    icon: spell_fire_elementaldevastation
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    rankSpells:
+    - 30160
+    - 29179
+    - 29180
+    tooltip:
+    - Your offensive spell crits will increase your chance to get a critical strike
+      with melee attacks by 3% for 10 sec.
+    - Your offensive spell crits will increase your chance to get a critical strike
+      with melee attacks by 6% for 10 sec.
+    - Your offensive spell crits will increase your chance to get a critical strike
+      with melee attacks by 9% for 10 sec.
+  - id: 20211
+    slug: storm_reach
+    name: Storm Reach
+    tab: 1
+    tier: 4
+    col: 0
+    icon: spell_nature_stormreach
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 20
+    rankSpells:
+    - 28999
+    - 29000
+    tooltip:
+    - Increases the range of your Lightning Bolt and Chain Lightning spells by 3 yards.
+    - Increases the range of your Lightning Bolt and Chain Lightning spells by 6 yards.
+  - id: 20212
+    slug: elemental_fury
+    name: Elemental Fury
+    tab: 1
+    tier: 4
+    col: 1
+    icon: spell_fire_volcano
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 20
+    rankSpells:
+    - 16089
+    tooltip:
+    - Increases the critical strike damage bonus of your Searing, Magma, and Fire
+      Nova Totems and your Fire, Frost, and Nature spells by 100%.
+  - id: 20213
+    slug: unrelenting_storm
+    name: Unrelenting Storm
+    tab: 1
+    tier: 4
+    col: 3
+    icon: spell_nature_unrelentingstorm
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 20
+    rankSpells:
+    - 30664
+    - 30665
+    - 30666
+    - 30667
+    - 30668
+    tooltip:
+    - Regenerate mana equal to 2% of your Intellect every 5 sec, even while casting.
+    - Regenerate mana equal to 4% of your Intellect every 5 sec, even while casting.
+    - Regenerate mana equal to 6% of your Intellect every 5 sec, even while casting.
+    - Regenerate mana equal to 8% of your Intellect every 5 sec, even while casting.
+    - Regenerate mana equal to 10% of your Intellect every 5 sec, even while casting.
+  - id: 20214
+    slug: elemental_precision
+    name: Elemental Precision
+    tab: 1
+    tier: 5
+    col: 0
+    icon: spell_nature_elementalprecision_1
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 25
+    rankSpells:
+    - 30672
+    - 30673
+    - 30674
+    tooltip:
+    - Increases your chance to hit with Fire, Frost and Nature spells by 2% and reduces
+      the threat caused by Fire, Frost and Nature spells by 4%.
+    - Increases your chance to hit with Fire, Frost and Nature spells by 4% and reduces
+      the threat caused by Fire, Frost and Nature spells by 7%.
+    - Increases your chance to hit with Fire, Frost and Nature spells by 6% and reduces
+      the threat caused by Fire, Frost and Nature spells by 10%.
+  - id: 20215
+    slug: lightning_mastery
+    name: Lightning Mastery
+    tab: 1
+    tier: 5
+    col: 2
+    icon: spell_lightning_lightningbolt01
+    maxRank: 5
+    prereqTalentId: 20207
+    prereqPoints: 25
+    rankSpells:
+    - 16578
+    - 16579
+    - 16580
+    - 16581
+    - 16582
+    tooltip:
+    - Reduces the cast time of your Lightning Bolt and Chain Lightning spells by 0.1
+      sec.
+    - Reduces the cast time of your Lightning Bolt and Chain Lightning spells by 0.2
+      sec.
+    - Reduces the cast time of your Lightning Bolt and Chain Lightning spells by 0.3
+      sec.
+    - Reduces the cast time of your Lightning Bolt and Chain Lightning spells by 0.4
+      sec.
+    - Reduces the cast time of your Lightning Bolt and Chain Lightning spells by 0.5
+      sec.
+  - id: 20216
+    slug: elemental_mastery
+    name: Elemental Mastery
+    tab: 1
+    tier: 6
+    col: 1
+    icon: spell_nature_wispheal
+    maxRank: 1
+    prereqTalentId: 20212
+    prereqPoints: 30
+    rankSpells:
+    - 16166
+    tooltip:
+    - When activated, this spell gives your next Fire, Frost, or Nature damage spell
+      a 100% critical strike chance and reduces the mana cost by 100%.
+  - id: 20217
+    slug: elemental_shields
+    name: Elemental Shields
+    tab: 1
+    tier: 6
+    col: 2
+    icon: spell_nature_elementalshields
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 30
+    rankSpells:
+    - 30669
+    - 30670
+    - 30671
+    tooltip:
+    - Reduces the chance you will be critically hit by melee and ranged attacks by
+      2%.
+    - Reduces the chance you will be critically hit by melee and ranged attacks by
+      4%.
+    - Reduces the chance you will be critically hit by melee and ranged attacks by
+      6%.
+  - id: 20218
+    slug: lightning_overload
+    name: Lightning Overload
+    tab: 1
+    tier: 7
+    col: 1
+    icon: spell_nature_lightningoverload
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 35
+    rankSpells:
+    - 30675
+    - 30678
+    - 30679
+    - 30680
+    - 30681
+    tooltip:
+    - Gives your Lightning Bolt and Chain Lightning spells a 4% chance to cast a second,
+      similar spell on the same target at no additional cost that causes half damage
+      and no threat.
+    - Gives your Lightning Bolt and Chain Lightning spells a 8% chance to cast a second,
+      similar spell on the same target at no additional cost that causes half damage
+      and no threat.
+    - Gives your Lightning Bolt and Chain Lightning spells a 12% chance to cast a
+      second, similar spell on the same target at no additional cost that causes half
+      damage and no threat.
+    - Gives your Lightning Bolt and Chain Lightning spells a 16% chance to cast a
+      second, similar spell on the same target at no additional cost that causes half
+      damage and no threat.
+    - Gives your Lightning Bolt and Chain Lightning spells a 20% chance to cast a
+      second, similar spell on the same target at no additional cost that causes half
+      damage and no threat.
+  - id: 20219
+    slug: totem_of_wrath
+    name: Totem of Wrath
+    tab: 1
+    tier: 8
+    col: 1
+    icon: spell_fire_totemofwrath
+    maxRank: 1
+    prereqTalentId: 20218
+    prereqPoints: 40
+    rankSpells:
+    - 30706
+    tooltip:
+    - Summons a Totem of Wrath with 5 health at the feet of the caster. The totem
+      increases the chance to hit and critically strike with spells by 3% for all
+      party members within 20 yards. Lasts 2 min.
+- key: 2
+  name: Enhancement
+  background: ShamanEnhancement
+  nodes:
+  - id: 20220
+    slug: ancestral_knowledge
+    name: Ancestral Knowledge
+    tab: 2
+    tier: 0
+    col: 1
+    icon: spell_shadow_grimward
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    rankSpells:
+    - 17485
+    - 17486
+    - 17487
+    - 17488
+    - 17489
+    tooltip:
+    - Increases your maximum mana by 1%.
+    - Increases your maximum mana by 2%.
+    - Increases your maximum mana by 3%.
+    - Increases your maximum mana by 4%.
+    - Increases your maximum mana by 5%.
+  - id: 20221
+    slug: shield_specialization
+    name: Shield Specialization
+    tab: 2
+    tier: 0
+    col: 2
+    icon: inv_shield_06
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    rankSpells:
+    - 16253
+    - 16298
+    - 16299
+    - 16300
+    - 16301
+    tooltip:
+    - Increases your chance to block attacks with a shield by 1% and increases the
+      amount blocked by 5%.
+    - Increases your chance to block attacks with a shield by 2% and increases the
+      amount blocked by 10%.
+    - Increases your chance to block attacks with a shield by 3% and increases the
+      amount blocked by 15%.
+    - Increases your chance to block attacks with a shield by 4% and increases the
+      amount blocked by 20%.
+    - Increases your chance to block attacks with a shield by 5% and increases the
+      amount blocked by 25%.
+  - id: 20222
+    slug: guardian_totems
+    name: Guardian Totems
+    tab: 2
+    tier: 1
+    col: 0
+    icon: spell_nature_stoneskintotem
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 16258
+    - 16293
+    tooltip:
+    - Increases the amount of damage reduced by your Stoneskin Totem and Windwall
+      Totem by 10% and reduces the cooldown of your Grounding Totem by 1 sec.
+    - Increases the amount of damage reduced by your Stoneskin Totem and Windwall
+      Totem by 20% and reduces the cooldown of your Grounding Totem by 2 sec.
+  - id: 20223
+    slug: thundering_strikes
+    name: Thundering Strikes
+    tab: 2
+    tier: 1
+    col: 1
+    icon: ability_thunderbolt
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 16255
+    - 16302
+    - 16303
+    - 16304
+    - 16305
+    tooltip:
+    - Improves your chance to get a critical strike with your weapon attacks by 1%.
+    - Improves your chance to get a critical strike with your weapon attacks by 2%.
+    - Improves your chance to get a critical strike with your weapon attacks by 3%.
+    - Improves your chance to get a critical strike with your weapon attacks by 4%.
+    - Improves your chance to get a critical strike with your weapon attacks by 5%.
+  - id: 20224
+    slug: improved_ghost_wolf
+    name: Improved Ghost Wolf
+    tab: 2
+    tier: 1
+    col: 2
+    icon: spell_nature_spiritwolf
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 16262
+    - 16287
+    tooltip:
+    - Reduces the cast time of your Ghost Wolf spell by 1 sec.
+    - Reduces the cast time of your Ghost Wolf spell by 2 sec.
+  - id: 20225
+    slug: improved_lightning_shield
+    name: Improved Lightning Shield
+    tab: 2
+    tier: 1
+    col: 3
+    icon: spell_nature_lightningshield
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 16261
+    - 16290
+    - 16291
+    tooltip:
+    - Increases the damage done by your Lightning Shield orbs by 5%.
+    - Increases the damage done by your Lightning Shield orbs by 10%.
+    - Increases the damage done by your Lightning Shield orbs by 15%.
+  - id: 20226
+    slug: enhancing_totems
+    name: Enhancing Totems
+    tab: 2
+    tier: 2
+    col: 0
+    icon: spell_nature_earthbindtotem
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 16259
+    - 16295
+    tooltip:
+    - Increases the effect of your Strength of Earth and Grace of Air Totems by 8%.
+    - Increases the effect of your Strength of Earth and Grace of Air Totems by 15%.
+  - id: 20227
+    slug: shamanistic_focus
+    name: Shamanistic Focus
+    tab: 2
+    tier: 2
+    col: 2
+    icon: spell_nature_elementalabsorption
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 43338
+    tooltip:
+    - After landing a melee critical strike, you enter a Focused state. The Focused
+      state reduces the mana cost of your next Shock spell by 60%.
+  - id: 20228
+    slug: anticipation
+    name: Anticipation
+    tab: 2
+    tier: 2
+    col: 3
+    icon: spell_nature_mirrorimage
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 16254
+    - 16271
+    - 16272
+    - 16273
+    - 16274
+    tooltip:
+    - Increases your chance to dodge by an additional 1%.
+    - Increases your chance to dodge by an additional 2%.
+    - Increases your chance to dodge by an additional 3%.
+    - Increases your chance to dodge by an additional 4%.
+    - Increases your chance to dodge by an additional 5%.
+  - id: 20229
+    slug: flurry
+    name: Flurry
+    tab: 2
+    tier: 3
+    col: 1
+    icon: ability_ghoulfrenzy
+    maxRank: 5
+    prereqTalentId: 20223
+    prereqPoints: 15
+    rankSpells:
+    - 16256
+    - 16281
+    - 16282
+    - 16283
+    - 16284
+    tooltip:
+    - Increases your attack speed by 10% for your next 3 swings after dealing a critical
+      strike.
+    - Increases your attack speed by 15% for your next 3 swings after dealing a critical
+      strike.
+    - Increases your attack speed by 20% for your next 3 swings after dealing a critical
+      strike.
+    - Increases your attack speed by 25% for your next 3 swings after dealing a critical
+      strike.
+    - Increases your attack speed by 30% for your next 3 swings after dealing a critical
+      strike.
+  - id: 20230
+    slug: toughness
+    name: Toughness
+    tab: 2
+    tier: 3
+    col: 2
+    icon: spell_holy_devotion
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 15
+    rankSpells:
+    - 16252
+    - 16306
+    - 16307
+    - 16308
+    - 16309
+    tooltip:
+    - Increases your armor value from items by 2%, and reduces the duration of movement
+      slowing effects on you by 10%.
+    - Increases your armor value from items by 4%, and reduces the duration of movement
+      slowing effects on you by 20%.
+    - Increases your armor value from items by 6%, and reduces the duration of movement
+      slowing effects on you by 30%.
+    - Increases your armor value from items by 8%, and reduces the duration of movement
+      slowing effects on you by 40%.
+    - Increases your armor value from items by 10%, and reduces the duration of movement
+      slowing effects on you by 50%.
+  - id: 20231
+    slug: improved_weapon_totems
+    name: Improved Weapon Totems
+    tab: 2
+    tier: 4
+    col: 0
+    icon: spell_fire_enchantweapon
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 20
+    rankSpells:
+    - 29192
+    - 29193
+    tooltip:
+    - Increases the melee attack power bonus of your Windfury Totem by 15% and increases
+      the damage caused by your Flametongue Totem by 6%.
+    - Increases the melee attack power bonus of your Windfury Totem by 30% and increases
+      the damage caused by your Flametongue Totem by 12%.
+  - id: 20232
+    slug: spirit_weapons
+    name: Spirit Weapons
+    tab: 2
+    tier: 4
+    col: 1
+    icon: ability_parry
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 20
+    rankSpells:
+    - 16268
+    tooltip:
+    - Gives a chance to parry enemy melee attacks and reduces the threat generated
+      by your melee attacks by 30%.
+  - id: 20233
+    slug: elemental_weapons
+    name: Elemental Weapons
+    tab: 2
+    tier: 4
+    col: 2
+    icon: spell_fire_flametounge
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 20
+    rankSpells:
+    - 16266
+    - 29079
+    - 29080
+    tooltip:
+    - Increases the damage caused by your Rockbiter Weapon by 7%, your Windfury Weapon
+      effect by 13% and increases the damage caused by your Flametongue Weapon and
+      Frostbrand Weapon by 5%.
+    - Increases the damage caused by your Rockbiter Weapon by 14%, your Windfury Weapon
+      effect by 27% and increases the damage caused by your Flametongue Weapon and
+      Frostbrand Weapon by 10%.
+    - Increases the damage caused by your Rockbiter Weapon by 20%, your Windfury Weapon
+      effect by 40% and increases the damage caused by your Flametongue Weapon and
+      Frostbrand Weapon by 15%.
+  - id: 20234
+    slug: mental_quickness
+    name: Mental Quickness
+    tab: 2
+    tier: 5
+    col: 0
+    icon: spell_nature_mentalquickness
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 25
+    rankSpells:
+    - 30812
+    - 30813
+    - 30814
+    tooltip:
+    - Reduces the mana cost of your instant cast Shaman spells by 2% and increases
+      your spell damage and healing by an amount equal to 10% of your attack power.
+    - Reduces the mana cost of your instant cast Shaman spells by 4% and increases
+      your spell damage and healing by an amount equal to 20% of your attack power.
+    - Reduces the mana cost of your instant cast Shaman spells by 6% and increases
+      your spell damage and healing by an amount equal to 30% of your attack power.
+  - id: 20235
+    slug: weapon_mastery
+    name: Weapon Mastery
+    tab: 2
+    tier: 5
+    col: 3
+    icon: ability_hunter_swiftstrike
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 25
+    rankSpells:
+    - 29082
+    - 29084
+    - 29086
+    - 29087
+    - 29088
+    tooltip:
+    - Increases the damage you deal with all weapons by 2%.
+    - Increases the damage you deal with all weapons by 4%.
+    - Increases the damage you deal with all weapons by 6%.
+    - Increases the damage you deal with all weapons by 8%.
+    - Increases the damage you deal with all weapons by 10%.
+  - id: 20236
+    slug: dual_wield_specialization
+    name: Dual Wield Specialization
+    tab: 2
+    tier: 6
+    col: 0
+    icon: ability_dualwieldspecialization
+    maxRank: 3
+    prereqTalentId: 20237
+    prereqPoints: 30
+    rankSpells:
+    - 30816
+    - 30818
+    - 30819
+    tooltip:
+    - Increases your chance to hit while dual wielding by an additional 2%.
+    - Increases your chance to hit while dual wielding by an additional 4%.
+    - Increases your chance to hit while dual wielding by an additional 6%.
+  - id: 20237
+    slug: dual_wield
+    name: Dual Wield
+    tab: 2
+    tier: 6
+    col: 1
+    icon: ability_dualwield
+    maxRank: 1
+    prereqTalentId: 20232
+    prereqPoints: 30
+    rankSpells:
+    - 30798
+    tooltip:
+    - Allows one-hand and off-hand weapons to be equipped in the off-hand.
+  - id: 20238
+    slug: stormstrike
+    name: Stormstrike
+    tab: 2
+    tier: 6
+    col: 2
+    icon: ability_shaman_stormstrike
+    maxRank: 1
+    prereqTalentId: 20233
+    prereqPoints: 30
+    rankSpells:
+    - 17364
+    tooltip:
+    - Instantly attack with both weapons. In addition, the next 2 sources of Nature
+      damage dealt to the target are increased by 20%. Lasts 12 sec.
+  - id: 20239
+    slug: unleashed_rage
+    name: Unleashed Rage
+    tab: 2
+    tier: 7
+    col: 1
+    icon: spell_nature_unleashedrage
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 35
+    rankSpells:
+    - 30802
+    - 30808
+    - 30809
+    - 30810
+    - 30811
+    tooltip:
+    - Causes your critical hits with melee attacks to increase all party members'
+      melee attack power by 2% if within 20 yards of the Shaman. Lasts 10 sec.
+    - Causes your critical hits with melee attacks to increase all party members'
+      melee attack power by 4% if within 20 yards of the Shaman. Lasts 10 sec.
+    - Causes your critical hits with melee attacks to increase all party members'
+      melee attack power by 6% if within 20 yards of the Shaman. Lasts 10 sec.
+    - Causes your critical hits with melee attacks to increase all party members'
+      melee attack power by 8% if within 20 yards of the Shaman. Lasts 10 sec.
+    - Causes your critical hits with melee attacks to increase all party members'
+      melee attack power by 10% if within 20 yards of the Shaman. Lasts 10 sec.
+  - id: 20240
+    slug: shamanistic_rage
+    name: Shamanistic Rage
+    tab: 2
+    tier: 8
+    col: 1
+    icon: spell_nature_shamanrage
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 40
+    rankSpells:
+    - 30823
+    tooltip:
+    - Reduces all damage taken by 30% and gives your successful melee attacks a chance
+      to regenerate mana equal to 30% of your attack power. Lasts 15 sec.
+- key: 3
+  name: Restoration
+  background: ShamanRestoration
+  nodes:
+  - id: 20241
+    slug: improved_healing_wave
+    name: Improved Healing Wave
+    tab: 3
+    tier: 0
+    col: 1
+    icon: spell_nature_magicimmunity
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    rankSpells:
+    - 16182
+    - 16226
+    - 16227
+    - 16228
+    - 16229
+    tooltip:
+    - Reduces the casting time of your Healing Wave spell by 0.1 sec.
+    - Reduces the casting time of your Healing Wave spell by 0.2 sec.
+    - Reduces the casting time of your Healing Wave spell by 0.3 sec.
+    - Reduces the casting time of your Healing Wave spell by 0.4 sec.
+    - Reduces the casting time of your Healing Wave spell by 0.5 sec.
+  - id: 20242
+    slug: tidal_focus
+    name: Tidal Focus
+    tab: 3
+    tier: 0
+    col: 2
+    icon: spell_frost_manarecharge
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    rankSpells:
+    - 16179
+    - 16214
+    - 16215
+    - 16216
+    - 16217
+    tooltip:
+    - Reduces the mana cost of your healing spells by 1%.
+    - Reduces the mana cost of your healing spells by 2%.
+    - Reduces the mana cost of your healing spells by 3%.
+    - Reduces the mana cost of your healing spells by 4%.
+    - Reduces the mana cost of your healing spells by 5%.
+  - id: 20243
+    slug: improved_reincarnation
+    name: Improved Reincarnation
+    tab: 3
+    tier: 1
+    col: 0
+    icon: spell_nature_reincarnation
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 16184
+    - 16209
+    tooltip:
+    - Reduces the cooldown of your Reincarnation spell by 10 min and increases the
+      amount of health and mana you reincarnate with by an additional 10%.
+    - Reduces the cooldown of your Reincarnation spell by 20 min and increases the
+      amount of health and mana you reincarnate with by an additional 20%.
+  - id: 20244
+    slug: ancestral_healing
+    name: Ancestral Healing
+    tab: 3
+    tier: 1
+    col: 1
+    icon: spell_nature_undyingstrength
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 16176
+    - 16235
+    - 16240
+    tooltip:
+    - Increases your target's armor value by 8% for 15 sec after getting a critical
+      effect from one of your healing spells.
+    - Increases your target's armor value by 16% for 15 sec after getting a critical
+      effect from one of your healing spells.
+    - Increases your target's armor value by 25% for 15 sec after getting a critical
+      effect from one of your healing spells.
+  - id: 20245
+    slug: totemic_focus
+    name: Totemic Focus
+    tab: 3
+    tier: 1
+    col: 2
+    icon: spell_nature_moonglow
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 16173
+    - 16222
+    - 16223
+    - 16224
+    - 16225
+    tooltip:
+    - Reduces the mana cost of your totems by 5%.
+    - Reduces the mana cost of your totems by 10%.
+    - Reduces the mana cost of your totems by 15%.
+    - Reduces the mana cost of your totems by 20%.
+    - Reduces the mana cost of your totems by 25%.
+  - id: 20246
+    slug: nature_s_guidance
+    name: Nature's Guidance
+    tab: 3
+    tier: 2
+    col: 0
+    icon: spell_frost_stun
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 16180
+    - 16196
+    - 16198
+    tooltip:
+    - Increases your chance to hit with melee attacks and spells by 1%.
+    - Increases your chance to hit with melee attacks and spells by 2%.
+    - Increases your chance to hit with melee attacks and spells by 3%.
+  - id: 20247
+    slug: healing_focus
+    name: Healing Focus
+    tab: 3
+    tier: 2
+    col: 1
+    icon: spell_nature_healingwavelesser
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 16181
+    - 16230
+    - 16232
+    - 16233
+    - 16234
+    tooltip:
+    - Gives you a 14% chance to avoid interruption caused by damage while casting
+      any Shaman healing spell.
+    - Gives you a 28% chance to avoid interruption caused by damage while casting
+      any Shaman healing spell.
+    - Gives you a 42% chance to avoid interruption caused by damage while casting
+      any Shaman healing spell.
+    - Gives you a 56% chance to avoid interruption caused by damage while casting
+      any Shaman healing spell.
+    - Gives you a 70% chance to avoid interruption caused by damage while casting
+      any Shaman healing spell.
+  - id: 20248
+    slug: totemic_mastery
+    name: Totemic Mastery
+    tab: 3
+    tier: 2
+    col: 2
+    icon: spell_nature_nullward
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 16189
+    tooltip:
+    - The radius of your totems that affect friendly targets is increased to 30 yards.
+  - id: 20249
+    slug: healing_grace
+    name: Healing Grace
+    tab: 3
+    tier: 2
+    col: 3
+    icon: spell_nature_healingtouch
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 29187
+    - 29189
+    - 29191
+    tooltip:
+    - Reduces the threat generated by your healing spells by 5% and reduces the chance
+      your spells will be dispelled by 10%.
+    - Reduces the threat generated by your healing spells by 10% and reduces the chance
+      your spells will be dispelled by 20%.
+    - Reduces the threat generated by your healing spells by 15% and reduces the chance
+      your spells will be dispelled by 30%.
+  - id: 20250
+    slug: restorative_totems
+    name: Restorative Totems
+    tab: 3
+    tier: 3
+    col: 1
+    icon: spell_nature_manaregentotem
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 15
+    rankSpells:
+    - 16187
+    - 16205
+    - 16206
+    - 16207
+    - 16208
+    tooltip:
+    - Increases the effect of your Mana Spring and Healing Stream Totems by 5%.
+    - Increases the effect of your Mana Spring and Healing Stream Totems by 10%.
+    - Increases the effect of your Mana Spring and Healing Stream Totems by 15%.
+    - Increases the effect of your Mana Spring and Healing Stream Totems by 20%.
+    - Increases the effect of your Mana Spring and Healing Stream Totems by 25%.
+  - id: 20251
+    slug: tidal_mastery
+    name: Tidal Mastery
+    tab: 3
+    tier: 3
+    col: 2
+    icon: spell_nature_tranquility
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 15
+    rankSpells:
+    - 16194
+    - 16218
+    - 16219
+    - 16220
+    - 16221
+    tooltip:
+    - Increases the critical effect chance of your healing and lightning spells by
+      1%.
+    - Increases the critical effect chance of your healing and lightning spells by
+      2%.
+    - Increases the critical effect chance of your healing and lightning spells by
+      3%.
+    - Increases the critical effect chance of your healing and lightning spells by
+      4%.
+    - Increases the critical effect chance of your healing and lightning spells by
+      5%.
+  - id: 20252
+    slug: healing_way
+    name: Healing Way
+    tab: 3
+    tier: 4
+    col: 0
+    icon: spell_nature_healingway
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 20
+    rankSpells:
+    - 29206
+    - 29205
+    - 29202
+    tooltip:
+    - Your Healing Wave spells have a 33% chance to increase the effect of subsequent
+      Healing Wave spells on that target by 6% for 15 sec. This effect will stack
+      up to 3 times.
+    - Your Healing Wave spells have a 66% chance to increase the effect of subsequent
+      Healing Wave spells on that target by 6% for 15 sec. This effect will stack
+      up to 3 times.
+    - Your Healing Wave spells have a 100% chance to increase the effect of subsequent
+      Healing Wave spells on that target by 6% for 15 sec. This effect will stack
+      up to 3 times.
+  - id: 20253
+    slug: nature_s_swiftness
+    name: Nature's Swiftness
+    tab: 3
+    tier: 4
+    col: 2
+    icon: spell_nature_ravenform
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 20
+    rankSpells:
+    - 16188
+    tooltip:
+    - When activated, your next Nature spell with a casting time less than 10 sec.
+      becomes an instant cast spell.
+  - id: 20254
+    slug: focused_mind
+    name: Focused Mind
+    tab: 3
+    tier: 4
+    col: 3
+    icon: spell_nature_focusedmind
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 20
+    rankSpells:
+    - 30864
+    - 30865
+    - 30866
+    tooltip:
+    - Reduces the duration of any Silence or Interrupt effects used against the Shaman
+      by 10%. This effect does not stack with other similar effects.
+    - Reduces the duration of any Silence or Interrupt effects used against the Shaman
+      by 20%. This effect does not stack with other similar effects.
+    - Reduces the duration of any Silence or Interrupt effects used against the Shaman
+      by 30%. This effect does not stack with other similar effects.
+  - id: 20255
+    slug: purification
+    name: Purification
+    tab: 3
+    tier: 5
+    col: 2
+    icon: spell_frost_wizardmark
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 25
+    rankSpells:
+    - 16178
+    - 16210
+    - 16211
+    - 16212
+    - 16213
+    tooltip:
+    - Increases the effectiveness of your healing spells by 2%.
+    - Increases the effectiveness of your healing spells by 4%.
+    - Increases the effectiveness of your healing spells by 6%.
+    - Increases the effectiveness of your healing spells by 8%.
+    - Increases the effectiveness of your healing spells by 10%.
+  - id: 20256
+    slug: mana_tide_totem
+    name: Mana Tide Totem
+    tab: 3
+    tier: 6
+    col: 1
+    icon: spell_frost_summonwaterelemental
+    maxRank: 1
+    prereqTalentId: 20250
+    prereqPoints: 30
+    rankSpells:
+    - 16190
+    tooltip:
+    - Summons a Mana Tide Totem with 5 health at the feet of the caster for 12 sec
+      that restores 6% of total mana every 3 seconds to group members within 20 yards.
+  - id: 20257
+    slug: nature_s_guardian
+    name: Nature's Guardian
+    tab: 3
+    tier: 6
+    col: 2
+    icon: spell_nature_natureguardian
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 30
+    rankSpells:
+    - 30881
+    - 30883
+    - 30884
+    - 30885
+    - 30886
+    tooltip:
+    - Whenever a damaging attack is taken that reduces you below 30% health, you have
+      a 10% chance to heal 10% of your total health and reduce your threat level on
+      that target. 5 second cooldown.
+    - Whenever a damaging attack is taken that reduces you below 30% health, you have
+      a 20% chance to heal 10% of your total health and reduce your threat level on
+      that target. 5 second cooldown.
+    - Whenever a damaging attack is taken that reduces you below 30% health, you have
+      a 30% chance to heal 10% of your total health and reduce your threat level on
+      that target. 5 second cooldown.
+    - Whenever a damaging attack is taken that reduces you below 30% health, you have
+      a 40% chance to heal 10% of your total health and reduce your threat level on
+      that target. 5 second cooldown.
+    - Whenever a damaging attack is taken that reduces you below 30% health, you have
+      a 50% chance to heal 10% of your total health and reduce your threat level on
+      that target. 5 second cooldown.
+  - id: 20258
+    slug: nature_s_blessing
+    name: Nature's Blessing
+    tab: 3
+    tier: 7
+    col: 1
+    icon: spell_nature_natureblessing
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 35
+    rankSpells:
+    - 30867
+    - 30868
+    - 30869
+    tooltip:
+    - Increases your spell damage and healing by an amount equal to 10% of your Intellect.
+    - Increases your spell damage and healing by an amount equal to 20% of your Intellect.
+    - Increases your spell damage and healing by an amount equal to 30% of your Intellect.
+  - id: 20259
+    slug: improved_chain_heal
+    name: Improved Chain Heal
+    tab: 3
+    tier: 7
+    col: 2
+    icon: spell_nature_healingwavegreater
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 35
+    rankSpells:
+    - 30872
+    - 30873
+    tooltip:
+    - Increases the amount healed by your Chain Heal spell by 10%.
+    - Increases the amount healed by your Chain Heal spell by 20%.
+  - id: 20260
+    slug: earth_shield
+    name: Earth Shield
+    tab: 3
+    tier: 8
+    col: 1
+    icon: spell_nature_skinofearth
+    maxRank: 1
+    prereqTalentId: 20258
+    prereqPoints: 40
+    rankSpells:
+    - 974
+    tooltip:
+    - Protects the target with an earthen shield, giving a 30% chance of ignoring
+      spell interruption when damaged and causing attacks to heal the shielded target
+      for 150. This effect can only occur once every few seconds. 6 charges. Lasts
+      10 min. Earth Shield can only be placed on one target at a time and only one
+      Elemental Shield can be active on a target at a time.

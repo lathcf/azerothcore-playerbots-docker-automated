@@ -1,0 +1,1426 @@
+era: 1
+class: 2
+eraName: TBC
+className: PALADIN
+tabs:
+- key: 1
+  name: Holy
+  background: PaladinHoly
+  nodes:
+  - id: 20000
+    slug: divine_strength
+    name: Divine Strength
+    tab: 1
+    tier: 0
+    col: 1
+    icon: ability_golemthunderclap
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    rankSpells:
+    - 20262
+    - 20263
+    - 20264
+    - 20265
+    - 20266
+    tooltip:
+    - Divine Strength Talent Requires Paladin Increases your total Strength by 2%.
+    - Divine Strength Talent Requires Paladin Increases your total Strength by 4%.
+    - Divine Strength Talent Requires Paladin Increases your total Strength by 6%.
+    - Divine Strength Talent Requires Paladin Increases your total Strength by 8%.
+    - Divine Strength Talent Requires Paladin Increases your total Strength by 10%.
+  - id: 20001
+    slug: divine_intellect
+    name: Divine Intellect
+    tab: 1
+    tier: 0
+    col: 2
+    icon: spell_nature_sleep
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    rankSpells:
+    - 20257
+    - 20258
+    - 20259
+    - 20260
+    - 20261
+    tooltip:
+    - Divine Intellect Talent Requires Paladin Increases your total Intellect by 2%.
+    - Divine Intellect Talent Requires Paladin Increases your total Intellect by 4%.
+    - Divine Intellect Talent Requires Paladin Increases your total Intellect by 6%.
+    - Divine Intellect Talent Requires Paladin Increases your total Intellect by 8%.
+    - Divine Intellect Talent Requires Paladin Increases your total Intellect by 10%.
+  - id: 20002
+    slug: spiritual_focus
+    name: Spiritual Focus
+    tab: 1
+    tier: 1
+    col: 1
+    icon: spell_arcane_blink
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 20205
+    - 20206
+    - 20207
+    - 20209
+    - 20208
+    tooltip:
+    - Spiritual Focus Talent Requires Paladin Gives your Flash of Light and Holy Light
+      spells a 14% chance to not lose casting time when you take damage.
+    - Spiritual Focus Talent Requires Paladin Gives your Flash of Light and Holy Light
+      spells a 28% chance to not lose casting time when you take damage.
+    - Spiritual Focus Talent Requires Paladin Gives your Flash of Light and Holy Light
+      spells a 42% chance to not lose casting time when you take damage.
+    - Spiritual Focus Talent Requires Paladin Gives your Flash of Light and Holy Light
+      spells a 56% chance to not lose casting time when you take damage.
+    - Spiritual Focus Talent Requires Paladin Gives your Flash of Light and Holy Light
+      spells a 70% chance to not lose casting time when you take damage.
+  - id: 20003
+    slug: improved_seal_of_righteousness
+    name: Improved Seal of Righteousness
+    tab: 1
+    tier: 1
+    col: 2
+    icon: ability_thunderbolt
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 20224
+    - 20225
+    - 20330
+    - 20331
+    - 20332
+    tooltip:
+    - Improved Seal of Righteousness Talent Requires Paladin Increases the damage
+      done by your Seal of Righteousness and Judgement of Righteousness by 3%.
+    - Improved Seal of Righteousness Talent Requires Paladin Increases the damage
+      done by your Seal of Righteousness and Judgement of Righteousness by 6%.
+    - Improved Seal of Righteousness Talent Requires Paladin Increases the damage
+      done by your Seal of Righteousness and Judgement of Righteousness by 9%.
+    - Improved Seal of Righteousness Talent Requires Paladin Increases the damage
+      done by your Seal of Righteousness and Judgement of Righteousness by 12%.
+    - Improved Seal of Righteousness Talent Requires Paladin Increases the damage
+      done by your Seal of Righteousness and Judgement of Righteousness by 15%.
+  - id: 20004
+    slug: healing_light
+    name: Healing Light
+    tab: 1
+    tier: 2
+    col: 0
+    icon: spell_holy_holybolt
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 20237
+    - 20238
+    - 20239
+    tooltip:
+    - Healing Light Talent Requires Paladin Increases the amount healed by your Holy
+      Light and Flash of Light spells by 4%.
+    - Healing Light Talent Requires Paladin Increases the amount healed by your Holy
+      Light and Flash of Light spells by 8%.
+    - Healing Light Talent Requires Paladin Increases the amount healed by your Holy
+      Light and Flash of Light spells by 12%.
+  - id: 20005
+    slug: aura_mastery
+    name: Aura Mastery
+    tab: 1
+    tier: 2
+    col: 1
+    icon: spell_holy_auramastery
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 31821
+    tooltip:
+    - Aura Mastery Talent Requires Paladin Increases the radius of your Auras to 40
+      yards.
+  - id: 20006
+    slug: improved_lay_on_hands
+    name: Improved Lay on Hands
+    tab: 1
+    tier: 2
+    col: 2
+    icon: spell_holy_layonhands
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 20234
+    - 20235
+    tooltip:
+    - Improved Lay on Hands Talent Requires Paladin Gives the target of your Lay on
+      Hands spell a 15% bonus to their armor value from items for 2 min. In addition,
+      the cooldown for your Lay on Hands spell is reduced by 10 min.
+    - Improved Lay on Hands Talent Requires Paladin Gives the target of your Lay on
+      Hands spell a 30% bonus to their armor value from items for 2 min. In addition,
+      the cooldown for your Lay on Hands spell is reduced by 20 min.
+  - id: 20007
+    slug: unyielding_faith
+    name: Unyielding Faith
+    tab: 1
+    tier: 2
+    col: 3
+    icon: spell_holy_unyieldingfaith
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 9453
+    - 25836
+    tooltip:
+    - Unyielding Faith Talent Requires Paladin Increases your chance to resist Fear
+      and Disorient effects by an additional 5%.
+    - Unyielding Faith Talent Requires Paladin Increases your chance to resist Fear
+      and Disorient effects by an additional 10%.
+  - id: 20008
+    slug: illumination
+    name: Illumination
+    tab: 1
+    tier: 3
+    col: 1
+    icon: spell_holy_greaterheal
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 15
+    rankSpells:
+    - 20210
+    - 20212
+    - 20213
+    - 20214
+    - 20215
+    tooltip:
+    - 'Illumination Talent Requires Paladin After getting a critical effect from your
+      Flash of Light, Holy Light, or Holy Shock heal spell, gives you a 20% chance
+      to gain mana equal to 60% of the base cost of the spell. (Proc chance: 20%)'
+    - 'Illumination Talent Requires Paladin After getting a critical effect from your
+      Flash of Light, Holy Light, or Holy Shock heal spell, gives you a 40% chance
+      to gain mana equal to 60% of the base cost of the spell. (Proc chance: 40%)'
+    - 'Illumination Talent Requires Paladin After getting a critical effect from your
+      Flash of Light, Holy Light, or Holy Shock heal spell, gives you a 60% chance
+      to gain mana equal to 60% of the base cost of the spell. (Proc chance: 60%)'
+    - 'Illumination Talent Requires Paladin After getting a critical effect from your
+      Flash of Light, Holy Light, or Holy Shock heal spell, gives you a 80% chance
+      to gain mana equal to 60% of the base cost of the spell. (Proc chance: 80%)'
+    - Illumination Talent Requires Paladin After getting a critical effect from your
+      Flash of Light, Holy Light, or Holy Shock heal spell, gives you a 100% chance
+      to gain mana equal to 60% of the base cost of the spell.
+  - id: 20009
+    slug: improved_blessing_of_wisdom
+    name: Improved Blessing of Wisdom
+    tab: 1
+    tier: 3
+    col: 2
+    icon: spell_holy_sealofwisdom
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 15
+    rankSpells:
+    - 20244
+    - 20245
+    tooltip:
+    - Improved Blessing of Wisdom Talent Requires Paladin Increases the effect of
+      your Blessing of Wisdom spell by 10%.
+    - Improved Blessing of Wisdom Talent Requires Paladin Increases the effect of
+      your Blessing of Wisdom spell by 20%.
+  - id: 20010
+    slug: pure_of_heart
+    name: Pure of Heart
+    tab: 1
+    tier: 4
+    col: 0
+    icon: spell_holy_pureofheart
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 20
+    rankSpells:
+    - 31822
+    - 31823
+    - 31824
+    tooltip:
+    - Pure of Heart Talent Requires Paladin Increases your resistance to Curse and
+      Disease effects by 5%.
+    - Pure of Heart Talent Requires Paladin Increases your resistance to Curse and
+      Disease effects by 10%.
+    - Pure of Heart Talent Requires Paladin Increases your resistance to Curse and
+      Disease effects by 15%.
+  - id: 20011
+    slug: divine_favor
+    name: Divine Favor
+    tab: 1
+    tier: 4
+    col: 1
+    icon: spell_holy_heal
+    maxRank: 1
+    prereqTalentId: 20008
+    prereqPoints: 20
+    rankSpells:
+    - 20216
+    tooltip:
+    - Divine Favor Talent 3% of base mana Instant 2 min cooldown Requires Paladin
+      When activated, gives your next Flash of Light, Holy Light, or Holy Shock spell
+      a 100% critical effect chance.
+  - id: 20012
+    slug: sanctified_light
+    name: Sanctified Light
+    tab: 1
+    tier: 4
+    col: 2
+    icon: spell_holy_healingaura
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 20
+    rankSpells:
+    - 20359
+    - 20360
+    - 20361
+    tooltip:
+    - Sanctified Light Talent Requires Paladin Increases the critical effect chance
+      of your Holy Light spell by 2%.
+    - Sanctified Light Talent Requires Paladin Increases the critical effect chance
+      of your Holy Light spell by 4%.
+    - Sanctified Light Talent Requires Paladin Increases the critical effect chance
+      of your Holy Light spell by 6%.
+  - id: 20013
+    slug: purifying_power
+    name: Purifying Power
+    tab: 1
+    tier: 5
+    col: 0
+    icon: spell_holy_purifyingpower
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 25
+    rankSpells:
+    - 31825
+    - 31826
+    tooltip:
+    - Purifying Power Talent Requires Paladin Reduces the mana cost of your Cleanse,
+      Purify and Consecration spells by 5% and increases the critical strike chance
+      of your Exorcism and Holy Wrath spells by 10%.
+    - Purifying Power Talent Requires Paladin Reduces the mana cost of your Cleanse,
+      Purify and Consecration spells by 10% and increases the critical strike chance
+      of your Exorcism and Holy Wrath spells by 20%.
+  - id: 20014
+    slug: holy_power
+    name: Holy Power
+    tab: 1
+    tier: 5
+    col: 2
+    icon: spell_holy_power
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 25
+    rankSpells:
+    - 5923
+    - 5924
+    - 5925
+    - 5926
+    - 25829
+    tooltip:
+    - Holy Power Talent Requires Paladin Increases the critical effect chance of your
+      Holy spells by 1%.
+    - Holy Power Talent Requires Paladin Increases the critical effect chance of your
+      Holy spells by 2%.
+    - Holy Power Talent Requires Paladin Increases the critical effect chance of your
+      Holy spells by 3%.
+    - Holy Power Talent Requires Paladin Increases the critical effect chance of your
+      Holy spells by 4%.
+    - Holy Power Talent Requires Paladin Increases the critical effect chance of your
+      Holy spells by 5%.
+  - id: 20015
+    slug: light_s_grace
+    name: Light's Grace
+    tab: 1
+    tier: 6
+    col: 0
+    icon: spell_holy_lightsgrace
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 30
+    rankSpells:
+    - 31833
+    - 31835
+    - 31836
+    tooltip:
+    - 'Light''s Grace Talent Requires Paladin Gives your Holy Light spell a 33% chance
+      to reduce the cast time of your next Holy Light spell by 0.5 sec. This effect
+      lasts 15 sec. (Proc chance: 33%)'
+    - 'Light''s Grace Talent Requires Paladin Gives your Holy Light spell a 66% chance
+      to reduce the cast time of your next Holy Light spell by 0.5 sec. This effect
+      lasts 15 sec. (Proc chance: 66%)'
+    - Light's Grace Talent Requires Paladin Gives your Holy Light spell a 100% chance
+      to reduce the cast time of your next Holy Light spell by 0.5 sec. This effect
+      lasts 15 sec.
+  - id: 20016
+    slug: holy_shock
+    name: Holy Shock
+    tab: 1
+    tier: 6
+    col: 1
+    icon: spell_holy_searinglight
+    maxRank: 1
+    prereqTalentId: 20011
+    prereqPoints: 30
+    rankSpells:
+    - 20473
+    tooltip:
+    - Holy Shock Talent 335 Mana 20 yd range Instant 15 sec cooldown Requires Paladin
+      Blasts the target with Holy energy, causing 277 to 299 Holy damage to an enemy,
+      or 351 to 379 healing to an ally.
+  - id: 20017
+    slug: blessed_life
+    name: Blessed Life
+    tab: 1
+    tier: 6
+    col: 2
+    icon: spell_holy_blessedlife
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 30
+    rankSpells:
+    - 31828
+    - 31829
+    - 31830
+    tooltip:
+    - 'Blessed Life Talent Requires Paladin All attacks against you have a 4% chance
+      to cause half damage. (Proc chance: 4%)'
+    - 'Blessed Life Talent Requires Paladin All attacks against you have a 7% chance
+      to cause half damage. (Proc chance: 7%)'
+    - 'Blessed Life Talent Requires Paladin All attacks against you have a 10% chance
+      to cause half damage. (Proc chance: 10%)'
+  - id: 20018
+    slug: holy_guidance
+    name: Holy Guidance
+    tab: 1
+    tier: 7
+    col: 1
+    icon: spell_holy_holyguidance
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 35
+    rankSpells:
+    - 31837
+    - 31838
+    - 31839
+    - 31840
+    - 31841
+    tooltip:
+    - Holy Guidance Talent Requires Paladin Increases your spell damage and healing
+      by 7% of your total Intellect.
+    - Holy Guidance Talent Requires Paladin Increases your spell damage and healing
+      by 14% of your total Intellect.
+    - Holy Guidance Talent Requires Paladin Increases your spell damage and healing
+      by 21% of your total Intellect.
+    - Holy Guidance Talent Requires Paladin Increases your spell damage and healing
+      by 28% of your total Intellect.
+    - Holy Guidance Talent Requires Paladin Increases your spell damage and healing
+      by 35% of your total Intellect.
+  - id: 20019
+    slug: divine_illumination
+    name: Divine Illumination
+    tab: 1
+    tier: 8
+    col: 1
+    icon: spell_holy_divineillumination
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 40
+    rankSpells:
+    - 31842
+    tooltip:
+    - Divine Illumination Talent Instant 3 min cooldown Requires Paladin Reduces the
+      mana cost of all spells by 50% for 15 sec.
+- key: 2
+  name: Protection
+  background: PaladinProtection
+  nodes:
+  - id: 20020
+    slug: improved_devotion_aura
+    name: Improved Devotion Aura
+    tab: 2
+    tier: 0
+    col: 1
+    icon: spell_holy_devotionaura
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    rankSpells:
+    - 20138
+    - 20139
+    - 20140
+    - 20141
+    - 20142
+    tooltip:
+    - Improved Devotion Aura Talent Requires Paladin Increases the armor bonus of
+      your Devotion Aura by 8%.
+    - Improved Devotion Aura Talent Requires Paladin Increases the armor bonus of
+      your Devotion Aura by 16%.
+    - Improved Devotion Aura Talent Requires Paladin Increases the armor bonus of
+      your Devotion Aura by 24%.
+    - Improved Devotion Aura Talent Requires Paladin Increases the armor bonus of
+      your Devotion Aura by 32%.
+    - Improved Devotion Aura Talent Requires Paladin Increases the armor bonus of
+      your Devotion Aura by 40%.
+  - id: 20021
+    slug: redoubt
+    name: Redoubt
+    tab: 2
+    tier: 0
+    col: 2
+    icon: ability_defend
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    rankSpells:
+    - 20127
+    - 20130
+    - 20135
+    - 20136
+    - 20137
+    tooltip:
+    - 'Redoubt Talent Requires Paladin Damaging melee and ranged attacks against you
+      have a 10% chance to increase your chance to block by 6%. Lasts 10 sec or 5
+      blocks. (Proc chance: 10%)'
+    - 'Redoubt Talent Requires Paladin Damaging melee and ranged attacks against you
+      have a 10% chance to increase your chance to block by 12%. Lasts 10 sec or 5
+      blocks. (Proc chance: 10%)'
+    - 'Redoubt Talent Requires Paladin Damaging melee and ranged attacks against you
+      have a 10% chance to increase your chance to block by 18%. Lasts 10 sec or 5
+      blocks. (Proc chance: 10%)'
+    - 'Redoubt Talent Requires Paladin Damaging melee and ranged attacks against you
+      have a 10% chance to increase your chance to block by 24%. Lasts 10 sec or 5
+      blocks. (Proc chance: 10%)'
+    - 'Redoubt Talent Requires Paladin Damaging melee and ranged attacks against you
+      have a 10% chance to increase your chance to block by 30%. Lasts 10 sec or 5
+      blocks. (Proc chance: 10%)'
+  - id: 20022
+    slug: precision
+    name: Precision
+    tab: 2
+    tier: 1
+    col: 0
+    icon: ability_rogue_ambush
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 20189
+    - 20192
+    - 20193
+    tooltip:
+    - Precision Requires Paladin Increases your chance to hit with melee weapons and
+      spells by 1%.
+    - Precision Requires Paladin Increases your chance to hit with melee weapons and
+      spells by 2%.
+    - Precision Requires Paladin Increases your chance to hit with melee weapons and
+      spells by 3%.
+  - id: 20023
+    slug: guardian_s_favor
+    name: Guardian's Favor
+    tab: 2
+    tier: 1
+    col: 1
+    icon: spell_holy_sealofprotection
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 20174
+    - 20175
+    tooltip:
+    - Guardian's Favor Talent Requires Paladin Reduces the cooldown of your Blessing
+      of Protection by 60 sec and increases the duration of your Blessing of Freedom
+      by 2 sec.
+    - Guardian's Favor Talent Requires Paladin Reduces the cooldown of your Blessing
+      of Protection by 120 sec and increases the duration of your Blessing of Freedom
+      by 4 sec.
+  - id: 20024
+    slug: toughness
+    name: Toughness
+    tab: 2
+    tier: 1
+    col: 3
+    icon: spell_holy_devotion
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 20143
+    - 20144
+    - 20145
+    - 20146
+    - 20147
+    tooltip:
+    - Toughness Talent Requires Paladin Increases your armor value from items by 2%.
+    - Toughness Talent Requires Paladin Increases your armor value from items by 4%.
+    - Toughness Talent Requires Paladin Increases your armor value from items by 6%.
+    - Toughness Talent Requires Paladin Increases your armor value from items by 8%.
+    - Toughness Talent Requires Paladin Increases your armor value from items by 10%.
+  - id: 20025
+    slug: blessing_of_kings
+    name: Blessing of Kings
+    tab: 2
+    tier: 2
+    col: 0
+    icon: spell_magic_magearmor
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 20217
+    tooltip:
+    - Blessing of Kings Talent 6% of base mana 30 yd range Instant Requires Paladin
+      Places a Blessing on the friendly target, increasing total stats by 10% for
+      10 min. Players may only have one Blessing on them per Paladin at any one time.
+  - id: 20026
+    slug: improved_righteous_fury
+    name: Improved Righteous Fury
+    tab: 2
+    tier: 2
+    col: 1
+    icon: spell_holy_sealoffury
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 20468
+    - 20469
+    - 20470
+    tooltip:
+    - Improved Righteous Fury Talent Requires Paladin While Righteous Fury is active,
+      all damage taken is reduced by 2% and increases the amount of threat generated
+      by your Righteous Fury spell by 16%.
+    - Improved Righteous Fury Talent Requires Paladin While Righteous Fury is active,
+      all damage taken is reduced by 4% and increases the amount of threat generated
+      by your Righteous Fury spell by 33%.
+    - Improved Righteous Fury Talent Requires Paladin While Righteous Fury is active,
+      all damage taken is reduced by 6% and increases the amount of threat generated
+      by your Righteous Fury spell by 50%.
+  - id: 20027
+    slug: shield_specialization
+    name: Shield Specialization
+    tab: 2
+    tier: 2
+    col: 2
+    icon: inv_shield_06
+    maxRank: 3
+    prereqTalentId: 20021
+    prereqPoints: 10
+    rankSpells:
+    - 20148
+    - 20149
+    - 20150
+    tooltip:
+    - Shield Specialization Talent Requires Paladin Increases the amount of damage
+      absorbed by your shield by 10%.
+    - Shield Specialization Talent Requires Paladin Increases the amount of damage
+      absorbed by your shield by 20%.
+    - Shield Specialization Talent Requires Paladin Increases the amount of damage
+      absorbed by your shield by 30%.
+  - id: 20028
+    slug: anticipation
+    name: Anticipation
+    tab: 2
+    tier: 2
+    col: 3
+    icon: spell_magic_lesserinvisibilty
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 20096
+    - 20097
+    - 20098
+    - 20099
+    - 20100
+    tooltip:
+    - Anticipation Talent Requires Paladin Increases your Defense skill by 4.
+    - Anticipation Talent Requires Paladin Increases your Defense skill by 8.
+    - Anticipation Talent Requires Paladin Increases your Defense skill by 12.
+    - Anticipation Talent Requires Paladin Increases your Defense skill by 16.
+    - Anticipation Talent Requires Paladin Increases your Defense skill by 20.
+  - id: 20029
+    slug: stoicism
+    name: Stoicism
+    tab: 2
+    tier: 3
+    col: 0
+    icon: spell_holy_stoicism
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 15
+    rankSpells:
+    - 31844
+    - 31845
+    tooltip:
+    - Stoicism Talent Requires Paladin Increases your resistance to Stun effects by
+      an additional 5% and reduces the chance your spells will be dispelled by an
+      additional 15%.
+    - Stoicism Talent Requires Paladin Increases your resistance to Stun effects by
+      an additional 10% and reduces the chance your spells will be dispelled by an
+      additional 30%.
+  - id: 20030
+    slug: improved_hammer_of_justice
+    name: Improved Hammer of Justice
+    tab: 2
+    tier: 3
+    col: 1
+    icon: spell_holy_sealofmight
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    rankSpells:
+    - 20487
+    - 20488
+    - 20489
+    tooltip:
+    - Improved Hammer of Justice Talent Requires Paladin Decreases the cooldown of
+      your Hammer of Justice spell by 5 sec.
+    - Improved Hammer of Justice Talent Requires Paladin Decreases the cooldown of
+      your Hammer of Justice spell by 10 sec.
+    - Improved Hammer of Justice Talent Requires Paladin Decreases the cooldown of
+      your Hammer of Justice spell by 15 sec.
+  - id: 20031
+    slug: improved_concentration_aura
+    name: Improved Concentration Aura
+    tab: 2
+    tier: 3
+    col: 2
+    icon: spell_holy_mindsooth
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    rankSpells:
+    - 20254
+    - 20255
+    - 20256
+    tooltip:
+    - Improved Concentration Aura Talent Requires Paladin Increases the effect of
+      your Concentration Aura by an additional 5% and reduces the duration of any
+      Silence or Interrupt effect used against an affected group member by 10%. The
+      duration reduction does not stack with any other effects.
+    - Improved Concentration Aura Talent Requires Paladin Increases the effect of
+      your Concentration Aura by an additional 10% and reduces the duration of any
+      Silence or Interrupt effect used against an affected group member by 20%. The
+      duration reduction does not stack with any other effects.
+    - Improved Concentration Aura Talent Requires Paladin Increases the effect of
+      your Concentration Aura by an additional 15% and reduces the duration of any
+      Silence or Interrupt effect used against an affected group member by 30%. The
+      duration reduction does not stack with any other effects.
+  - id: 20032
+    slug: spell_warding
+    name: Spell Warding
+    tab: 2
+    tier: 4
+    col: 0
+    icon: spell_holy_improvedresistanceauras
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 20
+    rankSpells:
+    - 31846
+    - 31847
+    tooltip:
+    - Spell Warding Talent Requires Paladin All spell damage taken is reduced by 2%.
+    - Spell Warding Talent Requires Paladin All spell damage taken is reduced by 4%.
+  - id: 20033
+    slug: blessing_of_sanctuary
+    name: Blessing of Sanctuary
+    tab: 2
+    tier: 4
+    col: 1
+    icon: spell_nature_lightningshield
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 20
+    rankSpells:
+    - 20911
+    tooltip:
+    - Blessing of Sanctuary Talent 60 Mana 30 yd range Instant Requires Paladin Places
+      a Blessing on the friendly target, reducing damage dealt from all sources by
+      up to 10 for 10 min. In addition, when the target blocks a melee attack the
+      attacker will take 14 Holy damage. Players may only have one Blessing on them
+      per Paladin at any one time.
+  - id: 20034
+    slug: reckoning
+    name: Reckoning
+    tab: 2
+    tier: 4
+    col: 2
+    icon: spell_holy_blessingofstrength
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 20
+    rankSpells:
+    - 20177
+    - 20179
+    - 20181
+    - 20180
+    - 20182
+    tooltip:
+    - 'Reckoning Talent Requires Paladin Gives you a 2% chance after being hit by
+      any damaging attack that the next 4 weapon swings within 8 sec will generate
+      an additional attack. (Proc chance: 2%)'
+    - 'Reckoning Talent Requires Paladin Gives you a 4% chance after being hit by
+      any damaging attack that the next 4 weapon swings within 8 sec will generate
+      an additional attack. (Proc chance: 4%)'
+    - 'Reckoning Talent Requires Paladin Gives you a 6% chance after being hit by
+      any damaging attack that the next 4 weapon swings within 8 sec will generate
+      an additional attack. (Proc chance: 6%)'
+    - 'Reckoning Talent Requires Paladin Gives you a 8% chance after being hit by
+      any damaging attack that the next 4 weapon swings within 8 sec will generate
+      an additional attack. (Proc chance: 8%)'
+    - 'Reckoning Talent Requires Paladin Gives you a 10% chance after being hit by
+      any damaging attack that the next 4 weapon swings within 8 sec will generate
+      an additional attack. (Proc chance: 10%)'
+  - id: 20035
+    slug: sacred_duty
+    name: Sacred Duty
+    tab: 2
+    tier: 5
+    col: 0
+    icon: spell_holy_divineintervention
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 25
+    rankSpells:
+    - 31848
+    - 31849
+    tooltip:
+    - Sacred Duty Talent Requires Paladin Increases your total Stamina by 3%, reduces
+      the cooldown of your Divine Shield spell by 30 sec and reduces the attack speed
+      penalty by 50%.
+    - Sacred Duty Talent Requires Paladin Increases your total Stamina by 6%, reduces
+      the cooldown of your Divine Shield spell by 60 sec and reduces the attack speed
+      penalty by 100%.
+  - id: 20036
+    slug: one_handed_weapon_specialization
+    name: One-Handed Weapon Specialization
+    tab: 2
+    tier: 5
+    col: 2
+    icon: inv_sword_20
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 25
+    rankSpells:
+    - 20196
+    - 20197
+    - 20198
+    - 20199
+    - 20200
+    tooltip:
+    - One-Handed Weapon Specialization Talent Requires Paladin Increases all damage
+      you deal when a one-handed melee weapon is equipped by 1%.
+    - One-Handed Weapon Specialization Talent Requires Paladin Increases all damage
+      you deal when a one-handed melee weapon is equipped by 2%.
+    - One-Handed Weapon Specialization Talent Requires Paladin Increases all damage
+      you deal when a one-handed melee weapon is equipped by 3%.
+    - One-Handed Weapon Specialization Talent Requires Paladin Increases all damage
+      you deal when a one-handed melee weapon is equipped by 4%.
+    - One-Handed Weapon Specialization Talent Requires Paladin Requires One-Handed
+      Melee Weapon Increases all damage you deal when a one-handed melee weapon is
+      equipped by 5%.
+  - id: 20037
+    slug: improved_holy_shield
+    name: Improved Holy Shield
+    tab: 2
+    tier: 6
+    col: 0
+    icon: spell_holy_blessingofprotection
+    maxRank: 2
+    prereqTalentId: 20038
+    prereqPoints: 30
+    rankSpells:
+    - 41021
+    - 41026
+    tooltip:
+    - Improved Holy Shield Talent Requires Paladin Increases damage caused by your
+      Holy Shield by 10% and increases the number of charges of your Holy Shield by
+      2.
+    - Improved Holy Shield Talent Requires Paladin Increases damage caused by your
+      Holy Shield by 20% and increases the number of charges of your Holy Shield by
+      4.
+  - id: 20038
+    slug: holy_shield
+    name: Holy Shield
+    tab: 2
+    tier: 6
+    col: 1
+    icon: spell_holy_blessingofprotection
+    maxRank: 1
+    prereqTalentId: 20033
+    prereqPoints: 30
+    rankSpells:
+    - 20925
+    tooltip:
+    - Holy Shield Talent 135 Mana Instant 10 sec cooldown Requires Paladin Increases
+      chance to block by 30% for 10 sec and deals 59 Holy damage for each attack blocked
+      while active. Damage caused by Holy Shield causes 35% additional threat. Each
+      block expends a charge. 4 charges.
+  - id: 20039
+    slug: ardent_defender
+    name: Ardent Defender
+    tab: 2
+    tier: 6
+    col: 2
+    icon: spell_holy_ardentdefender
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 30
+    rankSpells:
+    - 31850
+    - 31851
+    - 31852
+    - 31853
+    - 31854
+    tooltip:
+    - Ardent Defender Talent Requires Paladin When you have less than 35% health,
+      all damage taken is reduced by 6%.
+    - Ardent Defender Talent Requires Paladin When you have less than 35% health,
+      all damage taken is reduced by 12%.
+    - Ardent Defender Talent Requires Paladin When you have less than 35% health,
+      all damage taken is reduced by 18%.
+    - Ardent Defender Talent Requires Paladin When you have less than 35% health,
+      all damage taken is reduced by 24%.
+    - Ardent Defender Talent Requires Paladin When you have less than 35% health,
+      all damage taken is reduced by 30%.
+  - id: 20040
+    slug: combat_expertise
+    name: Combat Expertise
+    tab: 2
+    tier: 7
+    col: 2
+    icon: spell_holy_weaponmastery
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 35
+    rankSpells:
+    - 31858
+    - 31859
+    - 31860
+    - 31861
+    - 31862
+    tooltip:
+    - Combat Expertise Talent Requires Paladin Increases your expertise by 1 and your
+      total Stamina by 2%.
+    - Combat Expertise Talent Requires Paladin Increases your expertise by 2 and your
+      total Stamina by 4%.
+    - Combat Expertise Talent Requires Paladin Increases your expertise by 3 and your
+      total Stamina by 6%.
+    - Combat Expertise Talent Requires Paladin Increases your expertise by 4 and your
+      total Stamina by 8%.
+    - Combat Expertise Talent Requires Paladin Increases your expertise by 5 and your
+      total Stamina by 10%.
+  - id: 20041
+    slug: avenger_s_shield
+    name: Avenger's Shield
+    tab: 2
+    tier: 8
+    col: 1
+    icon: spell_holy_avengersshield
+    maxRank: 1
+    prereqTalentId: 20038
+    prereqPoints: 40
+    rankSpells:
+    - 31935
+    tooltip:
+    - Avenger's Shield Talent 500 Mana 30 yd range 1 sec cast 30 sec cooldown Requires
+      Paladin Hurls a holy shield at the enemy, dealing 270 to 330 Holy damage, Dazing
+      them and then jumping to additional nearby enemies. Affects 3 total targets.
+      Lasts 6 sec.
+- key: 3
+  name: Retribution
+  background: PaladinCombat
+  nodes:
+  - id: 20042
+    slug: improved_blessing_of_might
+    name: Improved Blessing of Might
+    tab: 3
+    tier: 0
+    col: 1
+    icon: spell_holy_fistofjustice
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    rankSpells:
+    - 20042
+    - 20045
+    - 20046
+    - 20047
+    - 20048
+    tooltip:
+    - Improved Blessing of Might Talent Requires Paladin Increases the attack power
+      bonus of your Blessing of Might by 4%.
+    - Improved Blessing of Might Talent Requires Paladin Increases the attack power
+      bonus of your Blessing of Might by 8%.
+    - Improved Blessing of Might Talent Requires Paladin Increases the attack power
+      bonus of your Blessing of Might by 12%.
+    - Improved Blessing of Might Talent Requires Paladin Increases the attack power
+      bonus of your Blessing of Might by 16%.
+    - Improved Blessing of Might Talent Requires Paladin Increases the attack power
+      bonus of your Blessing of Might by 20%.
+  - id: 20043
+    slug: benediction
+    name: Benediction
+    tab: 3
+    tier: 0
+    col: 2
+    icon: spell_frost_windwalkon
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    rankSpells:
+    - 20101
+    - 20102
+    - 20103
+    - 20104
+    - 20105
+    tooltip:
+    - Benediction Talent Requires Paladin Reduces the mana cost of your Judgement
+      and Seal spells by 3%.
+    - Benediction Talent Requires Paladin Reduces the mana cost of your Judgement
+      and Seal spells by 6%.
+    - Benediction Talent Requires Paladin Reduces the mana cost of your Judgement
+      and Seal spells by 9%.
+    - Benediction Talent Requires Paladin Reduces the mana cost of your Judgement
+      and Seal spells by 12%.
+    - Benediction Talent Requires Paladin Reduces the mana cost of your Judgement
+      and Seal spells by 15%.
+  - id: 20044
+    slug: improved_judgement
+    name: Improved Judgement
+    tab: 3
+    tier: 1
+    col: 0
+    icon: spell_holy_righteousfury
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 25956
+    - 25957
+    tooltip:
+    - Improved Judgement Talent Requires Paladin Decreases the cooldown of your Judgement
+      spell by 1 sec.
+    - Improved Judgement Talent Requires Paladin Decreases the cooldown of your Judgement
+      spell by 2 sec.
+  - id: 20045
+    slug: improved_seal_of_the_crusader
+    name: Improved Seal of the Crusader
+    tab: 3
+    tier: 1
+    col: 1
+    icon: spell_holy_holysmite
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 20335
+    - 20336
+    - 20337
+    tooltip:
+    - Improved Seal of the Crusader Talent Requires Paladin In addition to the normal
+      effect, your Judgement of the Crusader spell will also increase the critical
+      strike chance of all attacks made against that target by an additional 1%.
+    - Improved Seal of the Crusader Talent Requires Paladin In addition to the normal
+      effect, your Judgement of the Crusader spell will also increase the critical
+      strike chance of all attacks made against that target by an additional 2%.
+    - Improved Seal of the Crusader Talent Requires Paladin In addition to the normal
+      effect, your Judgement of the Crusader spell will also increase the critical
+      strike chance of all attacks made against that target by an additional 3%.
+  - id: 20046
+    slug: deflection
+    name: Deflection
+    tab: 3
+    tier: 1
+    col: 2
+    icon: ability_parry
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 20060
+    - 20061
+    - 20062
+    - 20063
+    - 20064
+    tooltip:
+    - Deflection Talent Requires Paladin Increases your Parry chance by 1%.
+    - Deflection Talent Requires Paladin Increases your Parry chance by 2%.
+    - Deflection Talent Requires Paladin Increases your Parry chance by 3%.
+    - Deflection Talent Requires Paladin Increases your Parry chance by 4%.
+    - Deflection Talent Requires Paladin Increases your Parry chance by 5%.
+  - id: 20047
+    slug: vindication
+    name: Vindication
+    tab: 3
+    tier: 2
+    col: 0
+    icon: spell_holy_vindication
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 9452
+    - 26016
+    - 26021
+    tooltip:
+    - Vindication Talent Requires Paladin Gives the Paladin's damaging melee attacks
+      a chance to reduce the target's attributes by 5% for 15 sec.
+    - Vindication Talent Requires Paladin Gives the Paladin's damaging melee attacks
+      a chance to reduce the target's attributes by 10% for 15 sec.
+    - Vindication Talent Requires Paladin Gives the Paladin's damaging melee attacks
+      a chance to reduce the target's attributes by 15% for 15 sec.
+  - id: 20048
+    slug: conviction
+    name: Conviction
+    tab: 3
+    tier: 2
+    col: 1
+    icon: spell_holy_retributionaura
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 20117
+    - 20118
+    - 20119
+    - 20120
+    - 20121
+    tooltip:
+    - Conviction Talent Requires Paladin Requires Melee Weapon Increases your chance
+      to get a critical strike with melee weapons by 1%.
+    - Conviction Talent Requires Paladin Requires Melee Weapon Increases your chance
+      to get a critical strike with melee weapons by 2%.
+    - Conviction Talent Requires Paladin Requires Melee Weapon Increases your chance
+      to get a critical strike with melee weapons by 3%.
+    - Conviction Talent Requires Paladin Requires Melee Weapon Increases your chance
+      to get a critical strike with melee weapons by 4%.
+    - Conviction Talent Requires Paladin Requires Melee Weapon Increases your chance
+      to get a critical strike with melee weapons by 5%.
+  - id: 20049
+    slug: seal_of_command
+    name: Seal of Command
+    tab: 3
+    tier: 2
+    col: 2
+    icon: ability_warrior_innerrage
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 20375
+    tooltip:
+    - Seal of Command Level 70 Talent 65 Mana Instant Requires Paladin Gives the Paladin
+      a chance to deal additional Holy damage equal to 70% of normal weapon damage.
+      Only one Seal can be active on the Paladin at any one time. Lasts 30 sec. Unleashing
+      this Seal's energy will judge an enemy, instantly causing 68 to 73 Holy damage,
+      137 to 146 if the target is stunned or incapacitated. (1s cooldown)
+  - id: 20050
+    slug: pursuit_of_justice
+    name: Pursuit of Justice
+    tab: 3
+    tier: 2
+    col: 3
+    icon: spell_holy_persuitofjustice
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 26022
+    - 26023
+    - 44414
+    tooltip:
+    - Pursuit of Justice Talent Requires Paladin Reduces the chance you'll be hit
+      by spells by 1% and increases movement and mounted movement speed by 5%. This
+      does not stack with other movement speed increasing effects.
+    - Pursuit of Justice Talent Requires Paladin Reduces the chance you'll be hit
+      by spells by 2% and increases movement and mounted movement speed by 10%. This
+      does not stack with other movement speed increasing effects.
+    - Pursuit of Justice Talent Requires Paladin Reduces the chance you'll be hit
+      by spells by 3% and increases movement and mounted movement speed by 15%. This
+      does not stack with other movement speed increasing effects.
+  - id: 20051
+    slug: eye_for_an_eye
+    name: Eye for an Eye
+    tab: 3
+    tier: 3
+    col: 0
+    icon: spell_holy_eyeforaneye
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 15
+    rankSpells:
+    - 9799
+    - 25988
+    tooltip:
+    - Eye for an Eye Talent Requires Paladin All spell criticals against you cause
+      15% of the damage taken to the caster as well. The damage caused by Eye for
+      an Eye will not exceed 50% of the Paladin's total health.
+    - Eye for an Eye Talent Requires Paladin All spell criticals against you cause
+      30% of the damage taken to the caster as well. The damage caused by Eye for
+      an Eye will not exceed 50% of the Paladin's total health.
+  - id: 20052
+    slug: improved_retribution_aura
+    name: Improved Retribution Aura
+    tab: 3
+    tier: 3
+    col: 2
+    icon: spell_holy_auraoflight
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 15
+    rankSpells:
+    - 20091
+    - 20092
+    tooltip:
+    - Improved Retribution Aura Talent Requires Paladin Increases the damage done
+      by your Retribution Aura by 25%.
+    - Improved Retribution Aura Talent Requires Paladin Increases the damage done
+      by your Retribution Aura by 50%.
+  - id: 20053
+    slug: crusade
+    name: Crusade
+    tab: 3
+    tier: 3
+    col: 3
+    icon: spell_holy_crusade
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    rankSpells:
+    - 31866
+    - 31867
+    - 31868
+    tooltip:
+    - Crusade Talent Requires Paladin Increases all damage caused against Humanoids,
+      Demons, Undead and Elementals by 1%.
+    - Crusade Talent Requires Paladin Increases all damage caused against Humanoids,
+      Demons, Undead and Elementals by 2%.
+    - Crusade Talent Requires Paladin Increases all damage caused against Humanoids,
+      Demons, Undead and Elementals by 3%.
+  - id: 20054
+    slug: two_handed_weapon_specialization
+    name: Two-Handed Weapon Specialization
+    tab: 3
+    tier: 4
+    col: 0
+    icon: inv_hammer_04
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 20
+    rankSpells:
+    - 20111
+    - 20112
+    - 20113
+    tooltip:
+    - Two-Handed Weapon Specialization Talent Requires Paladin Increases the damage
+      you deal with two-handed melee weapons by 2%.
+    - Two-Handed Weapon Specialization Talent Requires Paladin Increases the damage
+      you deal with two-handed melee weapons by 4%.
+    - Two-Handed Weapon Specialization Talent Requires Paladin Increases the damage
+      you deal with two-handed melee weapons by 6%.
+  - id: 20055
+    slug: sanctity_aura
+    name: Sanctity Aura
+    tab: 3
+    tier: 4
+    col: 2
+    icon: spell_holy_mindvision
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 20
+    rankSpells:
+    - 20218
+    tooltip:
+    - Sanctity Aura Talent Instant Requires Paladin Increases Holy damage done by
+      party members within 30 yards by 10%. Players may only have one Aura on them
+      per Paladin at any one time.
+  - id: 20056
+    slug: improved_sanctity_aura
+    name: Improved Sanctity Aura
+    tab: 3
+    tier: 4
+    col: 3
+    icon: spell_holy_mindvision
+    maxRank: 2
+    prereqTalentId: 20055
+    prereqPoints: 20
+    rankSpells:
+    - 31869
+    - 31870
+    tooltip:
+    - Improved Sanctity Aura Talent Requires Paladin The amount of damage caused by
+      targets affected by Sanctity Aura is increased by 1%.
+    - Improved Sanctity Aura Talent Requires Paladin The amount of damage caused by
+      targets affected by Sanctity Aura is increased by 2%.
+  - id: 20057
+    slug: vengeance
+    name: Vengeance
+    tab: 3
+    tier: 5
+    col: 1
+    icon: ability_racial_avatar
+    maxRank: 5
+    prereqTalentId: 20048
+    prereqPoints: 25
+    rankSpells:
+    - 20049
+    - 20056
+    - 20057
+    - 20058
+    - 20059
+    tooltip:
+    - Vengeance Talent Requires Paladin Gives you a 1% bonus to Physical and Holy
+      damage you deal for 30 sec after dealing a critical strike from a weapon swing,
+      spell, or ability. This effect stacks up to 3 times.
+    - Vengeance Talent Requires Paladin Gives you a 2% bonus to Physical and Holy
+      damage you deal for 30 sec after dealing a critical strike from a weapon swing,
+      spell, or ability. This effect stacks up to 3 times.
+    - Vengeance Talent Requires Paladin Gives you a 3% bonus to Physical and Holy
+      damage you deal for 30 sec after dealing a critical strike from a weapon swing,
+      spell, or ability. This effect stacks up to 3 times.
+    - Vengeance Talent Requires Paladin Gives you a 4% bonus to Physical and Holy
+      damage you deal for 30 sec after dealing a critical strike from a weapon swing,
+      spell, or ability. This effect stacks up to 3 times.
+    - Vengeance Talent Requires Paladin Gives you a 5% bonus to Physical and Holy
+      damage you deal for 30 sec after dealing a critical strike from a weapon swing,
+      spell, or ability. This effect stacks up to 3 times.
+  - id: 20058
+    slug: sanctified_judgement
+    name: Sanctified Judgement
+    tab: 3
+    tier: 5
+    col: 2
+    icon: spell_holy_righteousfury
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 25
+    rankSpells:
+    - 31876
+    - 31877
+    - 31878
+    tooltip:
+    - Sanctified Judgement Talent Requires Paladin Gives your Judgement spell a 33%
+      chance to return 80% of the mana cost of the judged seal.
+    - Sanctified Judgement Talent Requires Paladin Gives your Judgement spell a 66%
+      chance to return 80% of the mana cost of the judged seal.
+    - Sanctified Judgement Talent Requires Paladin Gives your Judgement spell a 100%
+      chance to return 80% of the mana cost of the judged seal.
+  - id: 20059
+    slug: sanctified_seals
+    name: Sanctified Seals
+    tab: 3
+    tier: 6
+    col: 0
+    icon: spell_holy_holysmite
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 30
+    rankSpells:
+    - 32043
+    - 35396
+    - 35397
+    tooltip:
+    - Sanctified Seals Talent Requires Paladin Increases your chance to critically
+      hit with all spells and melee attacks by 1% and reduces the chance your Seals
+      will be dispelled by 33%.
+    - Sanctified Seals Talent Requires Paladin Increases your chance to critically
+      hit with all spells and melee attacks by 2% and reduces the chance your Seals
+      will be dispelled by 66%.
+    - Sanctified Seals Talent Requires Paladin Increases your chance to critically
+      hit with all spells and melee attacks by 3% and reduces the chance your Seals
+      will be dispelled by 100%.
+  - id: 20060
+    slug: repentance
+    name: Repentance
+    tab: 3
+    tier: 6
+    col: 1
+    icon: spell_holy_prayerofhealing
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 30
+    rankSpells:
+    - 20066
+    tooltip:
+    - Repentance Talent 60 Mana 20 yd range Instant 1 min cooldown Requires Paladin
+      Puts the enemy target in a state of meditation, incapacitating them for up to
+      6 sec. Any damage caused will awaken the target. Only works against Humanoids.
+  - id: 20061
+    slug: divine_purpose
+    name: Divine Purpose
+    tab: 3
+    tier: 6
+    col: 2
+    icon: spell_holy_divinepurpose
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 30
+    rankSpells:
+    - 31871
+    - 31872
+    - 31873
+    tooltip:
+    - Divine Purpose Talent Requires Paladin Melee and ranged critical strikes against
+      you cause 4% less damage.
+    - Divine Purpose Talent Requires Paladin Melee and ranged critical strikes against
+      you cause 7% less damage.
+    - Divine Purpose Talent Requires Paladin Melee and ranged critical strikes against
+      you cause 10% less damage.
+  - id: 20062
+    slug: fanaticism
+    name: Fanaticism
+    tab: 3
+    tier: 7
+    col: 1
+    icon: spell_holy_fanaticism
+    maxRank: 5
+    prereqTalentId: 20060
+    prereqPoints: 35
+    rankSpells:
+    - 31879
+    - 31880
+    - 31881
+    - 31882
+    - 31883
+    tooltip:
+    - Fanaticism Talent Requires Paladin Increases the critical strike chance of all
+      Judgements capable of a critical hit by 3% and reduces threat caused by all
+      actions by 6% except when under the effects of Righteous Fury.
+    - Fanaticism Talent Requires Paladin Increases the critical strike chance of all
+      Judgements capable of a critical hit by 6% and reduces threat caused by all
+      actions by 12% except when under the effects of Righteous Fury.
+    - Fanaticism Talent Requires Paladin Increases the critical strike chance of all
+      Judgements capable of a critical hit by 9% and reduces threat caused by all
+      actions by 18% except when under the effects of Righteous Fury.
+    - Fanaticism Talent Requires Paladin Increases the critical strike chance of all
+      Judgements capable of a critical hit by 12% and reduces threat caused by all
+      actions by 24% except when under the effects of Righteous Fury.
+    - Fanaticism Talent Requires Paladin Increases the critical strike chance of all
+      Judgements capable of a critical hit by 15% and reduces threat caused by all
+      actions by 30% except when under the effects of Righteous Fury.
+  - id: 20063
+    slug: crusader_strike
+    name: Crusader Strike
+    tab: 3
+    tier: 8
+    col: 1
+    icon: spell_holy_crusaderstrike
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 40
+    rankSpells:
+    - 35395
+    tooltip:
+    - Crusader Strike Talent 8% of base mana Melee Range Instant 6 sec cooldown Requires
+      Paladin Requires Melee Weapon An instant strike that causes 110% weapon damage
+      and refreshes all Judgements on the target.

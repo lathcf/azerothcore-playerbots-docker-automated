@@ -20,6 +20,7 @@
 #include "Field.h"
 #include "PlayerbotAI.h"
 #include "PlayerbotFactory.h"
+#include "EraTalentBots.h"   // era-managed bots get era builds at sync (mod-era-talents)
 #include "Tokenize.h"
 #include <algorithm>
 #include <cctype>
@@ -382,7 +383,9 @@ bool ArenaRosterCommand::HandleSync(ChatHandler* handler)
         PlayerbotFactory factory(bot, master->GetLevel(), ITEM_QUALITY_EPIC, 0);
         factory.Randomize(false);
         // 2) Force the pinned PvP spec (0-based tab), then re-derive strategies from it.
-        PlayerbotFactory::InitTalentsBySpecNo(bot, p.specTab, true);
+        //    Era-managed bots get an era build (see RaidRosterCommand SyncBotToSpec step 2).
+        if (!EraTalentBots::FactoryReconcile(bot, p.specTab))
+            PlayerbotFactory::InitTalentsBySpecNo(bot, p.specTab, true);
         if (PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot))
             botAI->ResetStrategies(false);
         // 3) Season PvP set replaces the factory gearing. AFTER the talent force on purpose:

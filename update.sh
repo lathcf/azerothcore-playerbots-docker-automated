@@ -78,13 +78,13 @@ for moddir in "$AC_DIR"/modules/*/; do
   [[ -d "$moddir/.git" ]] || continue
   update_repo "$moddir" "$(basename "$moddir")"
 done
-# Patches must apply AFTER the module updates: several (0002+) target files inside
+# Patches must apply AFTER the module updates: several (0003+) target files inside
 # modules/mod-playerbots, and update_repo's reset --hard would wipe hunks applied earlier.
 apply_patches
 
 # Re-sync in-repo modules so source edits land before rebuild (same list as setup.sh's
 # LOCAL_MODULES — a module missing here rebuilds from a stale copy after every update).
-for lm in mod-playerbot-chatter mod-raid-roster mod-ahbot-price mod-wintergrasp-bots mod-arena-roster; do
+for lm in mod-playerbot-chatter mod-raid-roster mod-ahbot-price mod-wintergrasp-bots mod-arena-roster mod-era-talents; do
   if [[ -d "$ROOT/modules/$lm" ]]; then
     echo "==> Syncing local module: $lm"
     rm -rf "$AC_DIR/modules/$lm"

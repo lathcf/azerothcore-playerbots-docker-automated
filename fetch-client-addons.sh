@@ -95,6 +95,44 @@ if [[ -n "$WDM_LANG" ]]; then
     -o "$DATADIR/patch-${WDM_LANG}-M.MPQ"
 fi
 
+# --- Client DATA patch (NOT an addon): mod-individual-progression patch-V ------
+# The CLIENT half of IP's era mana-cost change: players drop patch-V.mpq into
+#   World of Warcraft/Data/            (NOT Interface/AddOns/)
+# The SERVER half (Spell.dbc + profession DBCs) is overlaid by setup.sh, not here.
+# dbc.7z's only client files are cosmetic (patch-J/U) and are skipped by choice.
+if [[ "${IP_CLIENT_PATCH_V:-1}" == "1" ]]; then
+  if command -v 7z >/dev/null; then
+    DATADIR="$DEST/_data-patches"; mkdir -p "$DATADIR"
+    IPTMP="$(mktemp -d)"
+    git clone --depth 1 https://github.com/ZhengPeiRu21/mod-individual-progression.git "$IPTMP/ip" >/dev/null 2>&1
+    echo "==> Staging IP client patch-V.mpq (era mana costs)"
+    7z x -y -o"$IPTMP/v" "$IPTMP/ip/optional/patch-V.7z" >/dev/null
+    find "$IPTMP/v" -type f -iname 'patch-V.mpq' -exec cp -f {} "$DATADIR/patch-V.mpq" \;
+    rm -rf "$IPTMP"
+
+    # mod-era-talents ships a few CUSTOM visible client spells (the Improved Blizzard "Chilled"
+    # debuff, etc.) the stock client can't render. Merge those rows INTO this same patch-V.mpq —
+    # patch-V loads after our own patch-4 slot and its Spell.dbc would otherwise override ours, so
+    # coexisting inside one file is the only reliable option. Needs client-patch/mpqpack+mpqread
+    # (prebuilt, or client-patch/build-mpqpack.sh + StormLib); degrade gracefully if absent.
+    if [[ -x "$ROOT/client-patch/mpqpack" && -x "$ROOT/client-patch/mpqread" ]]; then
+      echo "==> Merging era-talent client spells into patch-V.mpq"
+      MERGED="$(mktemp -u).mpq"
+      if bash "$ROOT/client-patch/merge-into-patch.sh" "$DATADIR/patch-V.mpq" "$MERGED" >/dev/null 2>&1; then
+        mv -f "$MERGED" "$DATADIR/patch-V.mpq"
+      else
+        rm -f "$MERGED"
+        echo "NOTE: era-talent client-spell merge failed; patch-V.mpq staged without custom icons"
+      fi
+    else
+      echo "NOTE: client-patch/mpqpack+mpqread not built — patch-V.mpq staged WITHOUT era-talent"
+      echo "      custom debuff icons. Run client-patch/build-mpqpack.sh then re-run this script."
+    fi
+  else
+    echo "NOTE: '7z' (p7zip) needed to stage IP patch-V.mpq; skipping"
+  fi
+fi
+
 # --- Build the ready-to-unzip addons bundle ---------------------------------
 # Produce client-addons.zip at the repo root, pre-structured so a player unzips
 # it directly into their World of Warcraft base folder:
@@ -139,6 +177,12 @@ if compgen -G "$DEST/_data-patches/patch-*-M.MPQ" >/dev/null 2>&1; then
   done
 fi
 
+# IP client patch-V goes at Data/patch-V.mpq (base Data dir, not a <lang> subdir).
+if [[ -f "$DEST/_data-patches/patch-V.mpq" ]]; then
+  mkdir -p "$BUNDLE/Data"
+  cp -a "$DEST/_data-patches/patch-V.mpq" "$BUNDLE/Data/patch-V.mpq"
+fi
+
 rm -f "$ROOT/client-addons.zip"
 # Only zip the trees that exist: Data is absent when WDM_LANG="" skipped the patch.
 targets=(Interface)
@@ -173,6 +217,9 @@ cat <<EOF
    The .MPQ staged in $DEST/_data-patches/ does NOT go in AddOns/. Copy it to:
         World of Warcraft/Data/<lang>/        (e.g. Data/enUS/patch-enUS-M.MPQ)
    This is what makes the default M map show dungeon maps + your position.
+
+   IP era mana costs (patch-V): also copy patch-V.mpq from $DEST/_data-patches/ into
+   World of Warcraft/Data/. (The matching server-side DBCs are applied on the server by setup.sh.)
 
  What they do:
    - MultiBot / PlayerBotManager : bot management. MultiBot opens via its

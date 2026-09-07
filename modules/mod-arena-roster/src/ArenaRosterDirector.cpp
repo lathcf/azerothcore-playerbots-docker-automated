@@ -21,6 +21,7 @@
 #include "Player.h"
 #include "PlayerbotAI.h"
 #include "PlayerbotFactory.h"
+#include "EraTalentBots.h"   // era-managed bots get era builds at sync (mod-era-talents)
 #include "Playerbots.h"
 #include "QueryResult.h"
 #include "RandomPlayerbotMgr.h"
@@ -828,7 +829,10 @@ void ArenaRosterDirector::PhasePrepareBots(uint32 elapsedMs)
         // 4) Season set AFTER the talent force — the gear scorer weights by active talents.
         PlayerbotFactory factory(bot, 80, ITEM_QUALITY_EPIC, 0);
         factory.Randomize(false);
-        PlayerbotFactory::InitTalentsBySpecNo(bot, row.specTab, true);
+        // Era-managed bots get an era build (see RaidRosterCommand SyncBotToSpec step 2).
+        // Ladder bots are pinned at 80 -> WotLK band -> this is false and native runs.
+        if (!EraTalentBots::FactoryReconcile(bot, row.specTab))
+            PlayerbotFactory::InitTalentsBySpecNo(bot, row.specTab, true);
         if (PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot))
             botAI->ResetStrategies(false);
         if (!ArenaRosterGear::EquipSeason(bot, row.specTab, TIER_SEASON[_tierInProgress - 1]))

@@ -1,0 +1,1969 @@
+era: 0
+class: 3
+eraName: Vanilla
+className: HUNTER
+ref: ../_ref/hunter-spells.yaml
+petBuffBase: 929000
+# Bind the core Bestial Wrath CheckCast (player + living pet required; spell_hunter.cpp:1306,
+# stock-bound to 19574) to our Vanilla clone 932967 so a petless/dead-pet cast is refused
+# instead of burning 12% mana + the 2 min cooldown on nothing.
+# Bind the module's era_wyvern_sting (EraTalentProcScripts.cpp) to the Wyvern Sting sleep clone
+# 932965: on sleep removal it casts the era DoT 932966. The CORE spell_hun_wyvern_sting can't be
+# reused here — it resolves its DoT by rank chain (GetSpellWithRank(24131, GetRank())), and a
+# chainless clone reads rank 1 -> the stock WotLK 6s DoT.
+scriptBindings:
+- { spell: 932967, script: spell_hun_bestial_wrath }
+- { spell: 932965, script: era_wyvern_sting }
+# Vanilla Scorpid Sting Str/Agi clones (node 18328 Improved Scorpid Sting adds the stamina). The
+# AuraScript era_hunter_scorpid_sting sets each clone's Effect_3 (MOD_STAT Stamina) to -pct% of the
+# Strength reduced, where pct = the Improved Scorpid Sting marker (misc 16) on the casting hunter.
+- { spell: 932300, script: era_hunter_scorpid_sting }
+- { spell: 932301, script: era_hunter_scorpid_sting }
+- { spell: 932302, script: era_hunter_scorpid_sting }
+- { spell: 932303, script: era_hunter_scorpid_sting }
+helpers:
+# === Vanilla Scorpid Sting (baseline version-swap) + Improved Scorpid Sting (node 18328). ==========
+# Stock 3043 (the only Scorpid Sting rank a WotLK hunter trains) is the WotLK REWORK: a flat -hit-chance
+# debuff (aura 54 MOD_HIT_CHANCE). Vanilla Scorpid Sting reduced the target's STRENGTH and AGILITY (aura
+# 29 MOD_STAT) across 4 ranks — the higher ranks (14275-14277) were DELETED from the 3.3.5a DBC, leaving
+# only the reworked 3043. So the era version reconstructs the 4-rank Str/Agi chain as custom clones and
+# version-swaps it in for Vanilla hunters (stock 3043 stays for WotLK). VALUES are the AUTHORITATIVE
+# 1.12.1 client Spell.dbc (era-wow/tools/vanilla-extract/Spell.dbc, ids 3043/14275/14276/14277):
+# Str=Agi -21/-30/-46/-69, mana 70/90/125/165, levels 22/32/42/52, 20s (durIdx 18).
+#
+# Each clone templates 3043 (inherit family 9 + the Scorpid-Sting family flag = sting mutual-exclusion,
+# rangeIndex 114, instant cast, visual) and overrides the 3 effects: E1 MOD_STAT Str, E2 MOD_STAT Agi,
+# E3 MOD_STAT Stamina (misc 2, base 0 — the Improved-only stamina, set by era_hunter_scorpid_sting).
+# TRAINING: custom chain on the hunter trainer (Id 7) gated on marker 932304 ("Vanilla Hunter"); stock
+# 3043 re-gated on 932305 ("WotLK Hunter") — 2026_08_24_12 migration. ReconcileBaselineSpells grants the
+# era-matching marker + strips the wrong-era Scorpid Sting from the spellbook.
+- id: 932300               # Scorpid Sting Rank 1 (L22, -21 Str/Agi)
+  name: Scorpid Sting
+  template: 3043
+  powerCost: 70
+  effects:
+  - { effect: 6, aura: 29, basePoints: -21, misc: 0, targetA: 6 }   # MOD_STAT Strength
+  - { effect: 6, aura: 29, basePoints: -21, misc: 1, targetA: 6 }   # MOD_STAT Agility
+  - { effect: 6, aura: 29, basePoints: 0,   misc: 2, targetA: 6 }   # MOD_STAT Stamina (Improved-only; era_hunter_scorpid_sting sets it)
+  client:
+    name: Scorpid Sting
+    rank: 1
+    icon: 256              # stock Scorpid Sting SpellIconID (3043)
+    skillLine: 163         # Marksmanship tab (SkillLineAbility 3043 -> 163)
+    description: "Stings the target, reducing its Strength and Agility by 21 for 20 sec.  Only one Sting per Hunter can be active on any one target."
+    auraDescription: "Strength and Agility reduced by 21."
+- id: 932301               # Scorpid Sting Rank 2 (L32, -30)
+  name: Scorpid Sting
+  template: 3043
+  powerCost: 90
+  effects:
+  - { effect: 6, aura: 29, basePoints: -30, misc: 0, targetA: 6 }
+  - { effect: 6, aura: 29, basePoints: -30, misc: 1, targetA: 6 }
+  - { effect: 6, aura: 29, basePoints: 0,   misc: 2, targetA: 6 }
+  client:
+    name: Scorpid Sting
+    rank: 2
+    icon: 256
+    skillLine: 163
+    description: "Stings the target, reducing its Strength and Agility by 30 for 20 sec.  Only one Sting per Hunter can be active on any one target."
+    auraDescription: "Strength and Agility reduced by 30."
+- id: 932302               # Scorpid Sting Rank 3 (L42, -46)
+  name: Scorpid Sting
+  template: 3043
+  powerCost: 125
+  effects:
+  - { effect: 6, aura: 29, basePoints: -46, misc: 0, targetA: 6 }
+  - { effect: 6, aura: 29, basePoints: -46, misc: 1, targetA: 6 }
+  - { effect: 6, aura: 29, basePoints: 0,   misc: 2, targetA: 6 }
+  client:
+    name: Scorpid Sting
+    rank: 3
+    icon: 256
+    skillLine: 163
+    description: "Stings the target, reducing its Strength and Agility by 46 for 20 sec.  Only one Sting per Hunter can be active on any one target."
+    auraDescription: "Strength and Agility reduced by 46."
+- id: 932303               # Scorpid Sting Rank 4 (L52, -69)
+  name: Scorpid Sting
+  template: 3043
+  powerCost: 165
+  effects:
+  - { effect: 6, aura: 29, basePoints: -69, misc: 0, targetA: 6 }
+  - { effect: 6, aura: 29, basePoints: -69, misc: 1, targetA: 6 }
+  - { effect: 6, aura: 29, basePoints: 0,   misc: 2, targetA: 6 }
+  client:
+    name: Scorpid Sting
+    rank: 4
+    icon: 256
+    skillLine: 163
+    description: "Stings the target, reducing its Strength and Agility by 69 for 20 sec.  Only one Sting per Hunter can be active on any one target."
+    auraDescription: "Strength and Agility reduced by 69."
+# Era presence markers — hidden passives with a CLIENT block (name only, no skillLine -> resolvable for
+# the trainer "Requires ..." line but never in the spellbook). 932304 gates the custom Vanilla chain;
+# 932305 re-gates the stock 3043. ReconcileBaselineSpells (CLASS_HUNTER) grants exactly one per era.
+- id: 932304
+  name: "Era: Vanilla Hunter"
+  attributes: 262608       # PASSIVE + hidden -> self-applies on learn
+  effects:
+  - { effect: 6, aura: 4, basePoints: 0, misc: 0, targetA: 1 }
+  client:
+    name: "Vanilla Hunter"
+    icon: 1
+- id: 932305
+  name: "Era: WotLK Hunter"
+  attributes: 262608
+  effects:
+  - { effect: 6, aura: 4, basePoints: 0, misc: 0, targetA: 1 }
+  client:
+    name: "WotLK Hunter"
+    icon: 1
+# --- Bestial Wrath (node 18316) — Vanilla 18s / 12% base mana clone. ----------------------------
+# Stock WotLK 19574 (dump 2026-08-17): aura 61 MOD_SCALE +50 / aura 79 MOD_DAMAGE_PERCENT_DONE +50
+# misc 127 / aura 77 MECHANIC_IMMUNITY misc 12 (stun), all targetA 5 (pet); RangeIndex 6 (100 yd),
+# instant, RecoveryTime 120000, ManaCostPct 10, DurationIndex 1 = 10s. Classic 19574
+# (wowhead/classic/spell=19574): SAME effects but 18 sec and 12% of base mana — only duration+cost
+# diverge, so a template clone overriding exactly those two fields is the faithful era version.
+# durationIndex 85 = 18000 ms (SpellDuration.dbc, parsed 2026-08-17: (85, 18000, 0, 18000)).
+# manaCostPct rides the new _HELPER_SCALARS entry (gen_era_talents.py, this task).
+- id: 932967
+  name: Bestial Wrath
+  template: 19574          # CLONE stock Bestial Wrath — inherits visual/range/CD/attrs
+  spellFixAck: >-
+    NOT an ack — BOTH lost corrections are REPRODUCED IN DATA below. (a)
+    SpellInfoCorrections.cpp:4071 ORs SPELL_ATTR4_AURA_EXPIRES_OFFLINE (0x4) into 19574; template
+    DBC AttributesEx4 is 0 (dump 2026-09-06), so the post-fix value is 4 -> `attributesEx4: 4`.
+    (b) :5199-5206 ORs SPELL_ATTR2_NO_SCHOOL_IMMUNITIES (0x04000000) into 42292 / 59752 / 19574 /
+    34471; template DBC AttributesEx2 is 0, so the post-fix value is 67108864 -> `attributesEx2:
+    67108864`. Generator keys exist for both (`attributesEx2` / `attributesEx4` are in
+    gen_era_talents.py's _HELPER_SCALARS); the earlier note claiming otherwise was wrong.
+  durationIndex: 85        # 18 sec (Vanilla; stock index 1 = 10 sec)
+  manaCostPct: 12          # 12% of base mana (Vanilla; stock 10%)
+  attributesEx2: 67108864  # SPELL_ATTR2_NO_SCHOOL_IMMUNITIES — post-fix value (template 0 | bit)
+  attributesEx4: 4         # SPELL_ATTR4_AURA_EXPIRES_OFFLINE — post-fix value (template 0 | bit)
+  effects:                 # 19574's own three effects, re-authored verbatim (lint requires
+                           # explicit effects on template clones; dump 2026-08-17, stock
+                           # convention basePoints X + dieSides 1 -> value X+1)
+  - { effect: 6, aura: 61, basePoints: 49, dieSides: 1, targetA: 5 }             # MOD_SCALE +50 (pet)
+  - { effect: 6, aura: 79, basePoints: 49, dieSides: 1, misc: 127, targetA: 5 }  # MOD_DAMAGE_PERCENT_DONE +50 all schools
+  - { effect: 6, aura: 77, basePoints: -1, dieSides: 1, misc: 12, targetA: 5 }   # MECHANIC_IMMUNITY (stun)
+  client:
+    name: Bestial Wrath
+    icon: 1680             # stock 19574 SpellIconID (dump 2026-08-17)
+    description: "Send your pet into a rage causing 50% additional damage for 18 sec. While enraged, the beast does not feel pity or remorse or fear and it cannot be stopped unless killed."
+    auraDescription: "Enraged: damage increased by 50%. Cannot be stopped unless killed."
+    skillLine: 50          # Beast Mastery tab (stock 19574's SkillLine)
+# --- Spirit Bond pet-side carriers (node 18312, petBuffIds). ------------------------------------
+# Stock WotLK pet auras 19579/24529 (dump 2026-08-17): Effect_1 = 119 APPLY_AREA_AURA_PET, aura 20
+# OBS_MOD_HEALTH 1%/2% per EffectAuraPeriod 10000, radius index 12 (100 yd), targetA 1 (pet
+# self-cast via the stock spell_pet_auras rows 19578->19579 / 20895->24529), DurationIndex 21
+# (permanent, dies with the pet); PLUS Effect_2 = 119 aura 118 MOD_HEALING_PCT +5%/+10% — the
+# WotLK healing-received half. Classic 24529 (wowhead/classic/spell=24529): the regen effect ONLY,
+# no healing bonus -> diverged, so these clones keep effect 1's exact encoding (10s tick period
+# INHERITED from the template — helpers have no amplitude key) and zero out effect 2/3
+# (templated helpers write all 3 effect slots, so the stock healing half cannot leak through).
+# The 119 area aura radiates to the aura holder (pet) + its owner: both hunter and pet regen.
+- id: 932968
+  name: Spirit Bond
+  template: 19579          # CLONE stock rank-1 pet aura — inherits period/attrs/duration/visual
+  effects:
+  - effect: 119            # SPELL_EFFECT_APPLY_AREA_AURA_PET — fills pet + owner
+    aura: 20               # SPELL_AURA_OBS_MOD_HEALTH (% of total health per tick)
+    basePoints: 1          # 1% (Vanilla rank 1); 10s period inherited from 19579
+    targetA: 1             # TARGET_UNIT_CASTER (the pet self-casts; stock encoding)
+    radius: 12             # EffectRadiusIndex 12 = 100 yd (stock encoding)
+  client:
+    name: Spirit Bond
+    icon: 960              # stock Spirit Bond SpellIconID (dump 2026-08-17)
+    auraDescription: "You and your pet will regenerate 1% of total health every 10 sec."
+- id: 932969
+  name: Spirit Bond
+  template: 19579          # rank 2 clones the SAME template (24529 differs only in basePoints)
+  effects:
+  - effect: 119
+    aura: 20
+    basePoints: 2          # 2% (Vanilla rank 2)
+    targetA: 1
+    radius: 12
+  client:
+    name: Spirit Bond
+    icon: 960
+    auraDescription: "You and your pet will regenerate 2% of total health every 10 sec."
+# --- Ferocity pet-side carriers (node 18311, petBuffIds). ---------------------------------------
+# The stock crit carrier "Tamed Pet Passive 06" 19591 (dump 2026-08-17) has TWO effects: aura 52
+# MOD_WEAPON_CRIT_PERCENT + aura 57 MOD_SPELL_CRIT_CHANCE (both base 0; the WotLK talent spellmods
+# both via mask 1073741824). The auto `petAura:` pet-buff row is single-effect, so it could carry
+# only the melee half — these hand helpers mirror the carrier's BOTH-halves shape at the Vanilla
+# magnitudes (Classic Ferocity 19602 top value = 15; series 3/6/9/12/15 per the 1.12 tooltips).
+# Shape mirrors the generator's auto pet-buff: passive attrs, self-target, no duration (permanent
+# via the passive attribute), hidden (no client row — same as the auto 929000-band buffs).
+- id: 932973
+  name: Ferocity
+  attributes: 262608       # PASSIVE_ATTR — same attrs the auto pet-buff rows carry
+  effects:
+  - { effect: 6, aura: 52, basePoints: 3, targetA: 1 }   # MOD_WEAPON_CRIT_PERCENT +3
+  - { effect: 6, aura: 57, basePoints: 3, targetA: 1 }   # MOD_SPELL_CRIT_CHANCE +3
+- id: 932974
+  name: Ferocity
+  attributes: 262608
+  effects:
+  - { effect: 6, aura: 52, basePoints: 6, targetA: 1 }
+  - { effect: 6, aura: 57, basePoints: 6, targetA: 1 }
+- id: 932975
+  name: Ferocity
+  attributes: 262608
+  effects:
+  - { effect: 6, aura: 52, basePoints: 9, targetA: 1 }
+  - { effect: 6, aura: 57, basePoints: 9, targetA: 1 }
+- id: 932976
+  name: Ferocity
+  attributes: 262608
+  effects:
+  - { effect: 6, aura: 52, basePoints: 12, targetA: 1 }
+  - { effect: 6, aura: 57, basePoints: 12, targetA: 1 }
+- id: 932977
+  name: Ferocity
+  attributes: 262608
+  effects:
+  - { effect: 6, aura: 52, basePoints: 15, targetA: 1 }
+  - { effect: 6, aura: 57, basePoints: 15, targetA: 1 }
+# --- Deterrence (node 18339) — Vanilla 25% dodge/parry, 10 sec, 5 min cooldown. -----------------
+# Stock WotLK 19263 (dump 2026-08-17): aura 47 MOD_PARRY_PERCENT +100 / aura 287 DEFLECT_SPELLS
+# +100 / aura 25 MOD_PACIFY, DurationIndex 28 = 5s, RecoveryTime 90000 — the WotLK deflect rework,
+# nothing like the era version. Classic 19263 (wowhead classic): "Mod Parry % 25" + "Mod Dodge %
+# 25", 10 sec, 5 min cooldown, instant, no cost. Clone keeps the template's shell (Attributes
+# 327696, instant, self-cast, SpellIconID 83) and overrides duration/cooldown/effects.
+# Aura ids verified against the fork header + stock dumps: 47 MOD_PARRY_PERCENT (Deflection
+# 19295 Effect_1), 49 MOD_DODGE_PERCENT (Aspect of the Monkey 13163 Effect_1, node 18304 dump).
+# Effect encoding mirrors the stock 19263 slots verbatim (basePoints X + dieSides 1 -> X+1,
+# targetA 1 as dumped).
+- id: 932964
+  name: Deterrence
+  template: 19263          # CLONE stock Deterrence — inherits attrs/visual/instant/self-cast
+  durationIndex: 1         # 10 sec (SpellDuration.dbc idx 1 = 10000; stock idx 28 = 5000)
+  cooldown: 300000         # 5 min (Vanilla; stock RecoveryTime 90000)
+  effects:
+  - { effect: 6, aura: 47, basePoints: 24, dieSides: 1, targetA: 1 }   # MOD_PARRY_PERCENT +25
+  - { effect: 6, aura: 49, basePoints: 24, dieSides: 1, targetA: 1 }   # MOD_DODGE_PERCENT +25
+  client:
+    name: Deterrence
+    icon: 83               # stock 19263 SpellIconID (dump 2026-08-17)
+    description: "When activated, increases your Dodge and Parry chance by 25% for 10 sec."
+    auraDescription: "Dodge and Parry chance increased by 25%."
+    skillLine: 51          # Survival tab (SkillLineAbility row 10865: 19263 -> 51)
+# --- Wyvern Sting (node 18346) — Vanilla 12s sleep + 300-over-12s wake DoT. ---------------------
+# Stock WotLK 19386 (dump 2026-08-17): aura 12 MOD_STUN / Mechanic 10 (sleep), DurationIndex 9 =
+# 30s, ManaCost 115, RangeIndex 114 (8-35 yd), instant, CategoryRecoveryTime 60000 (Category 1111),
+# DefenseType 3, DispelType 4 (poison). Classic 19386 (wowhead classic): 115 mana, 8-35 yd,
+# instant, 2 MIN cooldown, 12 sec sleep, "Cannot be used in combat". Divergences -> overrides:
+# 12s duration (idx 29), 120s RecoveryTime, + SPELL_ATTR0_NOT_IN_COMBAT_ONLY_PEACEFUL
+# (0x10000000, SharedDefines.h:398 "Cannot be used in combat") OR'd onto the template's
+# Attributes 1114114 -> 269549570. NB the template's 60s CategoryRecoveryTime is inherited and
+# kept: it only cross-gates category-1111 members (the stock WotLK Wyvern ranks a Vanilla hunter
+# never has); the spell's own cooldown is the overridden 120s RecoveryTime.
+# The wake-DoT fires via the era_wyvern_sting module script (scriptBindings above) casting 932966.
+- id: 932965
+  name: Wyvern Sting
+  template: 19386          # CLONE stock Wyvern Sting — inherits range/cost/visual/mechanic
+  durationIndex: 29        # 12 sec sleep (SpellDuration.dbc idx 29 = 12000; stock idx 9 = 30000)
+  cooldown: 120000         # 2 min (Vanilla; stock rides a 60s category cooldown only)
+  attributes: 269549570    # template 1114114 | 0x10000000 NOT_IN_COMBAT_ONLY_PEACEFUL (Vanilla)
+  effects:
+  - { effect: 6, aura: 12, basePoints: -1, dieSides: 1, targetA: 6 }   # MOD_STUN (sleep), stock encoding
+  client:
+    name: Wyvern Sting
+    icon: 1721             # stock 19386 SpellIconID (dump 2026-08-17)
+    description: "A stinging shot that puts the target to sleep for 12 sec. Any damage will cancel the effect. When the target wakes up, the Sting causes 300 Nature damage over 12 sec. Only usable out of combat. Only one Sting per Hunter can be active on the target at a time."
+    auraDescription: "Asleep. Any damage will cancel the effect. When the target wakes up, the Sting causes 300 Nature damage over 12 sec."
+    skillLine: 51          # Survival tab (SkillLineAbility row 10930: 19386 -> 51)
+# Wyvern Sting wake-DoT: stock WotLK 24131 (dump 2026-08-17) = aura 3 PERIODIC_DAMAGE 100 per
+# EffectAuraPeriod 2000, DurationIndex 32 = 6s (300 total over 6s), targetA 25, DispelType poison.
+# Classic 24131 (wowhead classic + warcraft.wiki.gg): "50 Nature damage every 2 seconds" over
+# 12 sec = 300 total (3.1.0 is where the 12s DoT became 6s). Clone: 12s duration + 50/tick — the
+# 2s tick period is INHERITED from the template (helpers have no amplitude key), 6 ticks x 50.
+- id: 932966
+  name: Wyvern Sting
+  template: 24131          # CLONE stock rank-1 DoT — inherits period/school/dispel/visual
+  spellFixAck: >-
+    SpellInfoCorrections.cpp:4240 rewrites `Effects[EFFECT_0].TargetA` of 24131 / 24134 / 24135 from
+    the DBC's TARGET_UNIT_TARGET_ANY (25) to TARGET_UNIT_TARGET_ENEMY (6) -- a target rewrite with no
+    generator key other than authoring `targetA:`, which this clone now DOES (`targetA: 6` below), so
+    the correction is fully reproduced and nothing is lost. FIXED 2026-09-06 (TBC hunter Phase 7,
+    spec Amendment A.14 defect 1): this helper previously authored the stock UNCORRECTED 25, so it
+    was the one Wyvern DoT in either era whose implicit target check was ANY rather than ENEMY.
+  durationIndex: 29        # 12 sec (Vanilla; stock idx 32 = 6000)
+  effects:
+  - { effect: 6, aura: 3, basePoints: 49, dieSides: 1, targetA: 6 }    # PERIODIC_DAMAGE 50/2s;
+    # targetA 6 = TARGET_UNIT_TARGET_ENEMY, the post-fix value of ApplySpellFix({24131,24134,24135}).
+  client:
+    name: Wyvern Sting
+    icon: 1721             # same icon as the sleep (stock 24131 also carries 1721)
+    auraDescription: "50 Nature damage every 2 sec."
+# --- Entrapment root (node 18334 trigger) — Vanilla 5 sec root. ---------------------------------
+# Stock WotLK roots diverge per rank: 19185/64803/64804 = DurationIndex 39/27/35 = 2s/3s/4s
+# (dump 2026-08-17). Classic 19185 (wowhead classic): 5 sec root, mechanic Rooted. Clone the
+# rank-1 root shell (aura 26 MOD_ROOT, Mechanic 7, family 0 — deliberately NOT family 9, so no
+# hunter spellmod can stretch it, matching classic) with the 5s index. Visible debuff -> client:.
+- id: 932972
+  name: Entrapment
+  template: 19185          # CLONE stock Entrapment root — inherits root aura/mechanic/visual
+  spellFixAck: >-
+    NOT an ack — the correction is REPRODUCED IN DATA below. SpellInfoCorrections.cpp:691 makes
+    three changes to 19185 / 64803 / 64804 that a clone never inherits (they are applied BY ID to
+    the stock SpellInfo): `Effects[EFFECT_0].TargetA = TARGET_DEST_TARGET_ENEMY` (53), `TargetB =
+    TARGET_UNIT_DEST_AREA_ENEMY` (16), and `AttributesEx5 |= SPELL_ATTR5_ALWAYS_AOE_LINE_OF_SIGHT`
+    (0x04000000; the template's live DBC AttributesEx5 is 0, so the post-fix value is 67108864).
+    All three are authored here. The raw DBC shape a bare clone would inherit is TargetA 22 =
+    TARGET_SRC_CASTER / TargetB 15 = TARGET_UNIT_SRC_AREA_ENEMY at EffectRadiusIndex 13 — i.e. a
+    10 yd AoE root centred on the HUNTER, which the correction exists to turn into an area centred
+    on the TRAPPED VICTIM. Shipping the pre-fix shape would root every enemy standing next to the
+    hunter and (with no ALWAYS_AOE_LINE_OF_SIGHT) enforce LoS on that selection.
+  durationIndex: 28        # 5 sec (SpellDuration.dbc idx 28 = 5000; stock idx 39 = 2000)
+  attributesEx5: 67108864  # SPELL_ATTR5_ALWAYS_AOE_LINE_OF_SIGHT — post-fix value (template 0 | bit)
+  effects:
+  - { effect: 6, aura: 26, basePoints: 0, dieSides: 0, targetA: 53, targetB: 16, radius: 13 }
+    # ^ MOD_ROOT with the POST-FIX target pair: TARGET_DEST_TARGET_ENEMY / TARGET_UNIT_DEST_AREA_ENEMY
+    #   at EffectRadiusIndex 13 — the area is centred on the trapped victim, not on the hunter.
+  client:
+    name: Entrapment
+    icon: 20               # stock 19185 SpellIconID (dump 2026-08-17)
+    auraDescription: "Entrapped. Unable to move."
+# --- Improved Wing Clip root (node 18336 trigger) — Vanilla 5 sec root. -------------------------
+# The Classic proc chain (19228=4% .. 19235=20%, wowhead classic) triggers root 19229
+# ("Improved Wing Clip", 5 sec, mechanic Rooted) — an id that does NOT exist in the 3.3.5a DBC
+# at all (name scan returns only the castable 2974 + NPC copies; direct id dump: not found).
+# Reconstructed as a clone of the same generic root shell 19185 at 5s, with Wing Clip's icon.
+- id: 932978
+  name: Improved Wing Clip
+  template: 19185          # same root shell as 932972 (aura 26, Mechanic 7, family 0)
+  spellFixAck: >-
+    NOT an ack — SpellInfoCorrections.cpp:691's by-id fix for 19185 has NOTHING to gate here, so it
+    is deliberately not reproduced. That correction turns the 19185 shell into a victim-centred AoE
+    root (TargetA 53 / TargetB 16 + SPELL_ATTR5_ALWAYS_AOE_LINE_OF_SIGHT); Improved Wing Clip's root
+    is a plain SINGLE-TARGET root, so this clone authors TargetA 6 / TargetB 0 / radius 0 and
+    attributesEx5 0 — matching the shipped TBC reconstruction 948344. targetB and radius are
+    authored EXPLICITLY because a templated helper only writes those columns when the key is
+    present: omitting them would inherit 19185's AoE pair (15 / index 13) and turn the single-target
+    root into a 10 yd area root centred on the HUNTER (the pre-fix DBC shape).
+  durationIndex: 28        # 5 sec (Classic 19229's duration, wowhead classic)
+  attributesEx5: 0         # no ALWAYS_AOE_LINE_OF_SIGHT — nothing to gate on a single-target root
+  effects:
+  - { effect: 6, aura: 26, basePoints: 0, dieSides: 0, targetA: 6, targetB: 0, radius: 0 }
+    # ^ MOD_ROOT, single target (TARGET_UNIT_TARGET_ENEMY) — same shape as TBC's 948344.
+  client:
+    name: Improved Wing Clip
+    icon: 517              # Wing Clip 2974's SpellIconID (dump 2026-08-17)
+    auraDescription: "Immobilized."
+# --- Counterattack (node 18344) — Vanilla rank 1: 40 damage. ------------------------------------
+# Stock WotLK 19306 (dump 2026-08-17): Effect_1 SCHOOL_DAMAGE 48 (basePoints 47 + dieSides 1),
+# Effect_2 aura 26 MOD_ROOT for DurationIndex 28 = 5s, ManaCost 45, RangeIndex 2 (5 yd),
+# CategoryRecoveryTime 5000 (Category 1135), CasterAuraState 7 = AURA_STATE_HUNTER_PARRY (the
+# "becomes active after parrying" gate — pure DBC, inherited by the clone; no script involved).
+# Classic 19306 (wowhead classic): identical shape but 40 damage. Only the damage diverges ->
+# clone overriding basePoints 39. Root/cost/cooldown/range are template-inherited verbatim.
+# Vanilla trainer ranks recorded for Task 8 (NOT authored here): Classic r2 = 20909 (70 damage,
+# 65 mana), r3 = 20910 (110 damage, 85 mana) — trainer levels to be resolved in Task 8; the WotLK
+# stock 20909/20910 rows carry 84/132 damage, so Task 8 must chain CLONES off 932979 (the Aimed
+# Shot helper pattern), not the stock ids.
+- id: 932979
+  name: Counterattack
+  template: 19306          # CLONE stock rank 1 — inherits parry gate/root/cost/CD/visual
+  effects:
+  - { effect: 2, basePoints: 39, dieSides: 1, targetA: 6 }             # SCHOOL_DAMAGE 40 (Vanilla)
+  - { effect: 6, aura: 26, basePoints: 0, dieSides: 0, targetA: 6 }    # MOD_ROOT 5s (idx 28 inherited)
+  client:
+    name: Counterattack
+    icon: 278              # stock 19306 SpellIconID (dump 2026-08-17)
+    rank: 1
+    description: "A strike that becomes active after parrying an opponent's attack. This attack deals 40 damage and immobilizes the target for 5 sec. Counterattack cannot be blocked, dodged, or parried."
+    auraDescription: "Immobilized."
+    skillLine: 51          # Survival tab (SkillLineAbility row 13046: 19306 -> 51)
+# --- Counterattack trainer ranks (node 18344, R2/R3) — Vanilla 70/110 damage clones. ------------
+# Talent-granted R1 is 932979 (40 dmg). Higher ranks are trainer-taught (see the hunter trainer SQL
+# 2026_08_16_22). Stock WotLK 20909/20910 (dump 2026-08-17) carry 84/132 damage (basePoints 83/131);
+# Classic 20909/20910 = 70/110 (wowhead classic; mana 65/85 and levels 42/54 match the stock rows).
+# Only the SCHOOL_DAMAGE amount diverges, so each clone overrides that basePoints on its own stock
+# template and inherits the parry gate (CasterAuraState 7), 5s root (aura 26, DurationIndex 28), 5s
+# category cooldown (Category 1135), mana, level and range verbatim (all dumped byte-identical
+# across the three ranks). spell_ranks chains R1->R2->R3 off 932979 in the trainer SQL.
+- id: 932958
+  name: Counterattack
+  template: 20909          # CLONE stock rank 2 — inherits parry gate/root/cost 65/L42/CD/visual
+  effects:
+  - { effect: 2, basePoints: 69, dieSides: 1, targetA: 6 }             # SCHOOL_DAMAGE 70 (Vanilla r2)
+  - { effect: 6, aura: 26, basePoints: 0, dieSides: 0, targetA: 6 }    # MOD_ROOT 5s (idx 28 inherited)
+  client:
+    name: Counterattack
+    icon: 278              # stock Counterattack SpellIconID (dump 2026-08-17)
+    rank: 2
+    description: "A strike that becomes active after parrying an opponent's attack. This attack deals 70 damage and immobilizes the target for 5 sec. Counterattack cannot be blocked, dodged, or parried."
+    auraDescription: "Immobilized."
+    skillLine: 51          # Survival tab
+- id: 932959
+  name: Counterattack
+  template: 20910          # CLONE stock rank 3 — inherits parry gate/root/cost 85/L54/CD/visual
+  effects:
+  - { effect: 2, basePoints: 109, dieSides: 1, targetA: 6 }           # SCHOOL_DAMAGE 110 (Vanilla r3)
+  - { effect: 6, aura: 26, basePoints: 0, dieSides: 0, targetA: 6 }   # MOD_ROOT 5s (idx 28 inherited)
+  client:
+    name: Counterattack
+    icon: 278
+    rank: 3
+    description: "A strike that becomes active after parrying an opponent's attack. This attack deals 110 damage and immobilizes the target for 5 sec. Counterattack cannot be blocked, dodged, or parried."
+    auraDescription: "Immobilized."
+    skillLine: 51
+# --- Aimed Shot (node 18321) — Vanilla 3s-cast / 6s-cooldown trainer chain R1-R6. ---------------
+# Stock 19434 (dump 2026-08-17) is the WotLK REWORK: instant (CastingTimeIndex 18), a -50% healing
+# debuff (Effect_2 aura 118), and a 10s cooldown FORCED by the SpellInfoCorrections Aimed-Shot sweep
+# (SpellInfoCorrections.cpp:5311 — any family-9 row whose spell-level SpellClassMask_1 has bit
+# 0x20000 gets RecoveryTime=10000 + SPELL_ATTR6_NO_CATEGORY_COOLDOWN_MODS). Classic Aimed Shot
+# (wowhead classic, all 6 ranks): 3 sec cast, 6 sec cooldown, +ranged-damage bonus, NO healing
+# debuff; mana 75/115/160/210/260/310 and levels 20/28/36/44/52/60 match the stock rows exactly
+# (dump SpellLevel), only the cast/cooldown/debuff and the bonus damage diverge.
+#   SWEEP SIDESTEP (the KEY divergence for this node): the sweep predicate is
+#   `SpellClassSet == 9 && (SpellClassMask_1 & 0x00020000)` — BOTH conjuncts — so dropping the WORD-0
+#   bit alone escapes it. RE-IDENTIFIED 2026-09-05 (TBC Phase 7 back-port): each clone now carries
+#   `family: 9` + `mask: 0` + `maskC: 2097152` (word2 bit 21) instead of the old family:0/mask:0.
+#   Word2 bit 21 is FREE in both the live Spell.dbc and the acore_world.spell_dbc overlay (census in
+#   era-data/_ref/tbc/hunter-spells.yaml `aimed_shot_identity.evidence`), so no stock hunter spellmod
+#   can already reach it, the sweep still never matches, and the 6s RecoveryTime still survives.
+#   WHAT THE BACK-PORT BUYS: with a real family the clone is nameable by an `affects:` list, so
+#   Vanilla Efficiency (node 18318) now DOES reduce its mana cost — closing Vanilla record gap 4.
+#   Two further consequences, both checked and both wanted:
+#     * SpellInfo::IsRangedWeaponSpell() (SpellInfo.cpp:1311) used to pass these clones on the
+#       EquippedItemSubClassMask arm; it now passes on the family test directly. No behaviour change.
+#     * `spell_hun_readiness` walks the caster's cooldown map clearing every SPELLFAMILY_HUNTER
+#       spell, so a Vanilla hunter's Readiness now resets these clones — which is CORRECT and is a
+#       latent Vanilla defect the back-port fixes.
+#   SpellMgr.cpp:3499 (FORCE_SEND_CATEGORY_COOLDOWNS) keys on the same word-0 bit and likewise still
+#   never matches; the cooldown lives in RecoveryTime, which the client is sent regardless.
+#   CATEGORY: stock Aimed Shot's 10s cooldown is a Category-85 CategoryRecoveryTime (10000), NOT
+#   RecoveryTime — an inherited Category 85 would pin the clone at 10s even after the sweep is
+#   sidestepped, so each clone sets category:0 + categoryCooldown:0 (new generator scalars) and
+#   puts the whole 6s cooldown in RecoveryTime.
+#   Effect_1 = 121 SPELL_EFFECT_NORMALIZED_WEAPON_DMG (ranged weapon damage + flat bonus, the shot
+#   mechanic inherited from 19434); the WotLK healing debuff (Effect_2 aura 118) is dropped because
+#   templated clones 0-fill absent effect slots. Bonus value X -> basePoints X-1, dieSides 1.
+#   castTimeIndex 14 = 3000 ms (SpellCastTimes.dbc, parsed 2026-08-17); template's index 18 = instant.
+- id: 932952
+  name: Aimed Shot
+  template: 19434          # CLONE stock Aimed Shot — inherits ranged shot mechanic/ammo/range/visual
+  spellFixAck: >-
+    No BY-ID `ApplySpellFix` exists for 19434 or any of its ranks (whole-file grep of
+    SpellInfoCorrections.cpp, fork HEAD). The only correction that touches Aimed Shot is the
+    FAMILY+FLAG sweep at SpellInfoCorrections.cpp:5311-5318, and this clone escapes it DELIBERATELY:
+    the arm requires `SpellClassSet == SPELLFAMILY_HUNTER && (SpellFamilyFlags[0] & 0x00020000)`,
+    and the clone carries word2 bit 21 instead of word0 bit 17. Inheriting that sweep would force
+    RecoveryTime to 10 s and set SPELL_ATTR6_NO_CATEGORY_COOLDOWN_MODS — i.e. WotLK's retune over
+    Vanilla's 6 s cooldown, which is the whole reason this clone exists.
+  family: 9               # SPELLFAMILY_HUNTER — re-identified 2026-09-05 (was 0); see the block above
+  mask: 0                 # word0 stays 0: 0x20000 is the SWEPT bit and must never be set here
+  maskC: 2097152          # word2 bit 21 — the era Aimed Shot identity (free in both stores)
+  castTimeIndex: 14       # 3 sec cast (stock index 18 = instant)
+  cooldown: 6000          # 6 sec (RecoveryTime; Vanilla)
+  category: 0             # drop stock Category 85 ...
+  categoryCooldown: 0     # ... and its 10s CategoryRecoveryTime so RecoveryTime is the real cooldown
+  powerCost: 75           # 75 mana (Vanilla r1; matches stock 19434 ManaCost)
+  effects:
+  - { effect: 121, basePoints: 69, dieSides: 1, targetA: 6 }   # normalized weapon damage +70
+  client:
+    name: Aimed Shot
+    icon: 1629             # stock 19434 SpellIconID (dump 2026-08-17)
+    rank: 1
+    description: "An aimed shot that increases ranged damage by 70."
+    skillLine: 163         # Marksmanship tab (SkillLineAbility: 19434 -> 163)
+- id: 932953
+  name: Aimed Shot
+  template: 19434
+  spellFixAck: >-
+    Same as 932952: no by-id ApplySpellFix on 19434; the family+flag sweep at
+    SpellInfoCorrections.cpp:5311-5318 is escaped on purpose by carrying word2 bit 21 instead of
+    word0 0x20000, so the 6 s RecoveryTime survives.
+  family: 9
+  mask: 0
+  maskC: 2097152
+  castTimeIndex: 14
+  cooldown: 6000
+  category: 0
+  categoryCooldown: 0
+  powerCost: 115           # 115 mana (Vanilla r2; matches stock 20900 L28)
+  effects:
+  - { effect: 121, basePoints: 124, dieSides: 1, targetA: 6 }  # +125
+  client:
+    name: Aimed Shot
+    icon: 1629
+    rank: 2
+    description: "An aimed shot that increases ranged damage by 125."
+    skillLine: 163
+- id: 932954
+  name: Aimed Shot
+  template: 19434
+  spellFixAck: >-
+    Same as 932952: no by-id ApplySpellFix on 19434; the family+flag sweep at
+    SpellInfoCorrections.cpp:5311-5318 is escaped on purpose by carrying word2 bit 21 instead of
+    word0 0x20000, so the 6 s RecoveryTime survives.
+  family: 9
+  mask: 0
+  maskC: 2097152
+  castTimeIndex: 14
+  cooldown: 6000
+  category: 0
+  categoryCooldown: 0
+  powerCost: 160           # 160 mana (Vanilla r3; matches stock 20901 L36)
+  effects:
+  - { effect: 121, basePoints: 199, dieSides: 1, targetA: 6 }  # +200
+  client:
+    name: Aimed Shot
+    icon: 1629
+    rank: 3
+    description: "An aimed shot that increases ranged damage by 200."
+    skillLine: 163
+- id: 932955
+  name: Aimed Shot
+  template: 19434
+  spellFixAck: >-
+    Same as 932952: no by-id ApplySpellFix on 19434; the family+flag sweep at
+    SpellInfoCorrections.cpp:5311-5318 is escaped on purpose by carrying word2 bit 21 instead of
+    word0 0x20000, so the 6 s RecoveryTime survives.
+  family: 9
+  mask: 0
+  maskC: 2097152
+  castTimeIndex: 14
+  cooldown: 6000
+  category: 0
+  categoryCooldown: 0
+  powerCost: 210           # 210 mana (Vanilla r4; matches stock 20902 L44)
+  effects:
+  - { effect: 121, basePoints: 329, dieSides: 1, targetA: 6 }  # +330
+  client:
+    name: Aimed Shot
+    icon: 1629
+    rank: 4
+    description: "An aimed shot that increases ranged damage by 330."
+    skillLine: 163
+- id: 932956
+  name: Aimed Shot
+  template: 19434
+  spellFixAck: >-
+    Same as 932952: no by-id ApplySpellFix on 19434; the family+flag sweep at
+    SpellInfoCorrections.cpp:5311-5318 is escaped on purpose by carrying word2 bit 21 instead of
+    word0 0x20000, so the 6 s RecoveryTime survives.
+  family: 9
+  mask: 0
+  maskC: 2097152
+  castTimeIndex: 14
+  cooldown: 6000
+  category: 0
+  categoryCooldown: 0
+  powerCost: 260           # 260 mana (Vanilla r5; matches stock 20903 L52)
+  effects:
+  - { effect: 121, basePoints: 459, dieSides: 1, targetA: 6 }  # +460
+  client:
+    name: Aimed Shot
+    icon: 1629
+    rank: 5
+    description: "An aimed shot that increases ranged damage by 460."
+    skillLine: 163
+- id: 932957
+  name: Aimed Shot
+  template: 19434
+  spellFixAck: >-
+    Same as 932952: no by-id ApplySpellFix on 19434; the family+flag sweep at
+    SpellInfoCorrections.cpp:5311-5318 is escaped on purpose by carrying word2 bit 21 instead of
+    word0 0x20000, so the 6 s RecoveryTime survives.
+  family: 9
+  mask: 0
+  maskC: 2097152
+  castTimeIndex: 14
+  cooldown: 6000
+  category: 0
+  categoryCooldown: 0
+  powerCost: 310           # 310 mana (Vanilla r6; matches stock 20904 L60)
+  effects:
+  - { effect: 121, basePoints: 599, dieSides: 1, targetA: 6 }  # +600
+  client:
+    name: Aimed Shot
+    icon: 1629
+    rank: 6
+    description: "An aimed shot that increases ranged damage by 600."
+    skillLine: 163
+# --- Trueshot Aura (node 18330) — Vanilla flat +AP party clone R1-R3. ---------------------------
+# Stock 19506 (dump 2026-08-17) is the WotLK REWORK: +10% ranged AP (Effect_1 aura 167) + +10%
+# melee AP (Effect_2 aura 166), both APPLY_AREA_AURA_PARTY (effect 65), single rank. Classic
+# Trueshot Aura (wowhead classic, 3 ranks 19506/20905/20906): a FLAT +50/75/100 to BOTH ranged and
+# melee attack power, party within 45 yd, 30 min, mana 325/425/525, levels 40/50/60. The clone keeps
+# the template's area-aura party shell (effect 65, targetA 1, 30-min DurationIndex 21 inherited) and
+# swaps the two % auras for the flat pair: aura 124 MOD_RANGED_ATTACK_POWER + aura 99
+# MOD_ATTACK_POWER (melee), each radius index 11 = 45 yd (SpellRadius.dbc, parsed 2026-08-17;
+# matches the 45-yd tooltip — the stock row's asymmetric idx 12/11 was a WotLK quirk). Flat value X
+# -> basePoints X-1, dieSides 1 (stock stat convention). family/mask left inherited (word-2 bit
+# 2097152 is untouched by any sweep and nothing in a Vanilla tree binds it).
+# TRACKED NOTE: wowhead classic renders an extra caster-only "+101/151/201 ranged AP" line per rank;
+# this era version implements the documented party +AP tooltip only (the doubled caster figure is
+# not in the Daribon tooltip and is omitted — an area aura already applies to the caster).
+- id: 932961
+  name: Trueshot Aura
+  template: 19506          # CLONE stock Trueshot Aura — inherits party area-aura shell/visual/30min
+  powerCost: 325           # 325 mana (Vanilla r1)
+  effects:
+  - { effect: 65, aura: 124, basePoints: 49, dieSides: 1, targetA: 1, radius: 11 }  # +50 ranged AP, party 45yd
+  - { effect: 65, aura: 99,  basePoints: 49, dieSides: 1, targetA: 1, radius: 11 }  # +50 melee AP, party 45yd
+  client:
+    name: Trueshot Aura
+    icon: 128              # stock 19506 SpellIconID (dump 2026-08-17)
+    rank: 1
+    description: "Increases the Ranged and Melee Attack Power of party members within 45 yards by 50. Lasts 30 min."
+    auraDescription: "Melee and ranged attack power increased by 50."
+    skillLine: 163         # Marksmanship tab (SkillLineAbility: 19506 -> 163)
+- id: 932962
+  name: Trueshot Aura
+  template: 19506
+  powerCost: 425           # 425 mana (Vanilla r2)
+  effects:
+  - { effect: 65, aura: 124, basePoints: 74, dieSides: 1, targetA: 1, radius: 11 }  # +75 ranged AP
+  - { effect: 65, aura: 99,  basePoints: 74, dieSides: 1, targetA: 1, radius: 11 }  # +75 melee AP
+  client:
+    name: Trueshot Aura
+    icon: 128
+    rank: 2
+    description: "Increases the Ranged and Melee Attack Power of party members within 45 yards by 75. Lasts 30 min."
+    auraDescription: "Melee and ranged attack power increased by 75."
+    skillLine: 163
+- id: 932963
+  name: Trueshot Aura
+  template: 19506
+  powerCost: 525           # 525 mana (Vanilla r3)
+  effects:
+  - { effect: 65, aura: 124, basePoints: 99, dieSides: 1, targetA: 1, radius: 11 }  # +100 ranged AP
+  - { effect: 65, aura: 99,  basePoints: 99, dieSides: 1, targetA: 1, radius: 11 }  # +100 melee AP
+  client:
+    name: Trueshot Aura
+    icon: 128
+    rank: 3
+    description: "Increases the Ranged and Melee Attack Power of party members within 45 yards by 100. Lasts 30 min."
+    auraDescription: "Melee and ranged attack power increased by 100."
+    skillLine: 163
+# --- Improved Concussive Shot stun (node 18317 trigger) — Vanilla 3 sec stun. --------------------
+# Vanilla Improved Concussive Shot procced a 3-sec stun (spell 19410) that does NOT exist in the
+# 3.3.5a DBC (WotLK reworked the talent into a Concussive-Shot duration spellmod — 19407/19412 dump:
+# aura 108 misc 1 SPELLMOD_DURATION, no stun). Reconstructed as a legacy stun helper mirroring the
+# priest Blackout stun 932970 shape: aura 12 MOD_STUN, Mechanic 12 (stun DR/immunity), DurationIndex
+# 27 = 3000 ms, targetA 6 (enemy), physical school. A custom stun needs a client row or the 3.3.5a
+# client renders no icon (the Blackout precedent) — hence the client block below.
+- id: 932971
+  name: Improved Concussive Shot
+  aura: 12                 # SPELL_AURA_MOD_STUN
+  mechanic: 12             # MECHANIC_STUN (SharedDefines.h)
+  durationIndex: 27        # 3 sec (SpellDuration.dbc idx 27 = 3000)
+  targetA: 6               # TARGET_UNIT_TARGET_ENEMY
+  basePoints: -1           # stun carries no amount (Blackout precedent)
+  school: 1                # physical
+  client:
+    name: Improved Concussive Shot
+    icon: 15               # Concussive Shot 5116 SpellIconID (dump 2026-08-17)
+    auraDescription: "Stunned."
+tabs:
+- key: 1
+  name: Beast Mastery
+  background: HunterBeastMastery
+  nodes:
+  # Improved Aspect of the Hawk — VANILLA-CORRECTED 2026-08-24 (final-review F-4). The 1.12.1 client
+  # Spell.dbc (canonical, decoded with calibrated offsets) shows Improved Aspect of the Hawk (19552-19556)
+  # as a SINGLE spellmod effect: Effect_1 aura 108 ADD_PCT_MODIFIER, op SPELLMOD_ALL_EFFECTS (8), masked to
+  # Aspect of the Hawk's family flag (0x100000), basePoints 3/7/11/15/19 + dieSides 1 -> +4/8/12/16/20% to
+  # the aspect's ranged-attack-power bonus. There is NO second effect, NO proc chance, and NO "Quick Shots"
+  # anywhere in the Vanilla AotH / Improved-AotH data — Quick Shots (the +30% ranged-haste proc) is a TBC
+  # 2.x addition (6150 is a portal-to-Stormwind spell in 1.12.1; a full-DBC name search finds no "Quick
+  # Shots"), and base Aspect of the Hawk 13165 in 1.12.1 has only Effect_1 (aura 124 MOD_RANGED_ATTACK_POWER)
+  # with no aura-42 proc. The PRIOR era model (Effect_1 = SPELLMOD_CHANCE_OF_SUCCESS raising a non-existent
+  # aura-42 proc by 1/2/3/4/5%, Effect_2 = +30% on Quick Shots 6150) reproduced the WOTLK mechanic, sourced
+  # from wowhead/classic (1.15) — not Vanilla. Corrected to the faithful single spellmod. NB this
+  # intentionally drops the Quick Shots haste the old model delivered on the 3.3.5a client (FULL-accuracy
+  # policy — Vanilla IAotH gave no haste proc). vals stored as base=val-1,dieSides=1 -> displayed
+  # 4/8/12/16/20, byte-matching the 1.12.1 basePoints 3/7/11/15/19.
+  - id: 18301
+    slug: improved_aspect_of_the_hawk
+    name: Improved Aspect of the Hawk
+    tab: 1
+    tier: 0
+    col: 1
+    icon: spell_nature_ravenform
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    mechanic: spellmod
+    affects: ["Aspect of the Hawk"]   # 13165, family 9 bit 1048576 (_ref, dumped) — op allEffects scales its +RAP
+    op: allEffects       # SPELLMOD_ALL_EFFECTS (8) — matches 1.12.1 19552-56 Effect_1 op
+    kind: pct            # aura 108 ADD_PCT_MODIFIER (the 1.12.1 encoding)
+    vals: [4, 8, 12, 16, 20]
+    tooltip:
+    - Increases the ranged attack power bonus of your Aspect of the Hawk by 4%.
+    - Increases the ranged attack power bonus of your Aspect of the Hawk by 8%.
+    - Increases the ranged attack power bonus of your Aspect of the Hawk by 12%.
+    - Increases the ranged attack power bonus of your Aspect of the Hawk by 16%.
+    - Increases the ranged attack power bonus of your Aspect of the Hawk by 20%.
+  # AUTHORED (mechanic: pet) — verdict 2026-08-17. Stock WotLK 19583-19587 diverges twice (dump):
+  # pet half = 2/4/6/8/10 (spellmod flat onto carrier 19581) AND an owner-health half (aura 133
+  # +1..+5 on the hunter, no mask). Vanilla = pet health ONLY at 3/6/9/12/15 (top rank confirmed
+  # value 15 on wowhead/classic/spell=19587; series per the 1.12 tooltips). petAura 133 =
+  # MOD_INCREASE_HEALTH_PERCENT, copied from the stock pet-health carrier analog "Tamed Pet
+  # Passive 03" 19581 (dump: aura 133, misc 0) — NOT 230 (that adds max health flat-style by
+  # value; the carrier proves 133 is the pet-health-% encoding).
+  - id: 18302
+    slug: endurance_training
+    name: Endurance Training
+    tab: 1
+    tier: 0
+    col: 2
+    icon: spell_nature_reincarnation
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    mechanic: pet
+    pet: 0                      # all pets
+    petAura: 133               # SPELL_AURA_MOD_INCREASE_HEALTH_PERCENT (analog: 19581, dumped)
+    vals: [3, 6, 9, 12, 15]
+    tooltip:
+    - Increases the Health of your pets by 3%.
+    - Increases the Health of your pets by 6%.
+    - Increases the Health of your pets by 9%.
+    - Increases the Health of your pets by 12%.
+    - Increases the Health of your pets by 15%.
+  # BOUND (grants stock) — verdict 2026-08-17. Stock 19557/19558 (dump): single effect, aura 107
+  # flat, misc 1 SPELLMOD_DURATION, +29999/+59999 -> +30000/+60000 ms, masked 4194304 = Eyes of
+  # the Beast 1002 — identical to the 1.12 effect (+30/60 sec, the tooltip below). No WotLK-only
+  # extras, so the decision tree's "grant a stock id" branch applies.
+  - id: 18303
+    slug: improved_eyes_of_the_beast
+    name: Improved Eyes of the Beast
+    tab: 1
+    tier: 1
+    col: 0
+    icon: ability_eyeoftheowl
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    grants: {1: [19557], 2: [19558]}   # stock ranks, Vanilla-exact (_ref.grants.improved_eyes_of_the_beast)
+    tooltip:
+    - Increases the duration of your Eyes of the Beast by 30 sec.
+    - Increases the duration of your Eyes of the Beast by 60 sec.
+  # AUTHORED (spellmod) — verdict 2026-08-17. Stock WotLK 19549-19551 is 3 ranks at +2/+4/+6
+  # (dump: aura 107 flat, misc 3 SPELLMOD_EFFECT1, mask (524288,0,8192)); Vanilla is 5 ranks at
+  # +1..+5 (wowhead/classic/spell=19549 value 1). op effect1 (stock WotLK's own choice) targets
+  # exactly 13163's Effect_1 = aura 49 MOD_DODGE_PERCENT (+18 base, dumped) — allEffects would
+  # also bleed into 13163's Effect_2 (aura 87 MOD_DAMAGE_PERCENT_TAKEN, amount 0) and add +N%
+  # damage taken, so effect1 is load-bearing here, not stylistic. Mask omits stock's word-3 8192
+  # (Aspect of the Dragonhawk, unreachable in Vanilla).
+  - id: 18304
+    slug: improved_aspect_of_the_monkey
+    name: Improved Aspect of the Monkey
+    tab: 1
+    tier: 1
+    col: 1
+    icon: ability_hunter_aspectofthemonkey
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    mechanic: spellmod
+    affects: ["Aspect of the Monkey"]  # 13163, family 9 bit 524288 (_ref, dumped)
+    op: effect1               # SPELLMOD_EFFECT1 (3) — the aspect's dodge effect only (see above)
+    kind: flat
+    vals: [1, 2, 3, 4, 5]
+    tooltip:
+    - Increases the Dodge bonus of your Aspect of the Monkey by 1%.
+    - Increases the Dodge bonus of your Aspect of the Monkey by 2%.
+    - Increases the Dodge bonus of your Aspect of the Monkey by 3%.
+    - Increases the Dodge bonus of your Aspect of the Monkey by 4%.
+    - Increases the Dodge bonus of your Aspect of the Monkey by 5%.
+  # AUTHORED (mechanic: pet) — verdict 2026-08-17. Stock WotLK 19609/19610/19612 diverges twice
+  # (dump): pet half = +7/+14(?)/+20 spellmod onto carrier 19580 AND an owner half (aura 142
+  # MOD_BASE_RESISTANCE_PCT +4../+10 misc 1 — hunter item-armor). Vanilla = pet armor ONLY at
+  # 10/20/30 (top rank confirmed value 30 on wowhead/classic/spell=19612). petAura 101 =
+  # MOD_RESISTANCE_PCT with petMisc 1 (SPELL_SCHOOL_MASK_NORMAL = armor), copied verbatim from
+  # the stock pet-armor carrier analog "Tamed Pet Passive 02" 19580 (dump: aura 101, misc 1).
+  - id: 18305
+    slug: thick_hide
+    name: Thick Hide
+    tab: 1
+    tier: 1
+    col: 2
+    icon: inv_misc_pelt_bear_03
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 5
+    mechanic: pet
+    pet: 0                      # all pets
+    petAura: 101               # SPELL_AURA_MOD_RESISTANCE_PCT (analog: 19580, dumped)
+    petMisc: 1                 # armor school mask (analog 19580's misc)
+    vals: [10, 20, 30]
+    tooltip:
+    - Increases the Armor rating of your pets by 10%.
+    - Increases the Armor rating of your pets by 20%.
+    - Increases the Armor rating of your pets by 30%.
+  # AUTHORED (multi, three spellmods) — verdict 2026-08-17. The WotLK DBC keeps only ONE rank
+  # (19575, dumped: aura 107 flat -6000 misc 10 CASTING_TIME + aura 108 pct -40 misc 14 COST +
+  # aura 107 flat +30 misc 8 ALL_EFFECTS, all masked 16777216 = Revive Pet) — its values are the
+  # RANK-2 magnitudes, so granting can't express rank 1. Both ranks authored with the stock
+  # three-op shape at the 1.12 values (r2 = -6s/-40%/+30% confirmed on wowhead/classic/spell=19575;
+  # r1 = the halved 1.12 series -3s/-20%/+15% per the tooltips below). The allEffects half raises
+  # Revive Pet 982's Effect_1 (SPELL_EFFECT_RESURRECT_PET, basePoints 14 -> 15% return health).
+  - id: 18306
+    slug: improved_revive_pet
+    name: Improved Revive Pet
+    tab: 1
+    tier: 1
+    col: 3
+    icon: ability_hunter_beastsoothe
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    mechanic: multi
+    effects:
+      - type: spellmod
+        affects: ["Revive Pet"]  # 982, family 9 bit 16777216 (_ref, dumped)
+        op: castTime         # SPELLMOD_CASTING_TIME (10), flat ms
+        kind: flat
+        vals: [-3000, -6000]
+      - type: spellmod
+        affects: ["Revive Pet"]
+        op: cost             # SPELLMOD_COST (14), pct
+        kind: pct
+        vals: [-20, -40]
+      - type: spellmod
+        affects: ["Revive Pet"]
+        op: allEffects       # SPELLMOD_ALL_EFFECTS (8) — 982's resurrect-health %
+        kind: flat
+        vals: [15, 30]
+    tooltip:
+    - Revive Pet's casting time is reduced by 3 sec, mana cost is reduced by 20%, and increases the health your pet returns
+      with by an additional 15%.
+    - Revive Pet's casting time is reduced by 6 sec, mana cost is reduced by 40%, and increases the health your pet returns
+      with by an additional 30%.
+  # AUTHORED (spellmod) — verdict 2026-08-17. Stock WotLK 19559/19560 diverges twice (dump):
+  # aspect half = +4/+8 (aura 107 flat misc 3 masked 2097152) AND two WotLK-only mounted/flight
+  # speed effects (aura 172/211 +5/+10). Vanilla = the aspect bonus ONLY at +3/+6
+  # (wowhead/classic/spell=19560 value 6 with no mount effects; 1.12 tooltips below — note the
+  # plan text's 4/8 was the WOTLK value, rejected by the loop). op effect1 targets the aspects'
+  # Effect_1 = aura 31 MOD_INCREASE_SPEED (+30 base, 5118 dumped); flat +3/+6 -> 33/36%.
+  # WARNING (from _ref): Cheetah and Pack SHARE bit 2097152 — one mask reaches both, which is
+  # exactly what this node wants.
+  - id: 18307
+    slug: pathfinding
+    name: Pathfinding
+    tab: 1
+    tier: 2
+    col: 0
+    icon: ability_mount_jungletiger
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 10
+    mechanic: spellmod
+    affects: ["Aspect of the Cheetah", "Aspect of the Pack"]  # both bit 2097152 (_ref)
+    op: effect1               # SPELLMOD_EFFECT1 (3) — the aspects' speed effect
+    kind: flat
+    vals: [3, 6]
+    tooltip:
+    - Increases the speed bonus of your Aspect of the Cheetah and Aspect of the Pack by 3%.
+    - Increases the speed bonus of your Aspect of the Cheetah and Aspect of the Pack by 6%.
+  # AUTHORED (mechanic: pet) — verdict 2026-08-17, resolving the _ref's UNRESOLVED flag
+  # (grants.boars_speed). WotLK 19596 "Boar's Speed" is a bare aura-31 row with inert vestigial
+  # misc/mask, NO spell_pet_auras row and NO core script — nothing stock delivers it to a pet, so
+  # Bound is not viable. Classic 19596 was an owner spellmod (+30 onto the speed carrier "Tamed
+  # Pet Passive 04" 19582, base 0) — same net +30%; our spell_pet_auras delivery applies the speed
+  # aura (analog 19582's exact encoding: aura 31, misc 0, self-target) directly and survives
+  # resummon via m_petAuras.
+  # TRACKED DEVIATION — outdoor-only restriction NOT implemented: Classic gated the talent passive
+  # with an outdoors-only attribute; the generated pet-buff row carries fixed passive attributes
+  # (no attribute hook in `mechanic: pet`), and the core only area-gates PLAYER auras — a pet-held
+  # outdoors flag would be inert anyway. Result: the +30% also applies indoors, STRONGER than
+  # 1.12 (which itself is how WotLK ships Boar's Speed — Blizzard dropped the gate too). The
+  # tooltip keeps the authentic 1.12 wording.
+  - id: 18308
+    slug: bestial_swiftness
+    name: Bestial Swiftness
+    tab: 1
+    tier: 2
+    col: 1
+    icon: ability_druid_dash
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    mechanic: pet
+    pet: 0                      # all pets
+    petAura: 31                # SPELL_AURA_MOD_INCREASE_SPEED (analog: 19582 / 19596, dumped)
+    vals: [30]
+    tooltip:
+    - Increases the outdoor movement speed of your pets by 30%.
+  # AUTHORED (mechanic: pet) — verdict 2026-08-17. Stock WotLK 19616-19620 = +3..+15 (spellmod
+  # flat onto damage carrier 8875); Vanilla = 4/8/12/16/20 (top rank confirmed value 20 on
+  # wowhead/classic/spell=19620). petAura 79 + petMisc 127 copied from the carrier analog
+  # "Tamed Pet Passive 01" 8875 (dump: aura 79 MOD_DAMAGE_PERCENT_DONE, misc 127 all schools —
+  # NOT physical-only misc 1: hunter pet specials like Lightning Breath are magic and the 1.12
+  # tooltip says "damage done by your pets", unqualified).
+  - id: 18309
+    slug: unleashed_fury
+    name: Unleashed Fury
+    tab: 1
+    tier: 2
+    col: 2
+    icon: ability_bullrush
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 10
+    mechanic: pet
+    pet: 0                      # all pets
+    petAura: 79                # SPELL_AURA_MOD_DAMAGE_PERCENT_DONE (analog: 8875, dumped)
+    petMisc: 127               # SPELL_SCHOOL_MASK_ALL (analog 8875's misc)
+    vals: [4, 8, 12, 16, 20]
+    tooltip:
+    - Increases the damage done by your pets by 4%.
+    - Increases the damage done by your pets by 8%.
+    - Increases the damage done by your pets by 12%.
+    - Increases the damage done by your pets by 16%.
+    - Increases the damage done by your pets by 20%.
+  # AUTHORED (proc-scripted onto the CORE script) — verdict 2026-08-17. Stock WotLK 19572/19573
+  # diverges twice (dump): chance 25/50 (aura 4 DUMMY misc 4086/4087) AND a WotLK-only -10/-20%
+  # cost half (aura 108 misc 14). Vanilla = dispel-only at 15/50 (wowhead/classic/spell=19572
+  # value 15, /19573 value 50 — the Classic rows have NO cost effect).
+  # Mechanism: the fork's spell_hun_improved_mend_pet AuraScript (spell_hunter.cpp:534, stock-bound
+  # to chain -19572) rolls EFFECT_0's DUMMY amount as the cleanse chance and casts the stock dispel
+  # 24406 (SPELL_EFFECT_DISPEL misc 7, self-cast, implicit-pet-targeted) — our proc-scripted
+  # carriers put the Vanilla chance in that DUMMY amount and bind the SAME core script per rank.
+  # The spell_proc row is what actually feeds it proc events: flags 262144 = PROC_FLAG_DONE_PERIODIC
+  # (Mend Pet 136/48990 is aura 8 PERIODIC_HEAL, 3s tick, dumped), typeMask 2 = PROC_SPELL_TYPE_HEAL,
+  # affects gates to Mend Pet's family bit. Chance 100 at the proc layer; the script rolls 15/50.
+  # NOTE (corrected 2026-08-17 post-review): the stock proc wiring DOES exist and work upstream —
+  # in NEGATIVE-ID chain form: spell_proc SpellId=-19572 (ProcFlags 262144, SpellTypeMask 2,
+  # SpellPhaseMask 2, Chance 0 -> falls back to spellInfo->ProcChance 101->100), plus
+  # spell_proc_event entry=-19572 and spell_script_names -19572, all live-queried on ac-database.
+  # (Only the DBC ProcTypeMask=0 half is true; the core reads the table, not that column.) Our
+  # band passives still need their OWN explicit rows because the -id chain form can't reach custom
+  # ids — the rows above mirror the stock -19572 shape exactly (chance 100 explicit vs the stock
+  # Chance-0 fallback to the same 100). Runtime dispel-fire evidence is deferred to the
+  # real-client pass (needs a dispellable debuff on the pet during Mend Pet ticks).
+  - id: 18310
+    slug: improved_mend_pet
+    name: Improved Mend Pet
+    tab: 1
+    tier: 3
+    col: 1
+    icon: ability_hunter_mendpet
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 15
+    mechanic: proc-scripted
+    script: spell_hun_improved_mend_pet   # the CORE AuraScript (reads EFFECT_0 amount as chance)
+    vals: [15, 50]             # Vanilla cleanse chance -> the DUMMY carrier's amount
+    proc:
+      flags: 262144            # PROC_FLAG_DONE_PERIODIC — Mend Pet's periodic heal ticks
+      typeMask: 2              # PROC_SPELL_TYPE_HEAL (Mend Pet is a heal periodic)
+      affects: ["Mend Pet"]    # family 9 bit 8388608 (_ref, dumped) — only Mend Pet ticks
+      chance: 100              # gate at the proc layer; the script rolls the 15/50
+    tooltip:
+    - Gives the Mend Pet spell a 15% chance of cleansing 1 Curse, Disease, Magic or Poison effect from the pet each tick.
+    - Gives the Mend Pet spell a 50% chance of cleansing 1 Curse, Disease, Magic or Poison effect from the pet each tick.
+  # AUTHORED (mechanic: pet via petBuffIds) — verdict 2026-08-17. Stock WotLK 19598-19602 =
+  # +2..+10 (spellmod flat onto crit carrier 19591); Vanilla = 3/6/9/12/15 (top rank confirmed
+  # value 15 on wowhead/classic/spell=19602). The carrier 19591 holds TWO crit auras (52
+  # MOD_WEAPON_CRIT_PERCENT + 57 MOD_SPELL_CRIT_CHANCE, dumped) and the single-aura auto petAura
+  # row can't carry both — petBuffIds points at hand helpers 932973-932977 that mirror the
+  # carrier's two-effect shape at the Vanilla values (see helpers above).
+  - id: 18311
+    slug: ferocity
+    name: Ferocity
+    tab: 1
+    tier: 3
+    col: 2
+    icon: inv_misc_monsterclaw_04
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 15
+    mechanic: pet
+    pet: 0                      # all pets
+    petBuffIds: [932973, 932974, 932975, 932976, 932977]  # hand carriers, one per rank
+    tooltip:
+    - Increases the critical strike chance of your pets by 3%.
+    - Increases the critical strike chance of your pets by 6%.
+    - Increases the critical strike chance of your pets by 9%.
+    - Increases the critical strike chance of your pets by 12%.
+    - Increases the critical strike chance of your pets by 15%.
+  # AUTHORED (mechanic: pet via petBuffIds) — verdict 2026-08-17. The stock chain IS fully wired
+  # (stock spell_pet_auras rows 19578->19579 / 20895->24529, live-queried in the _ref) but the
+  # WotLK pet auras carry a second effect Vanilla lacks: aura 118 MOD_HEALING_PCT +5/+10 (healing
+  # received). Classic 24529 = the 1%/2%-per-10s regen ONLY (wowhead/classic/spell=24529). So the
+  # node keeps the stock delivery mechanism through our own carriers: petBuffIds -> helpers
+  # 932968/932969, template-cloned from 19579 with only the regen effect (see helpers above).
+  # The 119 area aura lives ON THE PET and radiates to pet + owner; it auto-strips when the pet
+  # is dismissed/dies and re-applies on resummon via m_petAuras.
+  - id: 18312
+    slug: spirit_bond
+    name: Spirit Bond
+    tab: 1
+    tier: 4
+    col: 0
+    icon: ability_druid_demoralizingroar
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 20
+    mechanic: pet
+    pet: 0                      # all pets (the stock rows also use pet=0)
+    petBuffIds: [932968, 932969]  # Vanilla regen-only clones of stock 19579/24529
+    tooltip:
+    - While your pet is active, you and your pet will regenerate 1% of total health every 10 sec.
+    - While your pet is active, you and your pet will regenerate 2% of total health every 10 sec.
+  # BOUND (grants stock) — verdict 2026-08-17. Stock 19577 (dump) already IS the Vanilla
+  # "on next successful melee attack" version: it puts an aura-42 proc on the PET (targetA 5)
+  # whose next melee triggers 24394 (SPELL_EFFECT_THREAT 580 + aura 12 MOD_STUN, 3 sec via
+  # DurationIndex 27); core spell_hun_intimidation (spell_hunter.cpp:1285, stock-bound) only
+  # filters positive spells out of the proc. 1 min cooldown matches (RecoveryTime 60000).
+  # Minor accepted divergence: cost is 8% of base mana (WotLK encoding) vs the 1.12 flat
+  # 137 mana — behaviorally equivalent at 60 and not worth a clone.
+  - id: 18313
+    slug: intimidation
+    name: Intimidation
+    tab: 1
+    tier: 4
+    col: 1
+    icon: ability_devour
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 20
+    grants: {1: [19577]}       # stock Intimidation active (_ref.grants.intimidation, live-verified)
+    tooltip:
+    - Command your pet to intimidate the target on the next successful melee
+      attack, causing a high amount of threat and stunning the target for 3 sec.
+  # AUTHORED (mechanic: pet) — verdict 2026-08-17. Stock WotLK 19590/19592 = +50/+100 (aura 107
+  # flat misc 8 masked to focus-regen carrier 19589, dumped; no scripts/procs — pure spellmod,
+  # per the _ref); Vanilla = +10/+20 (wowhead/classic/spell=19590 value 10; 1.12 tooltips below).
+  # petAura 110 + petMisc 2 copied from the carrier analog "Tamed Pet Passive 05" 19589 (dump:
+  # aura 110 MOD_POWER_REGEN_PERCENT, misc 2 = POWER_FOCUS, base amount 0 — the talent supplies
+  # the whole percentage either way, so the direct pet aura at 10/20 is value-identical to the
+  # stock spellmod shape and applies immediately at learn via CastPetAuras).
+  - id: 18314
+    slug: bestial_discipline
+    name: Bestial Discipline
+    tab: 1
+    tier: 4
+    col: 3
+    icon: spell_nature_abolishmagic
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 20
+    mechanic: pet
+    pet: 0                      # all pets
+    petAura: 110               # SPELL_AURA_MOD_POWER_REGEN_PERCENT (analog: 19589, dumped)
+    petMisc: 2                 # POWER_FOCUS (analog 19589's misc)
+    vals: [10, 20]
+    tooltip:
+    - Increases the Focus regeneration of your pets by 10%.
+    - Increases the Focus regeneration of your pets by 20%.
+  # BOUND (grants stock) — verdict 2026-08-17, path A. The whole chain is stock and
+  # Vanilla-exact: 19621-19625 (dump) = aura 107 flat misc 18 CHANCE_OF_SUCCESS at
+  # +20/40/60/80/100, masked 0x80000000 to the auto-learned crit-proc carrier "Tamed Pet
+  # Passive 07" 20784 (aura 42 -> 19615 at ProcChance 0, ProcTypeMask 69972; live spell_proc +
+  # spell_proc_event rows exist for 20784). Classic 19621 (wowhead/classic) = the same +20
+  # chance-mod shape, and the payload 19615 Frenzy Effect = aura 138 MOD_MELEE_HASTE +30 for
+  # 8 sec (DurationIndex 31 = 8000 ms) — matching the 1.12 tooltip (30% attack speed, 8 sec)
+  # exactly. No spell_pet_auras/scripts needed: the carrier is auto-learned by every hunter pet
+  # (Pet::LearnPetPassives) and the owner spellmod reaches the pet via GetSpellModOwner.
+  # NOTE: a live proc-fire (pet melee crit -> 19615 on the pet) is deferred to the real-client
+  # pass; headless proves the grant + spellmod registration only.
+  - id: 18315
+    slug: frenzy
+    name: Frenzy
+    tab: 1
+    tier: 5
+    col: 2
+    icon: inv_misc_monsterclaw_03
+    maxRank: 5
+    prereqTalentId: 18311
+    prereqPoints: 25
+    grants: {1: [19621], 2: [19622], 3: [19623], 4: [19624], 5: [19625]}
+    tooltip:
+    - Gives your pet a 20% chance to gain a 30% attack speed increase for 8 sec after dealing a critical strike.
+    - Gives your pet a 40% chance to gain a 30% attack speed increase for 8 sec after dealing a critical strike.
+    - Gives your pet a 60% chance to gain a 30% attack speed increase for 8 sec after dealing a critical strike.
+    - Gives your pet a 80% chance to gain a 30% attack speed increase for 8 sec after dealing a critical strike.
+    - Gives your pet a 100% chance to gain a 30% attack speed increase for 8 sec after dealing a critical strike.
+  # AUTHORED (helper clone 932967) — verdict 2026-08-17. Stock 19574 diverges: 10 sec /
+  # 10% base mana (WotLK) vs 18 sec / 12% base mana (Classic, wowhead/classic/spell=19574);
+  # effects otherwise identical (+50% damage, +50% scale, stun immunity — see the helper comment).
+  # The clone carries its own client row (era duration/cost text) and the core CheckCast is
+  # rebound to it via scriptBindings (top of file).
+  - id: 18316
+    slug: bestial_wrath
+    name: Bestial Wrath
+    tab: 1
+    tier: 6
+    col: 1
+    icon: ability_druid_ferociousbite
+    maxRank: 1
+    prereqTalentId: 18313
+    prereqPoints: 30
+    grants: {1: [932967]}      # Vanilla 18s/12% clone (helpers above)
+    tooltip:
+    - Send your pet into a rage causing 50% additional damage for
+      18 sec. While enraged, the beast cannot be stopped unless killed.
+- key: 2
+  name: Marksmanship
+  background: HunterMarksmanship
+  nodes:
+  # AUTHORED (proc -> stun clone 932971) — verdict 2026-08-17. Vanilla Improved Concussive Shot
+  # procs a 3s stun (rank-1 4% confirmed on wowhead/classic/spell=19407; series 4/8/12/16/20% x5).
+  # Stock WotLK 19407/19412 diverges completely: only 2 ranks, and it's a Concussive-Shot DURATION
+  # spellmod (dump: aura 108 misc 1 SPELLMOD_DURATION +1000/+2000 ms masked 512), no stun at all.
+  # The Vanilla stun spell 19410 is absent from the 3.3.5a DBC -> reconstructed as clone 932971
+  # (helpers above). Proc: Concussive Shot 5116 is DefenseType 3 (ranged dmg class) -> flag 256
+  # PROC_FLAG_DONE_SPELL_RANGED_DMG_CLASS, family-masked to its bit 512. typeMask 5 is LOAD-BEARING:
+  # 5116 deals NO damage (single effect aura 33 MOD_DECREASE_SPEED, dump), so the hit event carries
+  # SpellTypeMask NO_DMG_HEAL(4) and the generator's default typeMask 1 (DAMAGE) would never match
+  # (the Improved Wing Clip bug; check_proc_damage_reachability flags it).
+  - id: 18317
+    slug: improved_concussive_shot
+    name: Improved Concussive Shot
+    tab: 2
+    tier: 0
+    col: 1
+    icon: spell_frost_stun
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    mechanic: proc
+    proc:
+      flags: 256               # PROC_FLAG_DONE_SPELL_RANGED_DMG_CLASS (SpellMgr.h:122)
+      affects: ["Concussive Shot"]   # family 9 bit 512 (_ref, dumped)
+      chance: [4, 8, 12, 16, 20]
+      typeMask: 5              # DAMAGE | NO_DMG_HEAL — Concussive Shot is a no-damage ranged-class hit
+      trigger: 932971         # the Vanilla 3s stun clone (helpers above)
+    tooltip:
+    - Gives your Concussive Shot a 4% chance to stun the target for 3 sec.
+    - Gives your Concussive Shot a 8% chance to stun the target for 3 sec.
+    - Gives your Concussive Shot a 12% chance to stun the target for 3 sec.
+    - Gives your Concussive Shot a 16% chance to stun the target for 3 sec.
+    - Gives your Concussive Shot a 20% chance to stun the target for 3 sec.
+  # AUTHORED (spellmod) — verdict 2026-08-17. Stock WotLK Efficiency 19416-19420 (dump) is the same
+  # op (aura 108 misc 14 SPELLMOD_COST) at the same -2..-10% series, masked to the shot+sting family
+  # (522752). Authored rather than granted so the mask is the Vanilla shot+sting set, named.
+  # UPDATED 2026-09-05 (TBC Phase 7 back-port): reaches the era Aimed Shot clones (932952-932957) via
+  # the word2 bit-21 identity — the clones now carry `family: 9` + `maskC: 2097152` instead of
+  # family 0, so an `affects:` name resolves to them. This CLOSES Vanilla record gap 4 ("Efficiency
+  # does not reduce the era Aimed Shot clone's mana"); the 6 s cooldown is unaffected, because the
+  # SpellInfoCorrections sweep keys on word0 0x20000 and the clones still do not carry it.
+  - id: 18318
+    slug: efficiency
+    name: Efficiency
+    tab: 2
+    tier: 0
+    col: 2
+    icon: spell_frost_wizardmark
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    mechanic: spellmod
+    affects: ["Arcane Shot", "Multi-Shot", "Concussive Shot", "Volley", "Serpent Sting", "Scorpid Sting", "Viper Sting", "Aimed Shot (Era)"]
+    op: cost                   # SPELLMOD_COST (14) — stock Efficiency's own op
+    kind: pct
+    vals: [-2, -4, -6, -8, -10]
+    tooltip:
+    - Reduces the Mana cost of your Shots and Stings by 2%.
+    - Reduces the Mana cost of your Shots and Stings by 4%.
+    - Reduces the Mana cost of your Shots and Stings by 6%.
+    - Reduces the Mana cost of your Shots and Stings by 8%.
+    - Reduces the Mana cost of your Shots and Stings by 10%.
+  # AUTHORED (spellmod) — verdict 2026-08-17. Hunter's Mark 1130 (dump): Effect_1 = aura 68 (the
+  # mark), Effect_2 = aura 127 RANGED_ATTACK_POWER_ATTACKER_BONUS (the RAP granted to attackers) —
+  # so op effect2 scales exactly the RAP bonus. Stock WotLK Improved Hunter's Mark 19421-19423
+  # diverges: only 3 ranks, and it adds a WotLK-only Effect_2 cost reduction (aura 108 misc 14, dump)
+  # on top of the effect2 scaling. Vanilla = the RAP scaling ONLY at +3/6/9/12/15% x5 ranks. Using
+  # op effect2 (stock's own choice, misc 12) avoids touching the mark's Effect_1 — WotLK's separate
+  # melee-AP behavior does not exist on 1130 (no aura-99 effect), so scaling only effect2 is faithful.
+  - id: 18319
+    slug: improved_hunter_s_mark
+    name: Improved Hunter's Mark
+    tab: 2
+    tier: 1
+    col: 1
+    icon: ability_hunter_snipershot
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    mechanic: spellmod
+    affects: ["Hunter's Mark"]  # 1130, family 9 bit 1024 (_ref, dumped)
+    op: effect2               # SPELLMOD_EFFECT2 (12) — 1130's Effect_2 = aura 127 RAP bonus (dump)
+    kind: pct
+    vals: [3, 6, 9, 12, 15]
+    tooltip:
+    - Increases the Ranged Attack Power bonus of your Hunter's Mark spell by 3%.
+    - Increases the Ranged Attack Power bonus of your Hunter's Mark spell by 6%.
+    - Increases the Ranged Attack Power bonus of your Hunter's Mark spell by 9%.
+    - Increases the Ranged Attack Power bonus of your Hunter's Mark spell by 12%.
+    - Increases the Ranged Attack Power bonus of your Hunter's Mark spell by 15%.
+  # BOUND (grants stock) — verdict 2026-08-17. Stock Lethal Shots 19426/19427/19429/19430/19431
+  # (dump; NB 19428 is a different spell, 19424/19425 absent — _ref): single effect aura 52
+  # MOD_WEAPON_CRIT_PERCENT +1/+2/+3/+4/+5%, family 0, 5 ranks — the exact Vanilla value series.
+  # MINOR ACCEPTED DEVIATION: aura 52 recomputes ALL weapon crit (HandleAuraModWeaponCritPercent ->
+  # UpdateAllWeaponDependentCritAuras), so it also raises MELEE crit; Vanilla Lethal Shots was
+  # ranged-only. No ranged-only weapon-crit % aura exists in 3.3.5a, and this is the same aura the
+  # granted Killer Instinct (18343 -> 19370) uses, so granting is the faithful path.
+  - id: 18320
+    slug: lethal_shots
+    name: Lethal Shots
+    tab: 2
+    tier: 1
+    col: 2
+    icon: ability_searingarrow
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    grants: {1: [19426], 2: [19427], 3: [19429], 4: [19430], 5: [19431]}  # stock ranks, +1..5% (_ref)
+    tooltip:
+    - Increases your critical strike chance with ranged weapons by 1%.
+    - Increases your critical strike chance with ranged weapons by 2%.
+    - Increases your critical strike chance with ranged weapons by 3%.
+    - Increases your critical strike chance with ranged weapons by 4%.
+    - Increases your critical strike chance with ranged weapons by 5%.
+  # AUTHORED (helper clone 932952 + trainer chain) — verdict 2026-08-17. Stock 19434 is the WotLK
+  # rework (instant, -50% healing debuff, 10s swept cooldown); Vanilla is a 3s-cast / 6s-cooldown
+  # bonus-damage shot with 6 ranks. The talent grants R1 (932952); R2-R6 (932953-957) are
+  # trainer-taught (SQL 2026_08_16_22) and stripped on era exit by `EraBandClassifier::Sweep` (they
+  # classify as ranks above a node-granted r1, so they are legal only while the node is spent in the
+  # CURRENT era). The retired per-class strip table `kHunterTrainedChains` no longer exists.
+  # Full clone rationale (sweep sidestep, category, effects, per-rank values) in the helpers above.
+  - id: 18321
+    slug: aimed_shot
+    name: Aimed Shot
+    tab: 2
+    tier: 2
+    col: 0
+    icon: inv_spear_07
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    grants: {1: [932952]}      # Vanilla 3s/6s R1 clone; R2-R6 trainer-chained off it
+    tooltip:
+    - An aimed shot that increases ranged damage by
+      70.
+  # AUTHORED (spellmod) — verdict 2026-08-17. Stock WotLK Improved Arcane Shot 19454-19456 is a
+  # completely different talent (dump: aura 108 misc 0 SPELLMOD_DAMAGE +5/10/15% on Arcane Shot,
+  # 3 ranks). Vanilla = -0.2/-0.4/-0.6/-0.8/-1.0s COOLDOWN on Arcane Shot (5 ranks). Arcane Shot 3044
+  # has a 6s category cooldown (CategoryRecoveryTime 6000, dump); op cooldown flat ms reduces it via
+  # GetSpellModOwner. WotLK's +dmg% rework is the divergence.
+  - id: 18322
+    slug: improved_arcane_shot
+    name: Improved Arcane Shot
+    tab: 2
+    tier: 2
+    col: 1
+    icon: ability_impalingbolt
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 10
+    mechanic: spellmod
+    affects: ["Arcane Shot"]   # 3044, family 9 bit 2048 (_ref, dumped)
+    op: cooldown               # SPELLMOD_COOLDOWN (11), flat ms
+    kind: flat
+    vals: [-200, -400, -600, -800, -1000]
+    tooltip:
+    - Reduces the cooldown of your Arcane Shot by 0.2 sec.
+    - Reduces the cooldown of your Arcane Shot by 0.4 sec.
+    - Reduces the cooldown of your Arcane Shot by 0.6 sec.
+    - Reduces the cooldown of your Arcane Shot by 0.8 sec.
+    - Reduces the cooldown of your Arcane Shot by 1 sec.
+  # BOUND (grants stock) — verdict 2026-08-17. Stock Hawk Eye 19498/19499/19500 (dump): aura 107
+  # flat, misc 5 SPELLMOD_RANGE, basePoints 1/3/5 + dieSides 1 -> +2/+4/+6 yd, masked to the ranged
+  # shot family (522753). Value series and rank count match Vanilla exactly (+2/4/6 yd, 3 ranks), so
+  # the grant branch applies (moved to Survival in WotLK but mechanically identical).
+  - id: 18323
+    slug: hawk_eye
+    name: Hawk Eye
+    tab: 2
+    tier: 2
+    col: 3
+    icon: ability_townwatch
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    grants: {1: [19498], 2: [19499], 3: [19500]}  # stock ranks, +2/4/6 yd (_ref, dumped)
+    tooltip:
+    - Increases the range of your ranged weapons by 2 yards.
+    - Increases the range of your ranged weapons by 4 yards.
+    - Increases the range of your ranged weapons by 6 yards.
+  # AUTHORED (spellmod) — verdict 2026-08-17. There is no stock Vanilla-shaped Improved Serpent
+  # Sting: the only family-9 spell of that name, 24467 (dump), is a +3s DURATION mod (aura 107 misc 1
+  # masked 16384), not the damage talent. Vanilla = +2/4/6/8/10% Serpent Sting DAMAGE (5 ranks).
+  # Serpent Sting 1978 is a pure periodic-damage DoT (aura 3), so op dot scales its whole damage.
+  - id: 18324
+    slug: improved_serpent_sting
+    name: Improved Serpent Sting
+    tab: 2
+    tier: 3
+    col: 1
+    icon: ability_hunter_quickshot
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 15
+    mechanic: spellmod
+    affects: ["Serpent Sting"]  # 1978, family 9 bit 16384 (_ref, dumped)
+    op: dot                    # SPELLMOD_DOT (22) — Serpent Sting's damage is entirely periodic
+    kind: pct
+    vals: [2, 4, 6, 8, 10]
+    tooltip:
+    - Increases the damage done by your Serpent Sting by 2%.
+    - Increases the damage done by your Serpent Sting by 4%.
+    - Increases the damage done by your Serpent Sting by 6%.
+    - Increases the damage done by your Serpent Sting by 8%.
+    - Increases the damage done by your Serpent Sting by 10%.
+  # BOUND (grants stock) — verdict 2026-08-17. Stock Mortal Shots 19485/19487/19488/19489/19490
+  # (dump; NB 19486 is a different spell — _ref): aura 108 misc 15 SPELLMOD_CRIT_DAMAGE_BONUS,
+  # basePoints 5..29 + dieSides 1 -> +6/12/18/24/30%, masked to the ranged-shot family. Value series
+  # and 5-rank count match Vanilla exactly and the mechanic (ranged crit-damage bonus) is unchanged
+  # from Vanilla, so the grant branch applies. The stock mask is the WotLK shot set (harmlessly wider
+  # than Vanilla).
+  # ACCEPTED GAP — the era Aimed Shot clones are NOT covered. The reason is no longer "the clone is
+  # family 0": the TBC phase back-ported the Aimed Shot identity, so 932952-932957 are family 9 with
+  # `maskC: 2097152` (word-2 bit 21). The gap survives because the GRANTED STOCK passive 19485 names
+  # its spellmod scope in its own effect-1 mask, whose word 2 is `EffectSpellClassMaskA_3 = 2625`
+  # (dump 2026-09-06) — bit 21 is absent, and a granted stock spell's mask cannot be edited without
+  # rewriting a stock row. Closing it would mean AUTHORING the node (five clones) instead of granting;
+  # not done, because Mortal Shots is a ranged-crit-damage bonus that the clone's own crit already
+  # gets from every OTHER source, and the node is otherwise a perfect Vanilla match.
+  - id: 18325
+    slug: mortal_shots
+    name: Mortal Shots
+    tab: 2
+    tier: 3
+    col: 2
+    icon: ability_piercedamage
+    maxRank: 5
+    prereqTalentId: 18320
+    prereqPoints: 15
+    grants: {1: [19485], 2: [19487], 3: [19488], 4: [19489], 5: [19490]}  # stock ranks, +6..30% crit dmg (_ref)
+    tooltip:
+    - Increases your ranged weapon critical strike damage bonus by 6%.
+    - Increases your ranged weapon critical strike damage bonus by 12%.
+    - Increases your ranged weapon critical strike damage bonus by 18%.
+    - Increases your ranged weapon critical strike damage bonus by 24%.
+    - Increases your ranged weapon critical strike damage bonus by 30%.
+  # BOUND (grants stock) — verdict 2026-08-17. Stock Scatter Shot 19503 (dump): Effect_1 = 31
+  # WEAPON_PERCENT_DAMAGE 50 (50% weapon damage) + Effect_2 = aura 5 MOD_CONFUSE (disorient),
+  # DurationIndex 35 = 4s, RecoveryTime 30000 (30s cd), RangeIndex 11 (15 yd) — Vanilla-exact
+  # behavior. MINOR ACCEPTED DEVIATION on cost, and the earlier note here was WRONG about it: stock
+  # 19503 is NOT free. Its flat `ManaCost` column is 0, but `ManaCostPct` is 8 (dump 2026-09-06), and
+  # a percentage cost is what the core actually charges — roughly 138 mana on a level-60 hunter,
+  # against the 1.12 figure of ~123. So the real deviation is about +12%, not "free vs 123". No 1.12
+  # ManaCostPct is recorded in `_ref` (the Vanilla record carries only the flat number), so there is
+  # no era value to author even if this were cloned; ±12% on one 30 s-cooldown utility shot is
+  # accepted. Single rank, so the grant branch applies.
+  # NB the TBC phase DID clone Scatter Shot (948382) — for `AuraInterruptFlags`, not for the cost.
+  - id: 18326
+    slug: scatter_shot
+    name: Scatter Shot
+    tab: 2
+    tier: 4
+    col: 0
+    icon: ability_golemstormbolt
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 20
+    grants: {1: [19503]}       # stock Scatter Shot (_ref.grants.scatter_shot, live-verified)
+    tooltip:
+    - A short-range shot that deals 50% weapon damage
+      and confuses the target for 4 sec. Any damage caused will remove the effect.
+  # AUTHORED (spellmod) — verdict 2026-08-17. Stock WotLK Barrage 19461/19462/24691 (dump): aura 108
+  # misc 0 SPELLMOD_DAMAGE, basePoints 3/7/11 -> +4/8/12%, masked 143360 = Multi-Shot(4096) +
+  # Volley(8192) + Aimed Shot(131072). Vanilla diverges in BOTH value (+5/10/15%) and scope
+  # (Multi-Shot + Volley only — WotLK added Aimed Shot). Authored with op damage at the Vanilla
+  # values and scope; Aimed Shot deliberately excluded because VANILLA'S OWN SCOPE excludes it —
+  # that is the whole point, and it is a fidelity CHOICE, not a technical limitation. (The old note
+  # "also unreachable — the clone is family 0" is retired: since the TBC phase back-ported the Aimed
+  # Shot identity, the era clones 932952-932957 are family 9 with `maskC: 2097152`, so an
+  # `affectsMask` COULD name them if Vanilla's Barrage had ever covered Aimed Shot. It did not.)
+  - id: 18327
+    slug: barrage
+    name: Barrage
+    tab: 2
+    tier: 4
+    col: 1
+    icon: ability_upgrademoonglaive
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 20
+    mechanic: spellmod
+    affects: ["Multi-Shot", "Volley"]  # bits 4096 + 8192 (_ref, dumped); Aimed Shot excluded (Vanilla scope)
+    op: damage                 # SPELLMOD_DAMAGE (0) — stock Barrage's own op
+    kind: pct
+    vals: [5, 10, 15]
+    tooltip:
+    - Increases the damage done by your Multi-Shot and Volley spells by 5%.
+    - Increases the damage done by your Multi-Shot and Volley spells by 10%.
+    - Increases the damage done by your Multi-Shot and Volley spells by 15%.
+  # SCRIPTED — reworked 2026-08-24 (was a tracked-deviation spellmod on the WotLK Scorpid Sting, which
+  # did nothing meaningful because stock 3043 is the WotLK -hit-chance rework, not the Vanilla Str/Agi
+  # debuff). Now the module ships the authentic Vanilla Scorpid Sting (helpers 932300-303, Str/Agi
+  # reduction) and this talent restores the AUTHENTIC 1.12 Improved Scorpid Sting: it makes Scorpid Sting
+  # ALSO reduce the target's Stamina by 10/20/30% of the Strength it removed. `mechanic: scripted` mints a
+  # band-gated hidden DUMMY marker per rank (misc 16, amount = 10/20/30) that self-applies on learn; the
+  # AuraScript era_hunter_scorpid_sting (bound to the 4 clones) reads the marker off the casting hunter
+  # and sets the clone's Effect_3 (MOD_STAT Stamina) to -pct% of the Str reduction (0 without the talent).
+  # DUMMY misc registry: 16.
+  # ACCEPTED AUTHENTIC BEHAVIOR (owner-confirmed 2026-08-25): the Stamina reduction lowers max health for
+  # PLAYER targets only. On CREATURES it has no health effect — Creature::UpdateMaxHealth (StatSystem.cpp)
+  # reads UNIT_MOD_HEALTH, not stamina, and Creature::UpdateStats is a no-op, so a MOD_STAT Stamina never
+  # touches a mob's health pool. This matches real Vanilla (Improved Scorpid Sting was effectively a PvP
+  # talent); NOT a bug. The owner chose authenticity over a PvE-visible max-health-reduction deviation.
+  - id: 18328
+    slug: improved_scorpid_sting
+    name: Improved Scorpid Sting
+    tab: 2
+    tier: 4
+    col: 2
+    icon: ability_hunter_criticalshot
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 20
+    mechanic: scripted
+    marker: 16                  # band-gated DUMMY misc the era_hunter_scorpid_sting script reads off the hunter
+    vals: [10, 20, 30]          # Stamina reduced as % of the Strength reduced (rank 1/2/3)
+    tooltip:
+    - Reduces the Stamina of targets affected by your Scorpid Sting by 10% of the amount of Strength reduced.
+    - Reduces the Stamina of targets affected by your Scorpid Sting by 20% of the amount of Strength reduced.
+    - Reduces the Stamina of targets affected by your Scorpid Sting by 30% of the amount of Strength reduced.
+  # AUTHORED (stat) — verdict 2026-08-17. Stock Ranged Weapon Specialization 19507/19508/19509
+  # (dump): aura 79 MOD_DAMAGE_PERCENT_DONE, misc 127 (all schools), +1/+3/+5% — but only 3 ranks,
+  # while Vanilla RWS is 5 ranks (+1/2/3/4/5%). Can't grant a 3-rank chain into a 5-rank node, so
+  # authored with the SAME aura/misc AND THE SAME RANGED EQUIP GATE the stock chain uses, at the full
+  # 5-rank series. MINOR ACCEPTED DEVIATION: aura 79 misc 127 is an all-SCHOOL damage percentage, not
+  # a ranged-weapon-only one (no ranged-only damage aura exists in 3.3.5a) — the same scope stock RWS
+  # ships. What keeps it honest is the equip gate (core CheckAttackFitToAuraRequirement): stock
+  # 19507-19509 carry EquippedItemClass 2 / EquippedItemSubclass 262156 (dump 2026-09-06), and so do
+  # TBC's own 19507-19511 (mirrored by the shipped TBC node 20635). Without it the node was a flat
+  # +1..5% to ALL damage regardless of what the hunter held.
+  - id: 18329
+    slug: ranged_weapon_specialization
+    name: Ranged Weapon Specialization
+    tab: 2
+    tier: 5
+    col: 2
+    icon: inv_weapon_rifle_06
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 25
+    mechanic: stat
+    aura: 79                   # SPELL_AURA_MOD_DAMAGE_PERCENT_DONE (analog: stock RWS 19507, dumped)
+    school: 127                # all-school mask (analog 19507's misc)
+    vals: [1, 2, 3, 4, 5]
+    equipClass: 2              # ITEM_CLASS_WEAPON — stock 19507's gate, verbatim
+    equipSubclass: 262156      # bow (1<<2) | gun (1<<3) | crossbow (1<<18) — stock 19507's mask
+    tooltip:
+    - Increases the damage you deal with ranged weapons by 1%.
+    - Increases the damage you deal with ranged weapons by 2%.
+    - Increases the damage you deal with ranged weapons by 3%.
+    - Increases the damage you deal with ranged weapons by 4%.
+    - Increases the damage you deal with ranged weapons by 5%.
+  # AUTHORED (helper clone 932961 + trainer chain) — verdict 2026-08-17. Stock 19506 is the WotLK
+  # rework (+10% ranged/melee AP party aura, single rank); Vanilla is a FLAT +50/75/100 ranged+melee
+  # AP party aura with 3 ranks. The talent grants R1 (932961); R2/R3 (932962/963) are trainer-taught
+  # (SQL 2026_08_16_22) and stripped on era exit by `EraBandClassifier::Sweep` (they classify as
+  # ranks above a node-granted r1, so they are legal only while the node is spent in the CURRENT
+  # era). The retired per-class strip table `kHunterTrainedChains` no longer exists. Full clone
+  # rationale (flat-AP effect swap, 45-yd radius, per-rank values, the caster-extra note) in the
+  # helpers above.
+  - id: 18330
+    slug: trueshot_aura
+    name: Trueshot Aura
+    tab: 2
+    tier: 6
+    col: 1
+    icon: ability_trueshot
+    maxRank: 1
+    prereqTalentId: 18327
+    prereqPoints: 30
+    grants: {1: [932961]}      # Vanilla flat +50 AP R1 clone; R2/R3 trainer-chained off it
+    tooltip:
+    - Increases the Ranged and Melee Attack Power of party members within 45 yards by 50. Lasts 30 min.
+- key: 3
+  name: Survival
+  background: HunterSurvival
+  nodes:
+  # AUTHORED (multi, two stat auras) — verdict 2026-08-17. The Vanilla-only slaying pair is
+  # ABSENT from the 3.3.5a DBC by name (_ref.notInWotLKDbc, dump confirmed). Classic 24295 (r3,
+  # wowhead classic): "Mod All Damage Done Against Creature % (Beast, Dragonkin, Giant)" 3% +
+  # "Mod Critical Damage Against Creature % (Beast, Dragonkin, Giant)" 3%. Fork encoding: aura
+  # 168 MOD_DAMAGE_DONE_VERSUS (consumed as a multiplier by creature-type mask, Unit.cpp:8490 /
+  # 10275 — live stock analog Crusade 31866: aura 168, misc = type mask, basePoints val-1) and
+  # aura 169 MOD_CRIT_PERCENT_VERSUS (consumed as CRIT DAMAGE bonus vs type, Unit.cpp:1554/1841/
+  # 9459/9497 — the exact Vanilla "critical damage" wording; NB the 3.3.5a DBC has ZERO stock
+  # aura-169 rows, so the encoding is verified against the fork handler itself, not an analog).
+  # misc 19 = CREATURE_TYPEMASK Beast(1<<0) | Dragonkin(1<<1) | Giant(1<<4) (SharedDefines.h:2622,
+  # 1 << (type-1)).
+  - id: 18331
+    slug: monster_slaying
+    name: Monster Slaying
+    tab: 3
+    tier: 0
+    col: 0
+    icon: inv_misc_head_dragon_black
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 0
+    mechanic: multi
+    effects:
+      - type: stat
+        aura: 168              # SPELL_AURA_MOD_DAMAGE_DONE_VERSUS (analog: Crusade 31866, dumped)
+        misc: 19               # Beast | Dragonkin | Giant creature-type mask
+        vals: [1, 2, 3]
+      - type: stat
+        aura: 169              # SPELL_AURA_MOD_CRIT_PERCENT_VERSUS (crit DAMAGE vs type — fork handler)
+        misc: 19
+        vals: [1, 2, 3]
+    tooltip:
+    - Increases all damage caused against Beast, Giants and Dragonkin targets by 1% and increases critical damage caused against
+      Beasts, Giants, and Dragonkin targets by an additional 1%.
+    - Increases all damage caused against Beast, Giants and Dragonkin targets by 2% and increases critical damage caused against
+      Beasts, Giants, and Dragonkin targets by an additional 2%.
+    - Increases all damage caused against Beast, Giants and Dragonkin targets by 3% and increases critical damage caused against
+      Beasts, Giants, and Dragonkin targets by an additional 3%.
+  # AUTHORED (multi, two stat auras) — verdict 2026-08-17. Same shape/provenance as Monster
+  # Slaying above (Classic 19153 r3: the same aura pair vs Humanoid at 3%); misc 64 =
+  # CREATURE_TYPEMASK Humanoid = 1 << (CREATURE_TYPE_HUMANOID(7) - 1) (SharedDefines.h:2628).
+  - id: 18332
+    slug: humanoid_slaying
+    name: Humanoid Slaying
+    tab: 3
+    tier: 0
+    col: 1
+    icon: spell_holy_prayerofhealing
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 0
+    mechanic: multi
+    effects:
+      - type: stat
+        aura: 168              # SPELL_AURA_MOD_DAMAGE_DONE_VERSUS
+        misc: 64               # Humanoid creature-type mask
+        vals: [1, 2, 3]
+      - type: stat
+        aura: 169              # SPELL_AURA_MOD_CRIT_PERCENT_VERSUS (crit damage vs type)
+        misc: 64
+        vals: [1, 2, 3]
+    tooltip:
+    - Increases all damage caused against Humanoid targets by 1% and increases critical damage caused against Humanoid targets
+      by an additional 1%.
+    - Increases all damage caused against Humanoid targets by 2% and increases critical damage caused against Humanoid targets
+      by an additional 2%.
+    - Increases all damage caused against Humanoid targets by 3% and increases critical damage caused against Humanoid targets
+      by an additional 3%.
+  # AUTHORED (stat) — verdict 2026-08-17. Stock WotLK Deflection is only 3 ranks (19295/19297/
+  # 19298) and diverges twice (dump): a WotLK-only Effect_2 aura 234 MECHANIC_DURATION_MOD_NOT_
+  # STACK misc 3 (disarm-duration reduction) rides every rank, and the Vanilla line is FIVE ranks
+  # +1..5% (Classic 19295: single effect "Mod Parry % 1", wowhead classic; per-rank series per the
+  # 1.12 tooltips below). aura 47 MOD_PARRY_PERCENT copied from stock 19295's Effect_1 (dumped).
+  # school: 0 pins EffectMiscValue to 0 (the stat emitter's default 127 is a school mask irrelevant
+  # to — and ignored by — the parry handler; 0 mirrors the stock row).
+  - id: 18333
+    slug: deflection
+    name: Deflection
+    tab: 3
+    tier: 0
+    col: 2
+    icon: ability_parry
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    mechanic: stat
+    aura: 47                   # SPELL_AURA_MOD_PARRY_PERCENT (analog: 19295, dumped)
+    school: 0                  # misc 0, as the stock parry rows carry
+    vals: [1, 2, 3, 4, 5]
+    tooltip:
+    - Increases your Parry chance by 1%.
+    - Increases your Parry chance by 2%.
+    - Increases your Parry chance by 3%.
+    - Increases your Parry chance by 4%.
+    - Increases your Parry chance by 5%.
+  # AUTHORED (proc -> root clone 932972) — verdict 2026-08-17. Classic: FIVE ranks at 5/10/15/20/
+  # 25% (19390 = r5 25% -> root 19185, wowhead classic), root = 5 sec (classic 19185). Stock WotLK
+  # Entrapment diverges everywhere: 3 ranks, per-rank roots 19185/64803/64804 at only 2s/3s/4s,
+  # and its DBC-only proc (ProcTypeMask 2097152, all-zero effect masks — no spell_proc row) cannot
+  # scope which traps qualify. Our authored spell_proc CAN: the core raises
+  # PROC_FLAG_DONE_TRAP_ACTIVATION (0x200000) only for family-9 casts matching flags[0]&0x18 or
+  # flags[2]&0x24000 (Spell.cpp:2288 — i.e. exactly the four trap EFFECT spells), the proc event
+  # carries the trap EFFECT spell as eventSpellInfo (so the family mask below excludes Freezing
+  # Trap 3355 bit 8, matching the Vanilla tooltip's Immolation/Frost/Explosive-only scope), fires
+  # at PROC_SPELL_PHASE_FINISH (hence phaseMask 4 — the default HIT phase would never match), and
+  # passes the trap triggerer as the proc victim (Spell.cpp:4329), so the root lands on the enemy
+  # that sprang the trap. attrMask 2 (TRIGGERED_CAN_PROC) is mandatory: the trap GO's casts are
+  # triggered casts. typeMask stays the default 1 — FINISH-phase events carry
+  # PROC_SPELL_TYPE_MASK_ALL (Unit.cpp:6816), so DAMAGE intersects for every trap line including
+  # the no-damage frost slow. Frost Trap coverage rides the ground aura 13810 (bit 16), NOT the
+  # mask-less 67035 — no gap here (67035 matters to Trap Mastery below, not to this proc).
+  - id: 18334
+    slug: entrapment
+    name: Entrapment
+    tab: 3
+    tier: 1
+    col: 0
+    icon: spell_nature_stranglevines
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    mechanic: proc
+    proc:
+      flags: 2097152           # PROC_FLAG_DONE_TRAP_ACTIVATION (SpellMgr.h:141)
+      affects: ["Immolation Trap Effect", "Explosive Trap Effect", "Frost Trap Aura"]
+      # ^ union (20, 0, 147456) — Freezing Trap Effect (bit 8) deliberately EXCLUDED (Vanilla scope)
+      chance: [5, 10, 15, 20, 25]
+      phaseMask: 4             # PROC_SPELL_PHASE_FINISH — trap activation procs fire at finish
+      attrMask: 2              # PROC_ATTR_TRIGGERED_CAN_PROC — trap effects are triggered casts
+      trigger: 932972          # the Vanilla 5s root clone (helpers above)
+    tooltip:
+    - Gives your Immolation Trap, Frost Trap, and Explosive Trap a 5% chance to entrap the target, preventing them from moving
+      for 5 sec.
+    - Gives your Immolation Trap, Frost Trap, and Explosive Trap a 10% chance to entrap the target, preventing them from moving
+      for 5 sec.
+    - Gives your Immolation Trap, Frost Trap, and Explosive Trap a 15% chance to entrap the target, preventing them from moving
+      for 5 sec.
+    - Gives your Immolation Trap, Frost Trap, and Explosive Trap a 20% chance to entrap the target, preventing them from moving
+      for 5 sec.
+    - Gives your Immolation Trap, Frost Trap, and Explosive Trap a 25% chance to entrap the target, preventing them from moving
+      for 5 sec.
+  # AUTHORED (spellmod) — verdict 2026-08-17. Stock WotLK 19159/19160 (dump): aura 107 flat,
+  # misc 7 SPELLMOD_CRITICAL_CHANCE, +10/+20 — the right op and values — but its mask
+  # (2, 524288, 0) ALSO covers Counterattack (word-2 524288, per the _ref), a WotLK scope
+  # extension Vanilla lacks (Classic 19159 affects only Raptor Strike + Mongoose Bite, wowhead
+  # classic). Authored with the same op at the Vanilla scope: union mask (2, 0, 65536) — word-1
+  # bit 2 covers both lines, Raptor's word-3 65536 rides along harmlessly (Raptor-exclusive bit).
+  - id: 18335
+    slug: savage_strikes
+    name: Savage Strikes
+    tab: 3
+    tier: 1
+    col: 1
+    icon: ability_racial_bloodrage
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    mechanic: spellmod
+    affects: ["Raptor Strike", "Mongoose Bite"]  # bits (2,0,65536) + (2,0,0) (_ref, dumped)
+    op: crit                   # SPELLMOD_CRITICAL_CHANCE (7) — stock 19159's own op
+    kind: flat
+    vals: [10, 20]
+    tooltip:
+    - Increases the critical strike chance of Raptor Strike and Mongoose Bite by 10%.
+    - Increases the critical strike chance of Raptor Strike and Mongoose Bite by 20%.
+  # AUTHORED (proc -> root clone 932978) — verdict 2026-08-17. The talent has NO WotLK
+  # counterpart at all (the root-proc was removed in 3.x; no "Improved Wing Clip" ids in the
+  # 3.3.5a DBC). Classic chain (wowhead classic): 19228 = 4% .. 19235 = 20%, five ranks, all
+  # triggering root 19229 ("Improved Wing Clip", 5 sec) — 19229 likewise absent from 3.3.5a,
+  # reconstructed as clone 932978. Proc: Wing Clip 2974 is DefenseType 2 (melee dmg class,
+  # dumped) -> PROC_FLAG_DONE_SPELL_MELEE_DMG_CLASS (0x10), default HIT phase, family-masked to
+  # Wing Clip's bit 64.
+  # typeMask 5 (DAMAGE | NO_DMG_HEAL) is LOAD-BEARING: the 3.3.5a Wing Clip deals NO damage —
+  # its Vanilla physical hit was removed, leaving a single APPLY_AURA(33 MOD_DECREASE_SPEED)
+  # effect (2974 dump) — so the melee-hit proc event computes SpellTypeMask NO_DMG_HEAL (4)
+  # (no damageInfo -> Unit::ProcSkillsAndAuras' no-damage branch), and the generator's default
+  # typeMask 1 (DAMAGE) is rejected by SpellMgr::CanSpellTriggerProcOnEvent (1 & 4 == 0 — the
+  # talent could never proc; caught in spec review of fcf5bce). Stock precedent for a melee-
+  # class no-damage proc filter: spell_proc rows -53695 / -20335 carry ProcFlags 16,
+  # SpellTypeMask 5, SpellPhaseMask 2 (live-queried).
+  - id: 18336
+    slug: improved_wing_clip
+    name: Improved Wing Clip
+    tab: 3
+    tier: 1
+    col: 2
+    icon: ability_rogue_trip
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    mechanic: proc
+    proc:
+      flags: 16                # PROC_FLAG_DONE_SPELL_MELEE_DMG_CLASS (Wing Clip's dmg class)
+      affects: ["Wing Clip"]   # family 9 bit 64 (_ref, dumped)
+      chance: [4, 8, 12, 16, 20]
+      typeMask: 5              # DAMAGE | NO_DMG_HEAL — Wing Clip is a NO-DAMAGE melee-class
+                               # hit on 3.3.5a (see comment above); the default 1 never matches
+      trigger: 932978          # the Vanilla 5s root clone (helpers above)
+    tooltip:
+    - Gives your Wing Clip ability a 4% chance to immobilize the target for 5 sec.
+    - Gives your Wing Clip ability a 8% chance to immobilize the target for 5 sec.
+    - Gives your Wing Clip ability a 12% chance to immobilize the target for 5 sec.
+    - Gives your Wing Clip ability a 16% chance to immobilize the target for 5 sec.
+    - Gives your Wing Clip ability a 20% chance to immobilize the target for 5 sec.
+  # AUTHORED (multi, two spellmods) — verdict 2026-08-17. The Vanilla name is gone from 3.3.5a
+  # (renamed "Trap Mastery" 19376/63457/63458, per the _ref) and the WotLK values diverge
+  # (+10/20/30 x3 ranks vs Vanilla +15/30 x2). Encoding per CLASSIC Clever Traps 19239 (wowhead
+  # classic): Effect_1 = SPELLMOD_DURATION (1) pct on Freezing Trap Effect + Frost Trap Aura,
+  # Effect_2 = SPELLMOD_ALL_EFFECTS (8) pct on Immolation Trap Effect + Explosive Trap Effect.
+  # The duration mask (24,0,0) is byte-identical to stock WotLK Trap Mastery's. The damage half
+  # deliberately follows CLASSIC's op 8 (ALL_EFFECTS scales every effect's CalcValue — including
+  # Explosive Trap's direct SCHOOL_DAMAGE hit) rather than WotLK's op 22 SPELLMOD_DOT (which only
+  # reaches periodic amounts and would skip that direct hit); mask union (4, 0, 147456) covers
+  # the same two damage lines as stock's (4, 134217728, 131072) — stock reaches Explosive via
+  # word-1 bit 4 only, ours also carries Explosive's exclusive word-3 16384; word-2 134217728 has
+  # no Vanilla-reachable holder and is dropped. Spellmods reach the trap effects because the GO
+  # trap casts with the hunter as original caster (GetSpellModOwner = the hunter — same
+  # delivery the stock WotLK talent relies on).
+  # NAMED GAP (same one as Trap Mastery below): the frost INITIAL slow 67035 has an all-zero
+  # family mask, so no spellmod can stretch it — but 67035 rides Frost Trap Aura 13810's own
+  # duration (the ground cloud, masked bit 16), so the era-visible "Frost trap duration" IS
+  # extended; only the per-target 10s slow duration stays stock.
+  - id: 18337
+    slug: clever_traps
+    name: Clever Traps
+    tab: 3
+    tier: 2
+    col: 0
+    icon: spell_nature_timestop
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 10
+    mechanic: multi
+    effects:
+      - type: spellmod
+        affects: ["Freezing Trap Effect", "Frost Trap Aura"]   # (24,0,0) — stock-identical duration mask
+        op: duration           # SPELLMOD_DURATION (1)
+        kind: pct
+        vals: [15, 30]
+      - type: spellmod
+        affects: ["Immolation Trap Effect", "Explosive Trap Effect"]  # (4,0,147456) — see comment
+        op: allEffects         # SPELLMOD_ALL_EFFECTS (8) — Classic 19239's own damage op
+        kind: pct
+        vals: [15, 30]
+    tooltip:
+    - Increases the duration of Freezing and Frost trap effects by 15% and the damage of Immolation and Explosive trap effects
+      by 15%.
+    - Increases the duration of Freezing and Frost trap effects by 30% and the damage of Immolation and Explosive trap effects
+      by 30%.
+  # AUTHORED (stat) — verdict 2026-08-17. Stock WotLK Survivalist 19255-19259 EXISTS at the same
+  # 2..10% series BUT was re-based onto STAMINA (dump: aura 137 MOD_TOTAL_STAT_PERCENTAGE,
+  # misc 2 = stamina) — +10% stamina is NOT +10% total health (base health is stamina-free), so
+  # granting would under-deliver. Classic 19259 (wowhead classic): "Mod Increase Maximum
+  # Health %" = aura 133 MOD_INCREASE_HEALTH_PERCENT, value 10 — the pet-health carrier 19581
+  # (BM node 18302's analog) proves the same aura id in the live fork.
+  - id: 18338
+    slug: survivalist
+    name: Survivalist
+    tab: 3
+    tier: 2
+    col: 1
+    icon: spell_shadow_twilight
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 10
+    mechanic: stat
+    aura: 133                  # SPELL_AURA_MOD_INCREASE_HEALTH_PERCENT (analog: 19581 / Classic 19259)
+    school: 0                  # misc 0 — the health handler reads no misc
+    vals: [2, 4, 6, 8, 10]
+    tooltip:
+    - Increases total health by 2%.
+    - Increases total health by 4%.
+    - Increases total health by 6%.
+    - Increases total health by 8%.
+    - Increases total health by 10%.
+  # AUTHORED (helper clone 932964) — verdict 2026-08-17. Stock 19263 is the WotLK deflect rework
+  # (100% parry + deflect + pacify, 5s, 90s CD — dump in the helper comment); Vanilla is +25%
+  # dodge/parry for 10s on a 5 min cooldown (wowhead classic). Clone carries its own client row.
+  - id: 18339
+    slug: deterrence
+    name: Deterrence
+    tab: 3
+    tier: 2
+    col: 2
+    icon: ability_whirlwind
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    grants: {1: [932964]}      # Vanilla 25%/25% 10s clone (helpers above)
+    tooltip:
+    - When activated, increases your Dodge and Parry chance by 25% for 10 sec.
+  # AUTHORED (spellmod, op resistMiss — added to the generator OP map this task) — verdict
+  # 2026-08-17. Vanilla Trap Mastery = -5/-10% trap resist chance; the WotLK spell of that NAME
+  # (19376 chain) is a different talent entirely (the duration/DOT spellmod = renamed Clever
+  # Traps). Encoding per CLASSIC Trap Mastery 19376 (wowhead classic): aura 107 flat, "Modifies
+  # Hit Chance (16)" = SPELLMOD_RESIST_MISS_CHANCE, value 5, masked to the trap EFFECT spells —
+  # the same shape Classic/WotLK use for Improved Feign Death (19287/37484). The core consumes
+  # op 16 in MagicSpellHitResult (Unit.cpp:3532: ApplySpellMod(spellId, SPELLMOD_RESIST_MISS_
+  # CHANCE, modHitChance)) — a flat +N to the landing spell's hit chance = -N% resist chance;
+  # the trap effects are magic-school binary spells resolved through exactly that path, with the
+  # hunter as GetSpellModOwner (GO traps cast with the hunter as original caster). Mask = all
+  # FOUR trap effect lines (28, 0, 147456) — Vanilla's "trap effects" is unscoped, Freezing
+  # included.
+  # NAMED GAP: Frost Trap's INITIAL single-target slow 67035 carries an all-zero family mask
+  # (_ref.trapEffects, explicitly recorded) — no family-mask spellmod can ever reach it, so that
+  # one application keeps its stock resist chance. The freezing stun 3355, immolation DoT 13797,
+  # explosive blast 13812 and the frost ground cloud 13810 (whose per-target slow applications
+  # roll hit against 13810 itself) are all covered.
+  - id: 18340
+    slug: trap_mastery
+    name: Trap Mastery
+    tab: 3
+    tier: 3
+    col: 0
+    icon: ability_ensnare
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 15
+    mechanic: spellmod
+    affects: ["Freezing Trap Effect", "Frost Trap Aura", "Immolation Trap Effect", "Explosive Trap Effect"]
+    op: resistMiss             # SPELLMOD_RESIST_MISS_CHANCE (16) — Classic 19376's own encoding
+    kind: flat
+    vals: [5, 10]
+    tooltip:
+    - Decreases the chance enemies will resist trap effects by 5%.
+    - Decreases the chance enemies will resist trap effects by 10%.
+  # AUTHORED (multi, three stat auras) — verdict 2026-08-17, resolving the plan's 117-vs-232
+  # question in favor of 117. Stock WotLK Surefooted 19290/19294/24283 was REWORKED into a
+  # duration reduction (aura 232 MECHANIC_DURATION_MOD, dumped in the _ref) — not Vanilla's
+  # resist chance. CLASSIC 19290 (wowhead classic): "Give % Chance to Resist Mechanic (Snared)"
+  # 5% + "... (Rooted)" 5% + "Mod Melee & Ranged Hit Chance %" 1% — i.e. aura 117
+  # MOD_MECHANIC_RESISTANCE (one mechanic per effect: misc 11 snare + misc 7 root, the priest
+  # Unbreakable Will precedent) + aura 54 MOD_HIT_CHANCE (melee+ranged %, the encoding the pet
+  # hit carrier 34666 proves in the fork). The same-named 27953 is the TBC boot enchant (aura
+  # 117 pair + aura 189 hit RATING) — its 117 halves corroborate, its rating half is WotLK-style
+  # and not used. Mechanic ids verified against SharedDefines.h (MECHANIC_ROOT 7, MECHANIC_SNARE
+  # 11 — the same pair both 27953 and stock 19290 carry as misc).
+  - id: 18341
+    slug: surefooted
+    name: Surefooted
+    tab: 3
+    tier: 3
+    col: 1
+    icon: ability_kick
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    mechanic: multi
+    effects:
+      - type: stat
+        aura: 54               # SPELL_AURA_MOD_HIT_CHANCE (melee + ranged %)
+        vals: [1, 2, 3]
+      - type: stat
+        aura: 117              # SPELL_AURA_MOD_MECHANIC_RESISTANCE
+        misc: 11               # MECHANIC_SNARE
+        vals: [5, 10, 15]
+      - type: stat
+        aura: 117
+        misc: 7                # MECHANIC_ROOT
+        vals: [5, 10, 15]
+    tooltip:
+    - Increases hit chance by 1% and increases the chance movement impairing effects will be resisted by 5%.
+    - Increases hit chance by 2% and increases the chance movement impairing effects will be resisted by 10%.
+    - Increases hit chance by 3% and increases the chance movement impairing effects will be resisted by 15%.
+  # AUTHORED (spellmod) — verdict 2026-08-17, resolving the _ref's 24432-vs-37484 ambiguity:
+  # 24432 = aura 107 misc 11 SPELLMOD_COOLDOWN -2000ms on FD (a TBC set-bonus cooldown reducer,
+  # DISMISSED); 37484 = aura 107 misc 16 SPELLMOD_RESIST_MISS_CHANCE +5 masked (256,0,0) = the FD
+  # resist shape, byte-identical to CLASSIC Improved Feign Death 19287 ("Modifies Hit Chance
+  # (16)" value 4 on Feign Death 5384, wowhead classic). Authored with that shape at the Vanilla
+  # 2/4 values.
+  # TRACKED GAP — behaviorally INERT on this core: Feign Death lands with no resist roll at all
+  # (AuraEffect::HandleFeignDeath, SpellAuraEffects.cpp:2931 — the SMSG_FEIGN_DEATH_RESISTED
+  # branch is commented out and no hit result is ever computed for the self-cast), which is also
+  # how retail WotLK ships (FD resists were removed). The talent's rows are era-faithful and
+  # would engage if the core ever restored the roll; today the two points buy nothing, exactly
+  # like the stock WotLK 37484 shape they mirror. Named here rather than silently shipped.
+  - id: 18342
+    slug: improved_feign_death
+    name: Improved Feign Death
+    tab: 3
+    tier: 3
+    col: 3
+    icon: ability_rogue_feigndeath
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 15
+    mechanic: spellmod
+    affects: ["Feign Death"]   # family 9 bit 256 (_ref, dumped; 37484/19287 carry the same mask)
+    op: resistMiss             # SPELLMOD_RESIST_MISS_CHANCE (16)
+    kind: flat
+    vals: [2, 4]
+    tooltip:
+    - Reduces the chance your Feign Death ability will be resisted by 2%.
+    - Reduces the chance your Feign Death ability will be resisted by 4%.
+  # BOUND (grants stock) — verdict 2026-08-17. Stock 19370/19371/19373 (dump): single effect,
+  # aura 52 MOD_WEAPON_CRIT_PERCENT +1/+2/+3, family 0 — identical to Classic 19370 ("Mod Melee &
+  # Ranged Crit % 1", wowhead classic) in aura semantics and the full value series. Vanilla's
+  # "all attacks" = weapon attacks (hunters have no offensive non-weapon spells), which aura 52
+  # covers for melee + ranged. NB 19372 is NOT a rank (family-0 "Ancient Hysteria", per the _ref).
+  - id: 18343
+    slug: killer_instinct
+    name: Killer Instinct
+    tab: 3
+    tier: 4
+    col: 1
+    icon: spell_holy_blessingofstamina
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 20
+    grants: {1: [19370], 2: [19371], 3: [19373]}  # stock ranks, Vanilla-exact (_ref.grants.killer_instinct)
+    tooltip:
+    - Increases your critical strike chance with all attacks by 1%.
+    - Increases your critical strike chance with all attacks by 2%.
+    - Increases your critical strike chance with all attacks by 3%.
+  # AUTHORED (helper clone 932979) — verdict 2026-08-17. Stock 19306 diverges only in damage
+  # (48 vs Classic's 40 — dump + wowhead classic; everything else matches: 45 mana, 5 yd, 5s
+  # category cooldown, built-in 5s root, CasterAuraState 7 = AURA_STATE_HUNTER_PARRY as the pure-
+  # DBC "after parry" gate — no core script involved). Per the decision tree a magnitude
+  # divergence forbids granting the stock id, so the node grants the 40-damage clone.
+  # TRAINER RANKS (recorded for Task 8, NOT authored here): Classic r2 = 20909 (70 dmg, 65 mana)
+  # and r3 = 20910 (110 dmg, 85 mana) are trainer-taught; the WotLK stock rows carry 84/132, so
+  # Task 8 must chain CLONES off 932979 (Aimed Shot trainer pattern), not the stock ids.
+  - id: 18344
+    slug: counterattack
+    name: Counterattack
+    tab: 3
+    tier: 4
+    col: 2
+    icon: ability_warrior_challange
+    maxRank: 1
+    prereqTalentId: 18339
+    prereqPoints: 20
+    grants: {1: [932979]}      # Vanilla 40-damage clone (helpers above)
+    tooltip:
+    - A strike that becomes active after parrying an opponent's attack. This
+      attack deals 40 damage and immobilizes the target for 5 sec. Counterattack cannot be blocked, dodged, or parried.
+  # BOUND (grants stock) — verdict 2026-08-17. The full FIVE-rank stock chain exists:
+  # 19168/19180/19181 plus 24296/24297 (outside both _ref id sweeps; recovered by direct id
+  # dump this task and recorded back into _ref.grants.lightning_reflexes). All five: aura 137
+  # MOD_TOTAL_STAT_PERCENTAGE, misc 1 = STAT_AGILITY, basePoints 2/5/8/11/14 -> +3/6/9/12/15% —
+  # the exact Vanilla series (skeleton tooltips below), so the decision tree's grant branch
+  # applies.
+  - id: 18345
+    slug: lightning_reflexes
+    name: Lightning Reflexes
+    tab: 3
+    tier: 5
+    col: 2
+    # NB: maladr0it calc misspells this "Lightening Reflexes"; icon taken from its row; --check will flag the name
+    icon: spell_nature_invisibilty
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 25
+    grants: {1: [19168], 2: [19180], 3: [19181], 4: [24296], 5: [24297]}
+    tooltip:
+    - Increases your Agility by 3%.
+    - Increases your Agility by 6%.
+    - Increases your Agility by 9%.
+    - Increases your Agility by 12%.
+    - Increases your Agility by 15%.
+  # AUTHORED (helper clones 932965 sleep + 932966 DoT, module script era_wyvern_sting) — verdict
+  # 2026-08-17. Stock 19386 = WotLK's 30s sleep whose wake-DoT (24131, 300 over 6s) is cast by the
+  # CORE script spell_hun_wyvern_sting via the 24131 rank chain; Classic = 12s sleep + 300 over
+  # 12s + 2 min cooldown + out-of-combat-only (wowhead classic + warcraft.wiki.gg — full dump
+  # facts in the helper comments). The sleep clone binds the module's era_wyvern_sting instead of
+  # the core script (a chainless clone would rank-resolve to the stock 6s DoT — scriptBindings at
+  # the top of this file). Tooltip cast line corrected from the Daribon import's "Attack speed"
+  # to Instant — wowhead classic shows Classic 19386 as an instant cast, which the template
+  # clone inherits.
+  - id: 18346
+    slug: wyvern_sting
+    name: Wyvern Sting
+    tab: 3
+    tier: 6
+    col: 1
+    icon: inv_spear_02
+    maxRank: 1
+    prereqTalentId: 18343
+    prereqPoints: 30
+    grants: {1: [932965]}      # Vanilla 12s sleep clone (helpers above); DoT 932966 via script
+    tooltip:
+    - A stinging shot that puts the target to sleep for 12 sec. Any damage
+      will cancel the effect. When the target wakes up, the Sting causes 300 Nature damage over 12 sec. Only usable out of
+      combat. Only one Sting per Hunter can be active on the target at a time.

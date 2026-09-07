@@ -1,0 +1,1274 @@
+era: 1
+class: 11
+eraName: TBC
+className: DRUID
+tabs:
+- key: 1
+  name: Balance
+  background: DruidBalance
+  nodes:
+  - id: 20100
+    slug: starlight_wrath
+    name: Starlight Wrath
+    tab: 1
+    tier: 0
+    col: 0
+    icon: spell_nature_abolishmagic
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    rankSpells:
+    - 16814
+    - 16815
+    - 16816
+    - 16817
+    - 16818
+    tooltip:
+    - Reduces the cast time of your Wrath and Starfire spells by 0.1 sec.
+    - Reduces the cast time of your Wrath and Starfire spells by 0.2 sec.
+    - Reduces the cast time of your Wrath and Starfire spells by 0.3 sec.
+    - Reduces the cast time of your Wrath and Starfire spells by 0.4 sec.
+    - Reduces the cast time of your Wrath and Starfire spells by 0.5 sec.
+  - id: 20101
+    slug: nature_s_grasp
+    name: Nature's Grasp
+    tab: 1
+    tier: 0
+    col: 1
+    icon: spell_nature_natureswrath
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 0
+    rankSpells:
+    - 16689
+    tooltip:
+    - While active, any time an enemy strikes the caster they have a 35% chance to
+      become afflicted by Entangling Roots (Rank 1). Only useable outdoors. 1 charge.
+      Lasts 45 sec.
+  - id: 20102
+    slug: improved_nature_s_grasp
+    name: Improved Nature's Grasp
+    tab: 1
+    tier: 0
+    col: 2
+    icon: spell_nature_natureswrath
+    maxRank: 4
+    prereqTalentId: 20101
+    prereqPoints: 0
+    rankSpells:
+    - 17245
+    - 17247
+    - 17248
+    - 17249
+    tooltip:
+    - Increases the chance for your Nature's Grasp to entangle an enemy by 15%.
+    - Increases the chance for your Nature's Grasp to entangle an enemy by 30%.
+    - Increases the chance for your Nature's Grasp to entangle an enemy by 45%.
+    - Increases the chance for your Nature's Grasp to entangle an enemy by 65%.
+  - id: 20103
+    slug: control_of_nature
+    name: Control of Nature
+    tab: 1
+    tier: 1
+    col: 0
+    icon: spell_nature_stranglevines
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 16918
+    - 16919
+    - 16920
+    tooltip:
+    - Gives you a 40% chance to avoid interruption caused by damage while casting
+      Entangling Roots and Cyclone.
+    - Gives you a 70% chance to avoid interruption caused by damage while casting
+      Entangling Roots and Cyclone.
+    - Gives you a 100% chance to avoid interruption caused by damage while casting
+      Entangling Roots and Cyclone.
+  - id: 20104
+    slug: focused_starlight
+    name: Focused Starlight
+    tab: 1
+    tier: 1
+    col: 1
+    icon: inv_staff_01
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 35363
+    - 35364
+    tooltip:
+    - Increases the critical strike chance of your Wrath and Starfire spells by 2%.
+    - Increases the critical strike chance of your Wrath and Starfire spells by 4%.
+  - id: 20105
+    slug: improved_moonfire
+    name: Improved Moonfire
+    tab: 1
+    tier: 1
+    col: 2
+    icon: spell_nature_starfall
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 16821
+    - 16822
+    tooltip:
+    - Increases the damage and critical strike chance of your Moonfire spell by 5%.
+    - Increases the damage and critical strike chance of your Moonfire spell by 10%.
+  - id: 20106
+    slug: brambles
+    name: Brambles
+    tab: 1
+    tier: 2
+    col: 0
+    icon: spell_nature_thorns
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 16836
+    - 16839
+    - 16840
+    tooltip:
+    - Increases damage caused by your Thorns and Entangling Roots spells by 25%.
+    - Increases damage caused by your Thorns and Entangling Roots spells by 50%.
+    - Increases damage caused by your Thorns and Entangling Roots spells by 75%.
+  - id: 20107
+    slug: insect_swarm
+    name: Insect Swarm
+    tab: 1
+    tier: 2
+    col: 2
+    icon: spell_nature_insectswarm
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 5570
+    tooltip:
+    - The enemy target is swarmed by insects, decreasing their chance to hit by 2%
+      and causing 108 Nature damage over 12 sec.
+  - id: 20108
+    slug: nature_s_reach
+    name: Nature's Reach
+    tab: 1
+    tier: 2
+    col: 3
+    icon: spell_nature_naturetouchgrow
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 16819
+    - 16820
+    tooltip:
+    - Increases the range of your Balance spells and Faerie Fire (Feral) ability by
+      10%.
+    - Increases the range of your Balance spells and Faerie Fire (Feral) ability by
+      20%.
+  - id: 20109
+    slug: vengeance
+    name: Vengeance
+    tab: 1
+    tier: 3
+    col: 1
+    icon: spell_nature_purge
+    maxRank: 5
+    prereqTalentId: 20104
+    prereqPoints: 15
+    rankSpells:
+    - 16909
+    - 16910
+    - 16911
+    - 16912
+    - 16913
+    tooltip:
+    - Increases the critical strike damage bonus of your Starfire, Moonfire, and Wrath
+      spells by 20%.
+    - Increases the critical strike damage bonus of your Starfire, Moonfire, and Wrath
+      spells by 40%.
+    - Increases the critical strike damage bonus of your Starfire, Moonfire, and Wrath
+      spells by 60%.
+    - Increases the critical strike damage bonus of your Starfire, Moonfire, and Wrath
+      spells by 80%.
+    - Increases the critical strike damage bonus of your Starfire, Moonfire, and Wrath
+      spells by 100%.
+  - id: 20110
+    slug: celestial_focus
+    name: Celestial Focus
+    tab: 1
+    tier: 3
+    col: 2
+    icon: spell_arcane_starfire
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    rankSpells:
+    - 16850
+    - 16923
+    - 16924
+    tooltip:
+    - Gives your Starfire spell a 5% chance to stun the target for 3 sec and increases
+      the chance you'll resist spell interruption when casting your Wrath spell by
+      25%.
+    - Gives your Starfire spell a 10% chance to stun the target for 3 sec and increases
+      the chance you'll resist spell interruption when casting your Wrath spell by
+      50%.
+    - Gives your Starfire spell a 15% chance to stun the target for 3 sec and increases
+      the chance you'll resist spell interruption when casting your Wrath spell by
+      70%.
+  - id: 20111
+    slug: lunar_guidance
+    name: Lunar Guidance
+    tab: 1
+    tier: 4
+    col: 0
+    icon: ability_druid_lunarguidance
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 20
+    rankSpells:
+    - 33589
+    - 33590
+    - 33591
+    tooltip:
+    - Increases your spell damage and healing by 8% of your total Intellect.
+    - Increases your spell damage and healing by 16% of your total Intellect.
+    - Increases your spell damage and healing by 25% of your total Intellect.
+  - id: 20112
+    slug: nature_s_grace
+    name: Nature's Grace
+    tab: 1
+    tier: 4
+    col: 1
+    icon: spell_nature_naturesblessing
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 20
+    rankSpells:
+    - 16880
+    tooltip:
+    - All spell criticals grace you with a blessing of nature, reducing the casting
+      time of your next spell by 0.5 sec.
+  - id: 20113
+    slug: moonglow
+    name: Moonglow
+    tab: 1
+    tier: 4
+    col: 2
+    icon: spell_nature_sentinal
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 20
+    rankSpells:
+    - 16845
+    - 16846
+    - 16847
+    tooltip:
+    - Reduces the Mana cost of your Moonfire, Starfire, Wrath, Healing Touch, Regrowth
+      and Rejuvenation spells by 3%.
+    - Reduces the Mana cost of your Moonfire, Starfire, Wrath, Healing Touch, Regrowth
+      and Rejuvenation spells by 6%.
+    - Reduces the Mana cost of your Moonfire, Starfire, Wrath, Healing Touch, Regrowth
+      and Rejuvenation spells by 9%.
+  - id: 20114
+    slug: moonfury
+    name: Moonfury
+    tab: 1
+    tier: 5
+    col: 1
+    icon: spell_nature_moonglow
+    maxRank: 5
+    prereqTalentId: 20112
+    prereqPoints: 25
+    rankSpells:
+    - 16896
+    - 16897
+    - 16899
+    - 16900
+    - 16901
+    tooltip:
+    - Increases the damage done by your Starfire, Moonfire and Wrath spells by 2%.
+    - Increases the damage done by your Starfire, Moonfire and Wrath spells by 4%.
+    - Increases the damage done by your Starfire, Moonfire and Wrath spells by 6%.
+    - Increases the damage done by your Starfire, Moonfire and Wrath spells by 8%.
+    - Increases the damage done by your Starfire, Moonfire and Wrath spells by 10%.
+  - id: 20115
+    slug: balance_of_power
+    name: Balance of Power
+    tab: 1
+    tier: 5
+    col: 2
+    icon: ability_druid_balanceofpower
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 25
+    rankSpells:
+    - 33592
+    - 33596
+    tooltip:
+    - Increases your chance to hit with all spells and reduces the chance you'll be
+      hit by spells by 2%.
+    - Increases your chance to hit with all spells and reduces the chance you'll be
+      hit by spells by 4%.
+  - id: 20116
+    slug: dreamstate
+    name: Dreamstate
+    tab: 1
+    tier: 6
+    col: 0
+    icon: ability_druid_dreamstate
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 30
+    rankSpells:
+    - 33597
+    - 33599
+    - 33956
+    tooltip:
+    - Regenerate mana equal to 4% of your Intellect every 5 sec, even while casting.
+    - Regenerate mana equal to 7% of your Intellect every 5 sec, even while casting.
+    - Regenerate mana equal to 10% of your Intellect every 5 sec, even while casting.
+  - id: 20117
+    slug: moonkin_form
+    name: Moonkin Form
+    tab: 1
+    tier: 6
+    col: 1
+    icon: spell_nature_forceofnature
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 30
+    rankSpells:
+    - 24858
+    tooltip:
+    - Shapeshift into Moonkin Form. While in this form the armor contribution from
+      items is increased by 400%, attack power is increased by 150% of your level
+      and all party members within 30 yards have their spell critical chance increased
+      by 5%. Melee attacks in this form have a chance on hit to regenerate mana based
+      on attack power. The Moonkin can only cast Balance and Remove Curse spells while
+      shapeshifted. The act of shapeshifting frees the caster of Polymorph and Movement
+      Impairing effects.
+  - id: 20118
+    slug: improved_faerie_fire
+    name: Improved Faerie Fire
+    tab: 1
+    tier: 6
+    col: 2
+    icon: spell_nature_faeriefire
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 30
+    rankSpells:
+    - 33600
+    - 33601
+    - 33602
+    tooltip:
+    - Your Faerie Fire spell also increases the chance the target will be hit by melee
+      and ranged attacks by 1%.
+    - Your Faerie Fire spell also increases the chance the target will be hit by melee
+      and ranged attacks by 2%.
+    - Your Faerie Fire spell also increases the chance the target will be hit by melee
+      and ranged attacks by 3%.
+  - id: 20119
+    slug: wrath_of_cenarius
+    name: Wrath of Cenarius
+    tab: 1
+    tier: 7
+    col: 1
+    icon: ability_druid_twilightswrath
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 35
+    rankSpells:
+    - 33603
+    - 33604
+    - 33605
+    - 33606
+    - 33607
+    tooltip:
+    - Your Starfire spell gains an additional 4% and your Wrath gains an additional
+      2% of your bonus damage effects.
+    - Your Starfire spell gains an additional 8% and your Wrath gains an additional
+      4% of your bonus damage effects.
+    - Your Starfire spell gains an additional 12% and your Wrath gains an additional
+      6% of your bonus damage effects.
+    - Your Starfire spell gains an additional 16% and your Wrath gains an additional
+      8% of your bonus damage effects.
+    - Your Starfire spell gains an additional 20% and your Wrath gains an additional
+      10% of your bonus damage effects.
+  - id: 20120
+    slug: force_of_nature
+    name: Force of Nature
+    tab: 1
+    tier: 8
+    col: 1
+    icon: ability_druid_forceofnature
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 40
+    rankSpells:
+    - 33831
+    tooltip:
+    - Summons 3 treants to attack enemy targets for 30 sec.
+- key: 2
+  name: Feral Combat
+  background: DruidFeralCombat
+  nodes:
+  - id: 20121
+    slug: ferocity
+    name: Ferocity
+    tab: 2
+    tier: 0
+    col: 1
+    icon: ability_hunter_pet_hyena
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    rankSpells:
+    - 16934
+    - 16935
+    - 16936
+    - 16937
+    - 16938
+    tooltip:
+    - Reduces the cost of your Maul, Swipe, Claw, Rake and Mangle abilities by 1 Rage
+      or Energy.
+    - Reduces the cost of your Maul, Swipe, Claw, Rake and Mangle abilities by 2 Rage
+      or Energy.
+    - Reduces the cost of your Maul, Swipe, Claw, Rake and Mangle abilities by 3 Rage
+      or Energy.
+    - Reduces the cost of your Maul, Swipe, Claw, Rake and Mangle abilities by 4 Rage
+      or Energy.
+    - Reduces the cost of your Maul, Swipe, Claw, Rake and Mangle abilities by 5 Rage
+      or Energy.
+  - id: 20122
+    slug: feral_aggression
+    name: Feral Aggression
+    tab: 2
+    tier: 0
+    col: 2
+    icon: ability_druid_demoralizingroar
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    rankSpells:
+    - 16858
+    - 16859
+    - 16860
+    - 16861
+    - 16862
+    tooltip:
+    - Increases the attack power reduction of your Demoralizing Roar by 8% and the
+      damage caused by your Ferocious Bite by 3%.
+    - Increases the attack power reduction of your Demoralizing Roar by 16% and the
+      damage caused by your Ferocious Bite by 6%.
+    - Increases the attack power reduction of your Demoralizing Roar by 24% and the
+      damage caused by your Ferocious Bite by 9%.
+    - Increases the attack power reduction of your Demoralizing Roar by 32% and the
+      damage caused by your Ferocious Bite by 12%.
+    - Increases the attack power reduction of your Demoralizing Roar by 40% and the
+      damage caused by your Ferocious Bite by 15%.
+  - id: 20123
+    slug: feral_instinct
+    name: Feral Instinct
+    tab: 2
+    tier: 1
+    col: 0
+    icon: ability_ambush
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 16947
+    - 16948
+    - 16949
+    tooltip:
+    - Increases threat caused in Bear and Dire Bear Form by 5% and reduces the chance
+      enemies have to detect you while Prowling.
+    - Increases threat caused in Bear and Dire Bear Form by 10% and reduces the chance
+      enemies have to detect you while Prowling.
+    - Increases threat caused in Bear and Dire Bear Form by 15% and reduces the chance
+      enemies have to detect you while Prowling.
+  - id: 20124
+    slug: brutal_impact
+    name: Brutal Impact
+    tab: 2
+    tier: 1
+    col: 1
+    icon: ability_druid_bash
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 16940
+    - 16941
+    tooltip:
+    - Increases the stun duration of your Bash and Pounce abilities by 0.5 sec.
+    - Increases the stun duration of your Bash and Pounce abilities by 1 sec.
+  - id: 20125
+    slug: thick_hide
+    name: Thick Hide
+    tab: 2
+    tier: 1
+    col: 2
+    icon: inv_misc_pelt_bear_03
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 16929
+    - 16930
+    - 16931
+    tooltip:
+    - Increases your Armor contribution from items by 4%.
+    - Increases your Armor contribution from items by 7%.
+    - Increases your Armor contribution from items by 10%.
+  - id: 20126
+    slug: feral_swiftness
+    name: Feral Swiftness
+    tab: 2
+    tier: 2
+    col: 0
+    icon: spell_nature_spiritwolf
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 17002
+    - 24866
+    tooltip:
+    - Increases your movement speed by 15% while outdoors in Cat Form and increases
+      your chance to dodge while in Cat Form, Bear Form and Dire Bear Form by 2%.
+    - Increases your movement speed by 30% while outdoors in Cat Form and increases
+      your chance to dodge while in Cat Form, Bear Form and Dire Bear Form by 4%.
+  - id: 20127
+    slug: feral_charge
+    name: Feral Charge
+    tab: 2
+    tier: 2
+    col: 1
+    icon: ability_hunter_pet_bear
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 16979
+    tooltip:
+    - Causes you to charge an enemy, immobilizing and interrupting any spell being
+      cast for 4 sec.
+  - id: 20128
+    slug: sharpened_claws
+    name: Sharpened Claws
+    tab: 2
+    tier: 2
+    col: 2
+    icon: inv_misc_monsterclaw_04
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 16942
+    - 16943
+    - 16944
+    tooltip:
+    - Increases your critical strike chance while in Bear, Dire Bear or Cat Form by
+      2%.
+    - Increases your critical strike chance while in Bear, Dire Bear or Cat Form by
+      4%.
+    - Increases your critical strike chance while in Bear, Dire Bear or Cat Form by
+      6%.
+  - id: 20129
+    slug: shredding_attacks
+    name: Shredding Attacks
+    tab: 2
+    tier: 3
+    col: 0
+    icon: spell_shadow_vampiricaura
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 15
+    rankSpells:
+    - 16966
+    - 16968
+    tooltip:
+    - Reduces the energy cost of your Shred ability by 9 and the rage cost of your
+      Lacerate ability by 1.
+    - Reduces the energy cost of your Shred ability by 18 and the rage cost of your
+      Lacerate ability by 2.
+  - id: 20130
+    slug: predatory_strikes
+    name: Predatory Strikes
+    tab: 2
+    tier: 3
+    col: 1
+    icon: ability_hunter_pet_cat
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    rankSpells:
+    - 16972
+    - 16974
+    - 16975
+    tooltip:
+    - Increases your melee attack power in Cat, Bear, Dire Bear and Moonkin Forms
+      by 50% of your level.
+    - Increases your melee attack power in Cat, Bear, Dire Bear and Moonkin Forms
+      by 100% of your level.
+    - Increases your melee attack power in Cat, Bear, Dire Bear and Moonkin Forms
+      by 150% of your level.
+  - id: 20131
+    slug: primal_fury
+    name: Primal Fury
+    tab: 2
+    tier: 3
+    col: 2
+    icon: ability_racial_cannibalize
+    maxRank: 2
+    prereqTalentId: 20128
+    prereqPoints: 15
+    rankSpells:
+    - 37116
+    - 37117
+    tooltip:
+    - Gives you a 50% chance to gain an additional 5 Rage anytime you get a critical
+      strike while in Bear and Dire Bear Form and your critical strikes from Cat Form
+      abilities that add combo points have a 50% chance to add an additional combo
+      point.
+    - Gives you a 100% chance to gain an additional 5 Rage anytime you get a critical
+      strike while in Bear and Dire Bear Form and your critical strikes from Cat Form
+      abilities that add combo points have a 100% chance to add an additional combo
+      point.
+  - id: 20132
+    slug: savage_fury
+    name: Savage Fury
+    tab: 2
+    tier: 4
+    col: 0
+    icon: ability_druid_ravage
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 20
+    rankSpells:
+    - 16998
+    - 16999
+    tooltip:
+    - Increases the damage caused by your Claw, Rake, and Mangle (Cat) abilities by
+      10%.
+    - Increases the damage caused by your Claw, Rake, and Mangle (Cat) abilities by
+      20%.
+  - id: 20133
+    slug: faerie_fire_feral
+    name: Faerie Fire (Feral)
+    tab: 2
+    tier: 4
+    col: 2
+    icon: spell_nature_faeriefire
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 20
+    rankSpells:
+    - 16857
+    tooltip:
+    - Decrease the armor of the target by 175 for 40 sec. While affected, the target
+      cannot stealth or turn invisible.
+  - id: 20134
+    slug: nurturing_instinct
+    name: Nurturing Instinct
+    tab: 2
+    tier: 4
+    col: 3
+    icon: ability_druid_healinginstincts
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 20
+    rankSpells:
+    - 33872
+    - 33873
+    tooltip:
+    - Increases your healing spells by up to 50% of your Agility, and increases healing
+      done to you by 10% while in Cat form.
+    - Increases your healing spells by up to 100% of your Agility, and increases healing
+      done to you by 20% while in Cat form.
+  - id: 20135
+    slug: heart_of_the_wild
+    name: Heart of the Wild
+    tab: 2
+    tier: 5
+    col: 1
+    icon: spell_holy_blessingofagility
+    maxRank: 5
+    prereqTalentId: 20130
+    prereqPoints: 25
+    rankSpells:
+    - 17003
+    - 17004
+    - 17005
+    - 17006
+    - 24894
+    tooltip:
+    - Increases your Intellect by 4%. In addition, while in Bear or Dire Bear Form
+      your Stamina is increased by 4% and while in Cat Form your attack power is increased
+      by 2%.
+    - Increases your Intellect by 8%. In addition, while in Bear or Dire Bear Form
+      your Stamina is increased by 8% and while in Cat Form your attack power is increased
+      by 4%.
+    - Increases your Intellect by 12%. In addition, while in Bear or Dire Bear Form
+      your Stamina is increased by 12% and while in Cat Form your attack power is
+      increased by 6%.
+    - Increases your Intellect by 16%. In addition, while in Bear or Dire Bear Form
+      your Stamina is increased by 16% and while in Cat Form your attack power is
+      increased by 8%.
+    - Increases your Intellect by 20%. In addition, while in Bear or Dire Bear Form
+      your Stamina is increased by 20% and while in Cat Form your attack power is
+      increased by 10%.
+  - id: 20136
+    slug: survival_of_the_fittest
+    name: Survival of the Fittest
+    tab: 2
+    tier: 5
+    col: 2
+    icon: ability_druid_enrage
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 25
+    rankSpells:
+    - 33853
+    - 33855
+    - 33856
+    tooltip:
+    - Increases all attributes by 1% and reduces the chance you'll be critically hit
+      by melee attacks by 1%.
+    - Increases all attributes by 2% and reduces the chance you'll be critically hit
+      by melee attacks by 2%.
+    - Increases all attributes by 3% and reduces the chance you'll be critically hit
+      by melee attacks by 3%.
+  - id: 20137
+    slug: primal_tenacity
+    name: Primal Tenacity
+    tab: 2
+    tier: 6
+    col: 0
+    icon: ability_druid_primaltenacity
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 30
+    rankSpells:
+    - 33851
+    - 33852
+    - 33957
+    tooltip:
+    - Increases your chance to resist Stun and Fear mechanics by 5%.
+    - Increases your chance to resist Stun and Fear mechanics by 10%.
+    - Increases your chance to resist Stun and Fear mechanics by 15%.
+  - id: 20138
+    slug: leader_of_the_pack
+    name: Leader of the Pack
+    tab: 2
+    tier: 6
+    col: 1
+    icon: spell_nature_unyeildingstamina
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 30
+    rankSpells:
+    - 17007
+    tooltip:
+    - While in Cat, Bear or Dire Bear Form, the Leader of the Pack increases ranged
+      and melee critical chance of all party members within 45 yards by 5%.
+  - id: 20139
+    slug: improved_leader_of_the_pack
+    name: Improved Leader of the Pack
+    tab: 2
+    tier: 6
+    col: 2
+    icon: spell_nature_unyeildingstamina
+    maxRank: 2
+    prereqTalentId: 20138
+    prereqPoints: 30
+    rankSpells:
+    - 34297
+    - 34300
+    tooltip:
+    - Your Leader of the Pack ability also causes affected targets to have a 100%
+      chance to heal themselves for 2% of their total health when they critically
+      hit with a melee or ranged attack. The healing effect cannot occur more than
+      once every 6 sec.
+    - Your Leader of the Pack ability also causes affected targets to have a 100%
+      chance to heal themselves for 4% of their total health when they critically
+      hit with a melee or ranged attack. The healing effect cannot occur more than
+      once every 6 sec.
+  - id: 20140
+    slug: predatory_instincts
+    name: Predatory Instincts
+    tab: 2
+    tier: 7
+    col: 2
+    icon: ability_druid_predatoryinstincts
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 35
+    rankSpells:
+    - 33859
+    - 33866
+    - 33867
+    - 33868
+    - 33869
+    tooltip:
+    - While in Cat Form, Bear Form, or Dire Bear Form, increases your damage from
+      melee critical strikes by 2% and your chance to avoid area effect attacks by
+      3%.
+    - While in Cat Form, Bear Form, or Dire Bear Form, increases your damage from
+      melee critical strikes by 4% and your chance to avoid area effect attacks by
+      6%.
+    - While in Cat Form, Bear Form, or Dire Bear Form, increases your damage from
+      melee critical strikes by 6% and your chance to avoid area effect attacks by
+      9%.
+    - While in Cat Form, Bear Form, or Dire Bear Form, increases your damage from
+      melee critical strikes by 8% and your chance to avoid area effect attacks by
+      12%.
+    - While in Cat Form, Bear Form, or Dire Bear Form, increases your damage from
+      melee critical strikes by 10% and your chance to avoid area effect attacks by
+      15%.
+  - id: 20141
+    slug: mangle
+    name: Mangle
+    tab: 2
+    tier: 8
+    col: 1
+    icon: ability_druid_mangle2
+    maxRank: 1
+    prereqTalentId: 20138
+    prereqPoints: 40
+    rankSpells:
+    - 33917
+    tooltip:
+    - Mangle the target, inflicting damage and causing the target to take additional
+      damage from bleed effects for 12 sec. This ability can be used in Cat Form or
+      Dire Bear Form.
+- key: 3
+  name: Restoration
+  background: DruidRestoration
+  nodes:
+  - id: 20142
+    slug: improved_mark_of_the_wild
+    name: Improved Mark of the Wild
+    tab: 3
+    tier: 0
+    col: 1
+    icon: spell_nature_regeneration
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    rankSpells:
+    - 17050
+    - 17051
+    - 17053
+    - 17054
+    - 17055
+    tooltip:
+    - Increases the effects of your Mark of the Wild and Gift of the Wild spells by
+      7%.
+    - Increases the effects of your Mark of the Wild and Gift of the Wild spells by
+      14%.
+    - Increases the effects of your Mark of the Wild and Gift of the Wild spells by
+      21%.
+    - Increases the effects of your Mark of the Wild and Gift of the Wild spells by
+      28%.
+    - Increases the effects of your Mark of the Wild and Gift of the Wild spells by
+      35%.
+  - id: 20143
+    slug: furor
+    name: Furor
+    tab: 3
+    tier: 0
+    col: 2
+    icon: spell_holy_blessingofstamina
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    rankSpells:
+    - 17056
+    - 17058
+    - 17059
+    - 17060
+    - 17061
+    tooltip:
+    - Gives you 20% chance to gain 10 Rage when you shapeshift into Bear and Dire
+      Bear Form or 40 Energy when you shapeshift into Cat Form.
+    - Gives you 40% chance to gain 10 Rage when you shapeshift into Bear and Dire
+      Bear Form or 40 Energy when you shapeshift into Cat Form.
+    - Gives you 60% chance to gain 10 Rage when you shapeshift into Bear and Dire
+      Bear Form or 40 Energy when you shapeshift into Cat Form.
+    - Gives you 80% chance to gain 10 Rage when you shapeshift into Bear and Dire
+      Bear Form or 40 Energy when you shapeshift into Cat Form.
+    - Gives you 100% chance to gain 10 Rage when you shapeshift into Bear and Dire
+      Bear Form or 40 Energy when you shapeshift into Cat Form.
+  - id: 20144
+    slug: naturalist
+    name: Naturalist
+    tab: 3
+    tier: 1
+    col: 0
+    icon: spell_nature_healingtouch
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 17069
+    - 17070
+    - 17071
+    - 17072
+    - 17073
+    tooltip:
+    - Reduces the cast time of your Healing Touch spell by 0.1 sec and increases the
+      damage you deal with physical attacks in all forms by 2%.
+    - Reduces the cast time of your Healing Touch spell by 0.2 sec and increases the
+      damage you deal with physical attacks in all forms by 4%.
+    - Reduces the cast time of your Healing Touch spell by 0.3 sec and increases the
+      damage you deal with physical attacks in all forms by 6%.
+    - Reduces the cast time of your Healing Touch spell by 0.4 sec and increases the
+      damage you deal with physical attacks in all forms by 8%.
+    - Reduces the cast time of your Healing Touch spell by 0.5 sec and increases the
+      damage you deal with physical attacks in all forms by 10%.
+  - id: 20145
+    slug: nature_s_focus
+    name: Nature's Focus
+    tab: 3
+    tier: 1
+    col: 1
+    icon: spell_nature_healingwavegreater
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 17063
+    - 17065
+    - 17066
+    - 17067
+    - 17068
+    tooltip:
+    - Gives you a 14% chance to avoid interruption caused by damage while casting
+      the Healing Touch, Regrowth and Tranquility spells.
+    - Gives you a 28% chance to avoid interruption caused by damage while casting
+      the Healing Touch, Regrowth and Tranquility spells.
+    - Gives you a 42% chance to avoid interruption caused by damage while casting
+      the Healing Touch, Regrowth and Tranquility spells.
+    - Gives you a 56% chance to avoid interruption caused by damage while casting
+      the Healing Touch, Regrowth and Tranquility spells.
+    - Gives you a 70% chance to avoid interruption caused by damage while casting
+      the Healing Touch, Regrowth and Tranquility spells.
+  - id: 20146
+    slug: natural_shapeshifter
+    name: Natural Shapeshifter
+    tab: 3
+    tier: 1
+    col: 2
+    icon: spell_nature_wispsplode
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 5
+    rankSpells:
+    - 16833
+    - 16834
+    - 16835
+    tooltip:
+    - Reduces the mana cost of all shapeshifting by 10%.
+    - Reduces the mana cost of all shapeshifting by 20%.
+    - Reduces the mana cost of all shapeshifting by 30%.
+  - id: 20147
+    slug: intensity
+    name: Intensity
+    tab: 3
+    tier: 2
+    col: 0
+    icon: spell_frost_windwalkon
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 17106
+    - 17107
+    - 17108
+    tooltip:
+    - Allows 10% of your Mana regeneration to continue while casting and causes your
+      Enrage ability to instantly generate 4 rage.
+    - Allows 20% of your Mana regeneration to continue while casting and causes your
+      Enrage ability to instantly generate 7 rage.
+    - Allows 30% of your Mana regeneration to continue while casting and causes your
+      Enrage ability to instantly generate 10 rage.
+  - id: 20148
+    slug: subtlety
+    name: Subtlety
+    tab: 3
+    tier: 2
+    col: 1
+    icon: ability_eyeoftheowl
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 17118
+    - 17119
+    - 17120
+    - 17121
+    - 17122
+    tooltip:
+    - Reduces the threat generated by your spells by 4% and reduces the chance your
+      spells will be dispelled by 6%.
+    - Reduces the threat generated by your spells by 8% and reduces the chance your
+      spells will be dispelled by 12%.
+    - Reduces the threat generated by your spells by 12% and reduces the chance your
+      spells will be dispelled by 18%.
+    - Reduces the threat generated by your spells by 16% and reduces the chance your
+      spells will be dispelled by 24%.
+    - Reduces the threat generated by your spells by 20% and reduces the chance your
+      spells will be dispelled by 30%.
+  - id: 20149
+    slug: omen_of_clarity
+    name: Omen of Clarity
+    tab: 3
+    tier: 2
+    col: 2
+    icon: spell_nature_crystalball
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    rankSpells:
+    - 16864
+    tooltip:
+    - Imbues the Druid with natural energy. Each of the Druid's melee attacks has
+      a chance of causing the caster to enter a Clearcasting state. The Clearcasting
+      state reduces the Mana, Rage or Energy cost of your next damage or healing spell
+      or offensive ability by 100%. Lasts 30 min.
+  - id: 20150
+    slug: tranquil_spirit
+    name: Tranquil Spirit
+    tab: 3
+    tier: 3
+    col: 1
+    icon: spell_holy_elunesgrace
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 15
+    rankSpells:
+    - 24968
+    - 24969
+    - 24970
+    - 24971
+    - 24972
+    tooltip:
+    - Reduces the mana cost of your Healing Touch and Tranquility spells by 2%.
+    - Reduces the mana cost of your Healing Touch and Tranquility spells by 4%.
+    - Reduces the mana cost of your Healing Touch and Tranquility spells by 6%.
+    - Reduces the mana cost of your Healing Touch and Tranquility spells by 8%.
+    - Reduces the mana cost of your Healing Touch and Tranquility spells by 10%.
+  - id: 20151
+    slug: improved_rejuvenation
+    name: Improved Rejuvenation
+    tab: 3
+    tier: 3
+    col: 2
+    icon: spell_nature_rejuvenation
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    rankSpells:
+    - 17111
+    - 17112
+    - 17113
+    tooltip:
+    - Increases the effect of your Rejuvenation spell by 5%.
+    - Increases the effect of your Rejuvenation spell by 10%.
+    - Increases the effect of your Rejuvenation spell by 15%.
+  - id: 20152
+    slug: nature_s_swiftness
+    name: Nature's Swiftness
+    tab: 3
+    tier: 4
+    col: 0
+    icon: spell_nature_ravenform
+    maxRank: 1
+    prereqTalentId: 20147
+    prereqPoints: 20
+    rankSpells:
+    - 17116
+    tooltip:
+    - When activated, your next Nature spell becomes an instant cast spell.
+  - id: 20153
+    slug: gift_of_nature
+    name: Gift of Nature
+    tab: 3
+    tier: 4
+    col: 1
+    icon: spell_nature_protectionformnature
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 20
+    rankSpells:
+    - 17104
+    - 24943
+    - 24944
+    - 24945
+    - 24946
+    tooltip:
+    - Increases the effect of all healing spells by 2%.
+    - Increases the effect of all healing spells by 4%.
+    - Increases the effect of all healing spells by 6%.
+    - Increases the effect of all healing spells by 8%.
+    - Increases the effect of all healing spells by 10%.
+  - id: 20154
+    slug: improved_tranquility
+    name: Improved Tranquility
+    tab: 3
+    tier: 4
+    col: 3
+    icon: spell_nature_tranquility
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 20
+    rankSpells:
+    - 17123
+    - 17124
+    tooltip:
+    - Reduces threat caused by Tranquility by 50%.
+    - Reduces threat caused by Tranquility by 100%.
+  - id: 20155
+    slug: empowered_touch
+    name: Empowered Touch
+    tab: 3
+    tier: 5
+    col: 0
+    icon: ability_druid_empoweredtouch
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 25
+    rankSpells:
+    - 33879
+    - 33880
+    tooltip:
+    - Your Healing Touch spell gains an additional 10% of your bonus healing effects.
+    - Your Healing Touch spell gains an additional 20% of your bonus healing effects.
+  - id: 20156
+    slug: improved_regrowth
+    name: Improved Regrowth
+    tab: 3
+    tier: 5
+    col: 2
+    icon: spell_nature_resistnature
+    maxRank: 5
+    prereqTalentId: 20151
+    prereqPoints: 25
+    rankSpells:
+    - 17074
+    - 17075
+    - 17076
+    - 17077
+    - 17078
+    tooltip:
+    - Increases the critical effect chance of your Regrowth spell by 10%.
+    - Increases the critical effect chance of your Regrowth spell by 20%.
+    - Increases the critical effect chance of your Regrowth spell by 30%.
+    - Increases the critical effect chance of your Regrowth spell by 40%.
+    - Increases the critical effect chance of your Regrowth spell by 50%.
+  - id: 20157
+    slug: living_spirit
+    name: Living Spirit
+    tab: 3
+    tier: 6
+    col: 0
+    icon: spell_nature_giftofthewaterspirit
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 30
+    rankSpells:
+    - 34151
+    - 34152
+    - 34153
+    tooltip:
+    - Increases your total Spirit by 5%.
+    - Increases your total Spirit by 10%.
+    - Increases your total Spirit by 15%.
+  - id: 20158
+    slug: swiftmend
+    name: Swiftmend
+    tab: 3
+    tier: 6
+    col: 1
+    icon: inv_relics_idolofrejuvenation
+    maxRank: 1
+    prereqTalentId: 20153
+    prereqPoints: 30
+    rankSpells:
+    - 18562
+    tooltip:
+    - Consumes a Rejuvenation or Regrowth effect on a friendly target to instantly
+      heal them an amount equal to 12 sec. of Rejuvenation or 18 sec. of Regrowth.
+  - id: 20159
+    slug: natural_perfection
+    name: Natural Perfection
+    tab: 3
+    tier: 6
+    col: 2
+    icon: ability_druid_naturalperfection
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 30
+    rankSpells:
+    - 33881
+    - 33882
+    - 33883
+    tooltip:
+    - Your critical strike chance with all spells is increased by 1% and critical
+      strikes against you give you the Natural Perfection effect reducing all damage
+      taken by 2%. Stacks up to 3 times. Lasts 8 sec.
+    - Your critical strike chance with all spells is increased by 2% and critical
+      strikes against you give you the Natural Perfection effect reducing all damage
+      taken by 3%. Stacks up to 3 times. Lasts 8 sec.
+    - Your critical strike chance with all spells is increased by 3% and critical
+      strikes against you give you the Natural Perfection effect reducing all damage
+      taken by 4%. Stacks up to 3 times. Lasts 8 sec.
+  - id: 20160
+    slug: empowered_rejuvenation
+    name: Empowered Rejuvenation
+    tab: 3
+    tier: 7
+    col: 1
+    icon: ability_druid_empoweredrejuvination
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 35
+    rankSpells:
+    - 33886
+    - 33887
+    - 33888
+    - 33889
+    - 33890
+    tooltip:
+    - The bonus healing effects of your healing over time spells is increased by 4%.
+    - The bonus healing effects of your healing over time spells is increased by 8%.
+    - The bonus healing effects of your healing over time spells is increased by 12%.
+    - The bonus healing effects of your healing over time spells is increased by 16%.
+    - The bonus healing effects of your healing over time spells is increased by 20%.
+  - id: 20161
+    slug: tree_of_life
+    name: Tree of Life
+    tab: 3
+    tier: 8
+    col: 1
+    icon: ability_druid_treeoflife
+    maxRank: 1
+    prereqTalentId: 20160
+    prereqPoints: 40
+    rankSpells:
+    - 33891
+    tooltip:
+    - Shapeshift into the Tree of Life. While in this form you increase healing received
+      by 25% of your total Spirit for all party members within 45 yards, your movement
+      speed is reduced by 20%, and you can only cast Swiftmend, Innervate, Nature's
+      Swiftness, Rebirth, Barkskin, poison removing and healing over time spells,
+      but the mana cost of these spells is reduced by 20%. The act of shapeshifting
+      frees the caster of Polymorph and Movement Impairing effects.

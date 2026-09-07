@@ -1,0 +1,772 @@
+# Canonical 1.12 (patch 1.12.1) Shaman BASELINE TOTEM numbers — the "numbers of record"
+# for the future Vanilla-era totem-override work (mirrors the paladin baseline-seal
+# reconstruction model). See era-data/_ref/shaman-spells.yaml for the sibling stock-spell
+# reference this file's shape/rigor mirrors, and
+# docs/superpowers/specs/2026-08-23-vanilla-totems-research-report.md for the per-totem
+# gap/diff narrative + WotLK stock ids. This is a REFERENCE/data artifact only — it changes
+# NO game data.
+#
+# ============================================================================================
+# STRICT PROVENANCE: every 1.12 number below was read DIRECTLY from the 1.12.1 client Spell.dbc
+#   /home/lewist/Projects/era-wow/tools/vanilla-extract/Spell.dbc
+# NEVER from wiki tooltips (wikis silently mix in patch-1.15 Classic-Era rebalanced values).
+# Where the DBC could not supply a value (duration/radius index tables, held-item enchant
+# magnitudes, dispel pulse intervals — all in DBCs NOT present in the extract), the value is
+# left as the raw DBC index and the gap is flagged, never invented.
+# ============================================================================================
+#
+# VERIFICATION METHOD
+#   - The 1.12.1 Spell.dbc is a DIFFERENT binary layout from 3.3.5a: 162 fields / 648 bytes per
+#     record (vs WotLK's 234 / 936). The project's WotLK reader tools/dump_spell_effects.py +
+#     tools/spell_dbc_columns.txt (234-col) therefore MISREAD it — the task's prescribed command
+#     produces misaligned garbage against this DBC (confirmed: Searing Totem dumped ManaCost=0,
+#     DurationIndex=0). The correct 1.12 field offsets were derived empirically here and are
+#     recorded below so this file is reproducible. (era-wow/tools/spell_dbc_112.py is the sibling
+#     1.12 reader; it exposes only id/school/cast/mana/basepoints/name — not effect type / aura /
+#     misc / radius — so the per-effect offsets below extend it.)
+#   - 1.12 Spell.dbc field offsets (0-indexed ints), VERIFIED against Strength of Earth (8075/8076),
+#     Grace of Air (8836), Healing Stream (5672), Mana Spring (5677), the resistance totems, and
+#     the summon-slot effects:
+#         ID=0  School=1(index; mask=1<<School)  CastingTimeIndex=14  DurationIndex=26
+#         ManaCost=28  RangeIndex=32  baseLevel=24  spellLevel=25
+#         per-effect arrays (index = field of Effect_1; +1 = Effect_2, +2 = Effect_3):
+#           Effect=56  EffectDieSides=59  EffectBasePoints=71  EffectImplicitTargetA=74
+#           EffectRadiusIndex=80  EffectApplyAuraName=83  EffectAmplitude(ms)=86
+#           EffectMiscValue=98  EffectTriggerSpell=101
+#         Name=112  Rank=121  (string-block offsets)
+#   - Effect enum (1.12 == 3.3.5a for these, resolved vs the fork's
+#     azerothcore-wotlk/src/server/shared/SharedDefines.h):
+#         2  = SPELL_EFFECT_SCHOOL_DAMAGE      6  = SPELL_EFFECT_APPLY_AURA
+#         35 = SPELL_EFFECT_APPLY_AREA_AURA_PARTY (the party pulse/buff a totem casts)
+#         36 = SPELL_EFFECT_LEARN_SPELL        92 = SPELL_EFFECT_ENCHANT_HELD_ITEM
+#         87/88/89/90 = SPELL_EFFECT_SUMMON_TOTEM_SLOT1..4 = FIRE / EARTH / WATER / AIR slot.
+#           (This slot number is the DBC-authoritative element assignment — it CONFIRMS the report's
+#            resistance-element gotcha: Frost Resistance summon 8181 = slot 87 FIRE; Fire Resistance
+#            8184 = slot 89 WATER; Nature Resistance 10595 = slot 90 AIR.)
+#   - Aura enum (resolved vs SpellAuraDefines.h):
+#         8  = PERIODIC_HEAL      24 = PERIODIC_ENERGIZE   29 = MOD_STAT (misc = stat index:
+#              0 STR / 1 AGI)     33 = MOD_DECREASE_SPEED  113 = MOD_RANGED_DAMAGE_TAKEN
+#         125 = MOD_MELEE_DAMAGE_TAKEN   143 = MOD_RESISTANCE_EXCLUSIVE (misc = school index:
+#              2 FIRE / 3 NATURE / 4 FROST).
+#   - DBC VALUE CONVENTION (identical to shaman-spells.yaml): a stock effect stores value-1 with
+#     EffectDieSides=1 (roll adds exactly 1), so effective magnitude = EffectBasePoints_N + 1.
+#     Every `mag`/magnitude below ALREADY applies the +1. Damage attacks with DieSides>1 are
+#     recorded as a `min..max` roll range (min = basePoints+1, max = basePoints+dieSides).
+#   - On a summon spell, EffectBasePoints_1 (+1) is the TOTEM CREATURE'S HEALTH and
+#     EffectMiscValue_1 is the summoned creature entry; ManaCost is carried by the SUMMON, the
+#     magnitude by the PULSE. (Recorded below only where notable, e.g. Stoneclaw's high health.)
+#
+# UNRESOLVED-BY-EXTRACT (raw DBC index kept; NOT converted — the index-table DBCs are absent):
+#   - durationIndex  -> SpellDuration.dbc (not in the extract). Human seconds in a totem's `note:`
+#     are the research report's figure, flagged (report), NOT DBC-verified.
+#   - radiusIndex    -> SpellRadius.dbc (not in the extract). RangeIndex IS decodable via the bundled
+#     SpellRange.dbc: index 1 = 0yd (self-cast — every totem summon), index 3 = 0..8yd, index 6 =
+#     0..100yd. Party pulses use radiusIndex 9 (uniform across all party-buff totems).
+#   - Flametongue held-item enchant magnitude -> SpellItemEnchantment.dbc (not in the extract);
+#     only the enchant id is recorded.
+#   - dispel/reflect totems (Tremor / Poison & Disease Cleansing / Grounding) carry ONLY the summon
+#     effect in Spell.dbc; the periodic dispel / spell-absorb the totem performs is a creature-cast
+#     behaviour (creature_template_spell + AI), not a player-named pulse spell — so no pulse magnitude
+#     or interval exists to read from Spell.dbc. Recorded as pulse: creature-cast.
+#
+# ID-COLLISION WARNING (spells are global; Blizzard REUSED ids across eras via rename/merge):
+#   - 8170 = "Disease Cleansing Totem" in 1.12, but "Cleansing Totem" in 3.3.5a (WotLK 3.1.0 merged
+#     poison+disease into 8170 and renamed it). A Disease-Cleansing reconstruction CANNOT reuse 8170.
+#   - 1535 = "Fire Nova Totem" in 1.12, but "Fire Nova" (the instant spell) in 3.3.5a (patch 3.3.0
+#     replaced the totem with the spell on the same id).
+#   These are why the HIDE dispositions strip the 3.3.5a meaning and a Vanilla clone must take a
+#   fresh id in the reserved band [920000, 933000).
+#
+# ============================================================================================
+# TIER-3 ADDENDUM (sub-project 2, 2026-08-23): three more enum values used below, resolved the same
+# way (grep against azerothcore-wotlk/src/server/shared/SharedDefines.h /
+# .../Spells/Auras/SpellAuraDefines.h) but not needed by Tier 0-2 above:
+#   Effect enum:  19 = SPELL_EFFECT_ADD_EXTRA_ATTACKS   63 = SPELL_EFFECT_THREAT
+#   Aura enum:    99 = SPELL_AURA_MOD_ATTACK_POWER
+#   Target enum (EffectImplicitTargetA, confirms slot/AoE geometry, not previously needed):
+#     1 = TARGET_UNIT_CASTER   20 = TARGET_UNIT_CASTER_AREA_PARTY   22 = TARGET_SRC_CASTER (AoE
+#     originates AT the caster, i.e. the totem)   41/42/43/44 = TARGET_DEST_CASTER_{FRONT_RIGHT,
+#     BACK_RIGHT,BACK_LEFT,FRONT_LEFT} (the 4 ground totem slots; used here only as a decode sanity
+#     check — SUMMON_TOTEM_SLOT1..4 87/88/89/90 map onto implicitA 44/41/42/43 respectively, which
+#     is internally consistent across every totem in this file and corroborates the field offsets).
+# All three totems below were decoded with the SAME validated offsets from the header above (no new
+# offsets needed) — spot-checked against known-good rows before trusting: Strength of Earth 8075
+# (mana 30, buff 8076 basePoints 9 -> mag 10 matches its existing Tier-0-2 record above) and Searing
+# Totem 3599/3606 (mana 30, bolt 7..9 matches its existing record above) both re-decoded byte-for-byte
+# identical through this addendum's script before any Tier-3 id was read.
+# ============================================================================================
+
+meta:
+  patch: "1.12.1"
+  dbc: "era-wow/tools/vanilla-extract/Spell.dbc (WDBC, 16332 records, 162 fields, 648 B/rec)"
+  extracted: "2026-08-23"
+  plusOneConventionApplied: true    # every `mag` below is already EffectBasePoints_N + 1
+
+totems:
+
+  # ================================ EARTH ==================================================
+  Earthbind:
+    element: earth
+    disposition: retune
+    stockSummon: 2484          # same id both eras (not renumbered)
+    stockPulse: 3600           # 3.3.5a slow pulse (word-B bit0 per shaman-spells.yaml)
+    learnLevel: 6              # DBC spellLevel of 2484 (report guessed ~10; DBC wins)
+    ranks: 1
+    note: "1.12 pulse 3600: aura 33 MOD_DECREASE_SPEED mag 50 => -50% move speed, radiusIndex 13,
+      durationIndex 28. Summon 2484 mana 40, durationIndex 22 (~45s report). Mechanic unchanged
+      era-to-era; retune = confirm slow %, radius, duration only."
+    vanilla:
+      summon: { id: 2484, mana: 40, durationIndex: 22, rangeIndex: 1 }
+      pulse:  { id: 3600, aura: "33 MOD_DECREASE_SPEED", mag: 50, radiusIndex: 13, durationIndex: 28 }
+
+  Stoneskin:
+    element: earth
+    disposition: retune
+    stockSummon: 8071
+    stockPulse: 8072           # word-A bit15 unique (shaman-spells.yaml)
+    learnLevel: 4              # DBC spellLevel of 8071 r1
+    ranks: 6
+    note: "1.12 pulse 8072-family: aura 125 MOD_MELEE_DAMAGE_TAKEN — a FLAT reduction of melee
+      damage taken per hit (NOT a %; NOT the WotLK effect). Magnitudes are negative in the DBC
+      (recorded as the reduction). radiusIndex 9, buff durationIndex 21 (~2min report). Retune the
+      per-rank flat reduction. Guardian Totems talent boosts this pulse (see shaman-spells.yaml)."
+    vanilla:
+      # per rank: [summonId, spellLevel, summonMana, pulseId, meleeDmgReduction]
+      ranksData:
+        - { rank: 1, summon: 8071,  level: 4,  mana: 35,  pulse: 8072,  reduction: 3  }   # basePts -4
+        - { rank: 2, summon: 8154,  level: 14, mana: 75,  pulse: 8156,  reduction: 6  }   # basePts -7
+        - { rank: 3, summon: 8155,  level: 24, mana: 110, pulse: 8157,  reduction: 10 }   # basePts -11
+        - { rank: 4, summon: 10406, level: 34, mana: 140, pulse: 10403, reduction: 14 }   # basePts -15
+        - { rank: 5, summon: 10407, level: 44, mana: 195, pulse: 10404, reduction: 20 }   # basePts -21
+        - { rank: 6, summon: 10408, level: 54, mana: 260, pulse: 10405, reduction: 27 }   # basePts -28
+      pulseAura: "125 MOD_MELEE_DAMAGE_TAKEN"
+      radiusIndex: 9
+      buffDurationIndex: 21
+
+  StrengthOfEarth:
+    element: earth
+    disposition: retune         # retune = record Str-only, DROP the WotLK agility effect
+    stockSummon: 8075
+    stockPulse: 8076            # word-A bit16 unique (shaman-spells.yaml)
+    learnLevel: 10
+    ranks: 4
+    note: "1.12 is STRENGTH-ONLY (aura 29 MOD_STAT, misc 0 = STAT_STRENGTH). The agility component
+      is a WotLK 3.0.2 addition (Grace of Air was merged in) and is ABSENT from 1.12 — so the
+      Vanilla record has no agility effect to drop from the DATA; the strip is on the 3.3.5a stock
+      side (its 8076 gained a 2nd MOD_STAT/agi effect). buff durationIndex 21 (~2min), radiusIndex 9."
+    vanilla:
+      ranksData:
+        - { rank: 1, summon: 8075,  level: 10, mana: 30,  buff: 8076,  strength: 10 }   # basePts 9
+        - { rank: 2, summon: 8160,  level: 24, mana: 80,  buff: 8162,  strength: 20 }   # basePts 19
+        - { rank: 3, summon: 8161,  level: 38, mana: 155, buff: 8163,  strength: 36 }   # basePts 35
+        - { rank: 4, summon: 10442, level: 52, mana: 275, buff: 10441, strength: 61 }   # basePts 60
+      buffAura: "29 MOD_STAT (misc 0 = STAT_STRENGTH)"
+      radiusIndex: 9
+      buffDurationIndex: 21
+
+  Stoneclaw:
+    element: earth
+    disposition: retune         # taunt-only (strip the WotLK absorb-shield pulse 55277)
+    stockSummon: 5730           # word-A bit3 unique
+    stockPulse: absent          # 1.12 has NO pulse spell — taunt is a creature-cast behaviour;
+                                # 3.3.5a's 55277 absorb-shield pulse has no Vanilla analog (strip it)
+    learnLevel: 8
+    ranks: 6
+    note: "1.12 Stoneclaw is a high-health, high-threat taunt totem with NO buff/pulse spell in
+      Spell.dbc — the summon's EffectBasePoints_1 (+1) is the TOTEM HEALTH (below), and the periodic
+      taunt is creature AI. Retune = health per rank + confirm taunt-only; do NOT attach the WotLK
+      absorb shield 55277. durationIndex 8 (~15s report)."
+    vanilla:
+      ranksData:
+        - { rank: 1, summon: 5730,  level: 8,  mana: 20,  totemHealth: 50  }
+        - { rank: 2, summon: 6390,  level: 18, mana: 40,  totemHealth: 150 }
+        - { rank: 3, summon: 6391,  level: 28, mana: 65,  totemHealth: 220 }
+        - { rank: 4, summon: 6392,  level: 38, mana: 95,  totemHealth: 280 }
+        - { rank: 5, summon: 10427, level: 48, mana: 130, totemHealth: 390 }
+        - { rank: 6, summon: 10428, level: 58, mana: 170, totemHealth: 480 }
+      pulse: creature-cast       # periodic taunt is creature AI, not a Spell.dbc pulse
+      durationIndex: 8
+
+  Tremor:
+    element: earth
+    disposition: retune
+    stockSummon: 8143           # same id both eras
+    stockPulse: creature-cast   # periodic Fear/Charm/Sleep dispel is creature-cast (no player pulse)
+    learnLevel: 18              # DBC spellLevel of 8143 (report guessed ~18 — matches)
+    ranks: 1
+    note: "1.12 summon 8143 mana 75, durationIndex 23 (~2min? report), creature entry 5913. The
+      periodic Fear/Charm/Sleep dispel is a creature-cast behaviour — NO player-named pulse spell
+      in Spell.dbc, so no pulse magnitude/interval to read. Mechanic unchanged era-to-era; retune
+      = duration/interval verification only (both from creature data, not Spell.dbc)."
+    vanilla:
+      summon: { id: 8143, mana: 75, durationIndex: 23, creatureEntry: 5913 }
+      pulse: creature-cast
+
+  EarthElemental:
+    element: earth
+    disposition: hide           # TBC 2.0.1 addition — absent from 1.12; strip in the Vanilla era
+    stockSummon: 2062           # 3.3.5a player summon id
+    stockPulse: absent
+    learnLevel: null
+    ranks: 0
+    note: "NOT in the 1.12 DBC (confirmed: only creature-AI 'Earth Elemental' entries 513/1226,
+      no player totem). HIDE for Vanilla; record stock 3.3.5a id 2062 only, no vanilla values."
+    vanilla: absent
+
+  # ================================ FIRE ===================================================
+  Searing:
+    element: fire
+    disposition: retune
+    stockSummon: 3599           # word-A bit4 unique
+    stockPulse: 3606            # the totem's single-target fire bolt ("Attack")
+    learnLevel: 10
+    ranks: 6
+    note: "1.12 damage is the totem creature's fire bolt 'Attack' (SCHOOL_DAMAGE, DieSides>1 so a
+      roll range). Retune = per-rank bolt damage. The bolt's fire interval is the totem creature's
+      attack speed (creature data, not Spell.dbc). Summon durationIndex varies by rank."
+    vanilla:
+      ranksData:
+        - { rank: 1, summon: 3599,  level: 10, mana: 30,  attack: 3606,  damage: "7..9"   }  # bp6 die3
+        - { rank: 2, summon: 6363,  level: 20, mana: 65,  attack: 6350,  damage: "10..14" }  # bp9 die5
+        - { rank: 3, summon: 6364,  level: 30, mana: 110, attack: 6351,  damage: "14..20" }  # bp13 die7
+        - { rank: 4, summon: 6365,  level: 40, mana: 160, attack: 6352,  damage: "20..28" }  # bp19 die9
+        - { rank: 5, summon: 10437, level: 50, mana: 210, attack: 10435, damage: "25..37" }  # bp24 die13
+        - { rank: 6, summon: 10438, level: 60, mana: 265, attack: 10436, damage: "32..46" }  # bp31 die15
+      attackSchool: fire
+
+  Magma:
+    element: fire
+    disposition: retune
+    stockSummon: 8190           # word-A bit12 unique
+    stockPulse: 8187            # AoE fire pulse (word-A bits {2,30} in 3.3.5a)
+    learnLevel: 26
+    ranks: 4
+    note: "1.12 pulse 8187-family: SCHOOL_DAMAGE (fire), flat per-tick AoE, radiusIndex 14. Pulse
+      interval is creature-timed (~2s classic; not in Spell.dbc). Summon durationIndex 18 (~20s
+      report). Retune = per-rank tick damage."
+    vanilla:
+      ranksData:
+        - { rank: 1, summon: 8190,  level: 26, mana: 285, pulse: 8187,  tickDamage: 22 }   # bp21
+        - { rank: 2, summon: 10585, level: 36, mana: 445, pulse: 10579, tickDamage: 37 }   # bp36
+        - { rank: 3, summon: 10586, level: 46, mana: 615, pulse: 10580, tickDamage: 54 }   # bp53
+        - { rank: 4, summon: 10587, level: 56, mana: 805, pulse: 10581, tickDamage: 75 }   # bp74
+      pulseSchool: fire
+      radiusIndex: 14
+      summonDurationIndex: 18
+
+  Flametongue:
+    element: fire
+    disposition: retune
+    stockSummon: 8227           # summon (word-A bit29 shared totem bit)
+    stockPulse: 52109           # 3.3.5a spell-power buff (word-A bit25) — a DIFFERENT mechanic
+    learnLevel: 28
+    ranks: 4
+    note: >
+      FLAG RESOLVED — the 1.12 Flametongue Totem is a WEAPON EFFECT, not a flat spell-damage buff.
+      Chain: the totem casts 'Flametongue Totem Passive' (8229-family, aura 23 PERIODIC_TRIGGER_SPELL,
+      amplitude 5000ms) which every 5s triggers 'Flametongue Totem Effect' (8230-family), whose
+      Effect_1 = 92 SPELL_EFFECT_ENCHANT_HELD_ITEM with EffectMiscValue = a SpellItemEnchantment.dbc
+      id (r1 124 / r2 285 / r3 543 / r4 1683). i.e. it temporarily ENCHANTS party members' held
+      weapons to deal bonus fire damage on hit (a Flametongue-Weapon-style imbue), NOT a caster
+      spell-power aura. This is the OPPOSITE of the WotLK version (stock pulse 52109 became an
+      all-school spell-power party aura). Reconstruction is a held-item-enchant chain, not a stat
+      aura. Enchant MAGNITUDE lives in SpellItemEnchantment.dbc (NOT in the extract) — only the
+      enchant id is recorded here.
+    vanilla:
+      ranksData:
+        - { rank: 1, summon: 8227,  level: 28, mana: 110, passive: 8229,  effect: 8230,  heldEnchantId: 124  }
+        - { rank: 2, summon: 8249,  level: 38, mana: 170, passive: 8251,  effect: 8250,  heldEnchantId: 285  }
+        - { rank: 3, summon: 10526, level: 48, mana: 250, passive: 10524, effect: 10521, heldEnchantId: 543  }
+        - { rank: 4, summon: 16387, level: 58, mana: 340, passive: 16388, effect: 15036, heldEnchantId: 1683 }
+      mechanic: "SPELL_EFFECT_ENCHANT_HELD_ITEM (effect 92) re-applied to party every 5s via aura-23 passive"
+      enchantMagnitudeSource: "SpellItemEnchantment.dbc (absent from extract) — id only"
+
+  FrostResistance:
+    element: fire               # Vanilla ELEMENT is FIRE (summon 8181 = slot 87 FIRE; requires Fire Totem reagent)
+    disposition: retune
+    stockSummon: 8181
+    stockPulse: 8182            # separate totem in 3.3.5a (merge is Cataclysm, not WotLK)
+    learnLevel: 24
+    ranks: 3
+    note: "Protects vs FROST but sits in the FIRE element slot (DBC slot 87 confirms the report's
+      element-swap gotcha). 1.12 buff 8182-family: aura 143 MOD_RESISTANCE_EXCLUSIVE, misc 4 =
+      FROST school. Separate totem in both eras — retune per-rank resistance only, NO un-merging.
+      buff durationIndex 21 (~2min), radiusIndex 9."
+    vanilla:
+      ranksData:
+        - { rank: 1, summon: 8181,  level: 24, mana: 90,  buff: 8182,  resistance: 30 }   # bp29
+        - { rank: 2, summon: 10478, level: 38, mana: 150, buff: 10476, resistance: 45 }   # bp44
+        - { rank: 3, summon: 10479, level: 54, mana: 225, buff: 10477, resistance: 60 }   # bp59
+      buffAura: "143 MOD_RESISTANCE_EXCLUSIVE (misc 4 = FROST)"
+      radiusIndex: 9
+      buffDurationIndex: 21
+
+  FireElemental:
+    element: fire
+    disposition: hide           # TBC 2.0.1 addition — absent from 1.12
+    stockSummon: 2894           # 3.3.5a player summon id
+    stockPulse: absent
+    learnLevel: null
+    ranks: 0
+    note: "NOT in the 1.12 DBC (only creature-AI 'Fire Elemental' 895/1242). HIDE for Vanilla;
+      stock 3.3.5a id 2894 recorded only."
+    vanilla: absent
+
+  FireNovaSpell:
+    element: fire
+    disposition: hide           # the 3.3.5a instant 'Fire Nova' spell — hide for Vanilla
+    stockSummon: 1535           # 3.3.5a id of the 'Fire Nova' SPELL (was the Fire Nova TOTEM id in 1.12)
+    stockPulse: absent
+    learnLevel: null
+    ranks: 0
+    note: >
+      This entry is the 3.3.5a 'Fire Nova' SPELL (patch 3.3.0 replaced the Vanilla Fire Nova TOTEM
+      with an instant spell on the same id 1535). HIDE the spell for a Vanilla character. The Fire
+      Nova TOTEM reconstruction (a drop-and-self-destruct AoE totem) is DEFERRED to a later phase
+      and is NOT covered here. For reference only, the 1.12 Fire Nova Totem summon ranks are
+      1535/8498/8499/11314/11315 (r1-5) and the nova blast is 'Fire Nova' 8349/8502/8503/11306/11307
+      (SCHOOL_DAMAGE fire); those are intentionally NOT expanded pending that phase.
+    vanilla: deferred
+
+  # ================================ WATER ==================================================
+  HealingStream:
+    element: water
+    disposition: retune
+    stockSummon: 5394           # word-A bit19 (shared with Mana Spring summon only)
+    stockPulse: 52041           # 3.3.5a pulse (word-A bits {13,26}); Restorative Totems boosts it
+    learnLevel: 20
+    ranks: 5
+    note: "1.12 pulse 5672-family: aura 8 PERIODIC_HEAL, amplitude 2000ms (heals every 2s),
+      radiusIndex 9, durationIndex 21 (~1min report). Retune = per-tick heal. WotLK has more ranks
+      (9), longer duration, larger radius, SP scaling — all divergences to strip for Vanilla."
+    vanilla:
+      ranksData:
+        - { rank: 1, summon: 5394,  level: 20, mana: 65,  pulse: 5672,  healPerTick: 6  }   # bp5
+        - { rank: 2, summon: 6375,  level: 30, mana: 80,  pulse: 6371,  healPerTick: 8  }   # bp7
+        - { rank: 3, summon: 6377,  level: 40, mana: 95,  pulse: 6372,  healPerTick: 10 }   # bp9
+        - { rank: 4, summon: 10462, level: 50, mana: 110, pulse: 10460, healPerTick: 12 }   # bp11
+        - { rank: 5, summon: 10463, level: 60, mana: 125, pulse: 10461, healPerTick: 14 }   # bp13
+      pulseAura: "8 PERIODIC_HEAL"
+      tickMs: 2000
+      radiusIndex: 9
+      buffDurationIndex: 21
+
+  ManaSpring:
+    element: water
+    disposition: retune
+    stockSummon: 5675           # word-A bit19 (shared with Healing Stream summon only)
+    stockPulse: 52031           # 3.3.5a pulse (word-A bits {14,26}); Restorative Totems boosts it
+    learnLevel: 26
+    ranks: 4
+    note: "1.12 pulse 5677-family: aura 24 PERIODIC_ENERGIZE, amplitude 2000ms (restores mana every
+      2s), radiusIndex 9, durationIndex 21 (~1min). Retune = per-tick mana. (NB the WotLK stock uses
+      MOD_POWER_REGEN(85) mana/5s framing; 1.12 is a flat PERIODIC_ENERGIZE per 2s tick.)"
+    vanilla:
+      ranksData:
+        - { rank: 1, summon: 5675,  level: 26, mana: 120, pulse: 5677,  manaPerTick: 4  }   # bp3
+        - { rank: 2, summon: 10495, level: 36, mana: 150, pulse: 10491, manaPerTick: 6  }   # bp5
+        - { rank: 3, summon: 10496, level: 46, mana: 180, pulse: 10493, manaPerTick: 8  }   # bp7
+        - { rank: 4, summon: 10497, level: 56, mana: 205, pulse: 10494, manaPerTick: 10 }   # bp9
+      pulseAura: "24 PERIODIC_ENERGIZE"
+      tickMs: 2000
+      radiusIndex: 9
+      buffDurationIndex: 21
+
+  FireResistance:
+    element: water              # Vanilla ELEMENT is WATER (summon 8184 = slot 89 WATER; requires Water Totem reagent)
+    disposition: retune
+    stockSummon: 8184
+    stockPulse: 8185
+    learnLevel: 28
+    ranks: 3
+    note: "Protects vs FIRE but sits in the WATER element slot (DBC slot 89 confirms the report's
+      element-swap gotcha). 1.12 buff 8185-family: aura 143 MOD_RESISTANCE_EXCLUSIVE, misc 2 = FIRE
+      school. Separate totem in both eras — retune per-rank resistance only, NO un-merging."
+    vanilla:
+      ranksData:
+        - { rank: 1, summon: 8184,  level: 28, mana: 90,  buff: 8185,  resistance: 30 }   # bp29
+        - { rank: 2, summon: 10537, level: 42, mana: 150, buff: 10534, resistance: 45 }   # bp44
+        - { rank: 3, summon: 10538, level: 58, mana: 225, buff: 10535, resistance: 60 }   # bp59
+      buffAura: "143 MOD_RESISTANCE_EXCLUSIVE (misc 2 = FIRE)"
+      radiusIndex: 9
+      buffDurationIndex: 21
+
+  PoisonCleansing:
+    element: water
+    disposition: from-scratch   # a poison-only PLAYER totem no longer exists in 3.3.5a
+    stockSummon: absent         # merged into Cleansing Totem 8170 (WotLK 3.1.0)
+    stockPulse: absent          # see note — no player-usable poison-only pulse survives
+    learnLevel: 22              # DBC spellLevel of 1.12 summon 8166 (report guessed ~38; DBC wins)
+    ranks: 1
+    note: >
+      1.12 summon 8166 (slot 89 WATER, mana 75, durationIndex 23, creature entry 5923). Periodic
+      'remove 1 Poison from party' is creature-cast — NO player pulse spell in Spell.dbc (no
+      magnitude/interval to read). 3.3.5a CHECK (WotLK Spell.dbc): the merged Cleansing Totem 8170
+      removes poison AND disease; a poison-only 'Poison Cleansing Totem' survives only as a
+      non-player NPC spell 38306 (TBC content) — NOT a player clone target. So a Vanilla poison-only
+      totem is FROM-SCRATCH: reconstruct summon 8166's behaviour as a custom clone + a poison-only
+      dispel (and HIDE Cleansing Totem 8170). Cannot reuse 8166 as-is if the id semantics are needed
+      clean, but 8166 is still 'Poison Cleansing Totem' in 3.3.5a — verify at authoring time whether
+      8166 remains a live player spell or was orphaned.
+    vanilla:
+      summon: { id: 8166, mana: 75, durationIndex: 23, creatureEntry: 5923 }
+      pulse: creature-cast
+
+  DiseaseCleansing:
+    element: water
+    disposition: from-scratch
+    stockSummon: absent         # 1.12 summon id 8170 was RENAMED to "Cleansing Totem" in 3.3.5a (collision)
+    stockPulse: absent
+    learnLevel: 38              # DBC spellLevel of 1.12 summon 8170 (report guessed ~30; DBC wins)
+    ranks: 1
+    note: >
+      1.12 summon 8170 = 'Disease Cleansing Totem' (slot 89 WATER, mana 75, durationIndex 23,
+      creature entry 5924); periodic 'remove 1 Disease' is creature-cast (no player pulse spell).
+      ID-COLLISION: in 3.3.5a the SAME id 8170 is 'Cleansing Totem' (the merged poison+disease
+      totem) — so the Disease-Cleansing reconstruction CANNOT reuse 8170; it needs a fresh custom
+      id in [920000,933000). 3.3.5a CHECK: NO disease-only 'Disease Cleansing' spell survives by
+      name at all — fully from-scratch. HIDE Cleansing Totem 8170 in the Vanilla era.
+    vanilla:
+      summon: { id: 8170, mana: 75, durationIndex: 23, creatureEntry: 5924 }
+      pulse: creature-cast
+
+  CleansingTotem:
+    element: water
+    disposition: hide           # WotLK 3.1.0 merged poison+disease into this — post-Vanilla
+    stockSummon: 8170           # 3.3.5a id (was Disease Cleansing Totem in 1.12 — collision)
+    stockPulse: absent
+    learnLevel: null
+    ranks: 0
+    note: "The merged poison+disease Cleansing Totem (WotLK 3.1.0). HIDE for Vanilla; its Vanilla
+      predecessors are the two separate PoisonCleansing/DiseaseCleansing entries above. Recorded
+      stock id 8170 only. (Note this is the SAME id 1.12 used for Disease Cleansing Totem.)"
+    vanilla: absent
+
+  # ================================ AIR ====================================================
+  Grounding:
+    element: air
+    disposition: retune
+    stockSummon: 8177           # word-A bits {18,29}; Guardian Totems reduces its cooldown
+    stockPulse: creature-cast   # single-spell absorb/redirect is creature-cast (no player pulse)
+    learnLevel: 30
+    ranks: 1
+    note: "1.12 summon 8177 (slot 90 AIR, mana 80, durationIndex 22 (~45s report), creature entry
+      5925). Absorbs/redirects the next single harmful targeted spell — a creature-cast behaviour,
+      NO player pulse spell in Spell.dbc. Mechanic unchanged era-to-era; retune = cooldown/duration
+      verification only."
+    vanilla:
+      summon: { id: 8177, mana: 80, durationIndex: 22, creatureEntry: 5925 }
+      pulse: creature-cast
+
+  NatureResistance:
+    element: air               # Vanilla ELEMENT is AIR (summon 10595 = slot 90 AIR)
+    disposition: retune
+    stockSummon: 10595         # word-A bit29 shared totem bit
+    stockPulse: 10596
+    learnLevel: 30
+    ranks: 3
+    note: "Protects vs NATURE, sits in the AIR element slot (DBC slot 90). 1.12 buff 10596-family:
+      aura 143 MOD_RESISTANCE_EXCLUSIVE, misc 3 = NATURE school. Separate totem in both eras —
+      retune per-rank resistance only, NO un-merging."
+    vanilla:
+      ranksData:
+        - { rank: 1, summon: 10595, level: 30, mana: 90,  buff: 10596, resistance: 30 }   # bp29
+        - { rank: 2, summon: 10600, level: 44, mana: 150, buff: 10598, resistance: 45 }   # bp44
+        - { rank: 3, summon: 10601, level: 60, mana: 225, buff: 10599, resistance: 60 }   # bp59
+      buffAura: "143 MOD_RESISTANCE_EXCLUSIVE (misc 3 = NATURE)"
+      radiusIndex: 9
+      buffDurationIndex: 21
+
+  Sentry:
+    element: air
+    disposition: no-op          # SUPERSEDED 2026-09-02: NOT unchanged — this verdict missed the cost
+                                # model (1.12 mana 80 FLAT, recorded in this very note, vs live
+                                # ManaCostPct 2 ≈ ~16 at L34) and the school (1.12 Nature vs live
+                                # Physical). Vanilla now trains clone 931390 at the 1.12 values;
+                                # stock 6495 is WotLK-only (era-data/vanilla/shaman.yaml, SQL
+                                # 2026_09_02_01, fix round).
+    stockSummon: 6495           # same id both eras
+    stockPulse: absent
+    learnLevel: 34
+    ranks: 1
+    note: "CONFIRMED UNCHANGED era-to-era. 1.12 summon 6495 (slot 90 AIR, mana 80, durationIndex 5,
+      creature entry 3968) + Effect_2 aura 4 (a self dummy/watch aura). Camera-swap scouting totem;
+      no per-era work needed — record stock id, no retune."
+    vanilla:
+      summon: { id: 6495, mana: 80, durationIndex: 5, creatureEntry: 3968 }
+      pulse: absent
+
+  GraceOfAir:
+    element: air
+    disposition: from-scratch   # 1.12-only; merged into Strength of Earth in WotLK 3.0.2
+    stockSummon: absent         # not in 3.3.5a (shaman-spells.yaml missingSpells.grace_of_air_totem)
+    stockPulse: absent
+    learnLevel: 42
+    ranks: 2
+    note: "1.12-only party AGILITY totem (buff aura 29 MOD_STAT, misc 1 = STAT_AGILITY). ABSENT from
+      3.3.5a (its agility was folded into Strength of Earth in 3.0.2). From-scratch reconstruction:
+      custom summon + a MOD_STAT/agi party buff. Pairs with StrengthOfEarth's Str-only record above.
+      buff durationIndex 21 (~2min), radiusIndex 9."
+    vanilla:
+      ranksData:
+        - { rank: 1, summon: 8835,  level: 42, mana: 190, buff: 8836,  agility: 43 }   # bp42
+        - { rank: 2, summon: 10627, level: 56, mana: 310, buff: 10626, agility: 67 }   # bp66
+      buffAura: "29 MOD_STAT (misc 1 = STAT_AGILITY)"
+      radiusIndex: 9
+      buffDurationIndex: 21
+
+  Windwall:
+    element: air
+    disposition: from-scratch   # 1.12-only; removed in WotLK 3.0.2
+    stockSummon: absent         # not in 3.3.5a (shaman-spells.yaml missingSpells.windwall_totem)
+    stockPulse: absent
+    learnLevel: 36
+    ranks: 3
+    note: >
+      FLAG RESOLVED — the 1.12 Windwall Totem 'reduce ranged damage taken' aura is
+      113 SPELL_AURA_MOD_RANGED_DAMAGE_TAKEN, which EXISTS cleanly in the 3.3.5a header
+      (SpellAuraDefines.h). So the reconstruction maps to ONE clean aura, no scripting/approximation
+      needed. Magnitudes are a flat reduction of ranged damage taken (DBC stores them negative).
+      From-scratch: custom summon + a MOD_RANGED_DAMAGE_TAKEN party buff. buff durationIndex 21
+      (~2min), radiusIndex 9.
+    vanilla:
+      ranksData:
+        - { rank: 1, summon: 15107, level: 36, mana: 140, buff: 15108, rangedDmgReduction: 16 }   # bp -17
+        - { rank: 2, summon: 15111, level: 46, mana: 210, buff: 15109, rangedDmgReduction: 25 }   # bp -26
+        - { rank: 3, summon: 15112, level: 56, mana: 280, buff: 15110, rangedDmgReduction: 32 }   # bp -33
+      buffAura: "113 MOD_RANGED_DAMAGE_TAKEN"
+      radiusIndex: 9
+      buffDurationIndex: 21
+
+  TranquilAir:
+    element: air
+    disposition: from-scratch   # 1.12-only threat reduction; absent from 3.3.5a
+    stockSummon: absent         # not in 3.3.5a (shaman-spells.yaml missingSpells.tranquil_air_totem)
+    stockPulse: absent
+    learnLevel: "[unresolved — confirm 1.12 id]"
+    ranks: "[unresolved]"
+    note: >
+      UNRESOLVED against this extract. 'Tranquil Air Totem' is NOT present in the 1.12.1 client
+      Spell.dbc by name, and the commonly-cited id 25908 is absent too — so no 1.12 id/values could
+      be confirmed from the DBC. It may be a post-1.12 addition, or absent from this specific client
+      build. KNOWN behaviour (research report, NOT DBC-verified): a party aura reducing threat
+      generated (~20%, aura SPELL_AURA_MOD_THREAT), single rank, ~level 42, ~2min. From-scratch if
+      it is genuinely a Vanilla totem — but FIRST confirm a real 1.12 id before authoring any number.
+      Do NOT invent magnitudes.
+    vanilla: "[unresolved — not found in 1.12.1 extract; confirm 1.12 id + values before authoring]"
+
+  WrathOfAir:
+    element: air
+    disposition: hide           # TBC 2.0.1 addition — absent from 1.12
+    stockSummon: 3738           # 3.3.5a player summon id
+    stockPulse: absent
+    learnLevel: null
+    ranks: 0
+    note: "NOT in the 1.12 DBC (confirmed absent). TBC 2.0.1 addition (5% spell haste in WotLK).
+      HIDE for Vanilla; stock 3.3.5a id 3738 recorded only."
+    vanilla: absent
+
+  # ================================ Tier-3 (sub-project 2) ================================
+  # The three MECHANIC-REWORKED totems sub-project 1 deferred (see FireNovaSpell entry above for
+  # the Fire Nova id-collision precedent). Design: docs/superpowers/specs/
+  # 2026-08-24-vanilla-totems-tier3-scripted-design.md. Sourced from the SAME 1.12.1 Spell.dbc via
+  # the SAME validated field offsets (header addendum above) — nothing here is from a wiki tooltip.
+  # CORRECTED RANK COUNTS vs the design doc's working assumptions (see notes per-totem below):
+  # Fire Nova = 5 (design doc already had this right), Windfury = 3 (NOT 5), Mana Tide = 3 (NOT 1).
+
+  FireNovaTotem:
+    element: fire
+    disposition: from-scratch   # no live 3.3.5a "totem" analog to retune — 1535 is now the instant
+                                 # "Fire Nova" SPELL (see FireNovaSpell entry above); totem behavior
+                                 # (drop -> short delay -> one AoE burst -> despawn) has no WotLK totem
+                                 # counterpart at all
+    stockSummon: absent         # see FireNovaSpell.stockSummon (1535) for the id-collision record
+    stockPulse: absent
+    learnLevel: 12              # DBC spellLevel of summon 1535 r1
+    ranks: 5                    # CONFIRMS the plan's assumption (design doc already had this right)
+    note: >
+      Two-spell-per-rank structure, same shape as Searing Totem: a summon (SUMMON_TOTEM_SLOT1=87
+      FIRE, EffectBasePoints_1+1 = totem HP 5, durationIndex 28 — this is the totem's own onstage
+      lifetime before it detonates, NOT a repeating-pulse duration like Magma) and a separate
+      SCHOOL_DAMAGE "Fire Nova" blast (implicitA 22 TARGET_SRC_CASTER — the AoE originates AT the
+      totem's position; radiusIndex 13). Damage min/max = basePoints+1 .. basePoints+dieSides (this
+      file's standard convention). UNRESOLVED-BY-EXTRACT: the detonation DELAY (how long after
+      summon the totem fires) and whether it pulses once or repeatedly are creature-AI timing, not a
+      Spell.dbc value — same gap class as Searing's bolt interval and Magma's tick interval elsewhere
+      in this file. The design doc's "~4s" detonation-delay placeholder remains UNVERIFIED by this
+      extract; do not promote it to a confirmed number without a creature/AI source.
+    vanilla:
+      ranksData:
+        - { rank: 1, summon: 1535,  level: 12, mana: 115, blast: 8349,  dmgMin: 48,  dmgMax: 56  }   # bp47 die9
+        - { rank: 2, summon: 8498,  level: 22, mana: 210, blast: 8502,  dmgMin: 102, dmgMax: 116 }   # bp101 die15
+        - { rank: 3, summon: 8499,  level: 32, mana: 345, blast: 8503,  dmgMin: 184, dmgMax: 208 }   # bp183 die25
+        - { rank: 4, summon: 11314, level: 42, mana: 490, blast: 11306, dmgMin: 281, dmgMax: 317 }   # bp280 die37
+        - { rank: 5, summon: 11315, level: 52, mana: 640, blast: 11307, dmgMin: 396, dmgMax: 442 }   # bp395 die47
+      blastSchool: fire
+      blastRadiusIndex: 13
+      summonDurationIndex: 28
+      detonationDelay: "UNRESOLVED-BY-EXTRACT — creature-AI timing, not a Spell.dbc field. Design
+        doc's ~4s placeholder is NOT DBC-confirmed."
+
+  WindfuryTotem:
+    element: air
+    disposition: retune          # id 8512 survives into 3.3.5a but its MECHANIC is fully replaced
+                                  # (WotLK 8512/8515 = a flat ~16% melee-haste AREA_AURA_PARTY, aura
+                                  # 138, EffectBasePoints_1=15 -> a %; verified directly against
+                                  # azerothcore-wotlk/ip-dbc/Spell.dbc for this file). The 1.12
+                                  # mechanic below is the OPPOSITE category (proc-imbue, not a
+                                  # passive stat aura) — same "FLAG RESOLVED" pattern as Flametongue.
+    stockSummon: 8512             # same id both eras, WotLK version is a single unranked talent-ish
+                                   # grant (ManaCost=0 in ip-dbc) — ranks 2/3 (10613/10614) do NOT
+                                   # exist in the 3.3.5a ip-dbc at all (confirmed absent)
+    stockPulse: 8515               # WotLK: aura 138 flat haste %. 1.12: PERIODIC_TRIGGER_SPELL chain
+                                    # (below) — completely different spell shape under the same id
+    learnLevel: 32                 # DBC spellLevel of summon 8512 r1
+    ranks: 3                       # *** PLAN CORRECTION: the plan assumed 5 ranks. 1.12.1 Spell.dbc
+                                    # has ONLY 3: summons 8512/10613/10614 (r4/r5 windfury ids do not
+                                    # exist in this DBC at all — confirmed via name search, only
+                                    # "Windfury Totem" Rank 1/2/3 present). ***
+    note: >
+      FLAG RESOLVED — mirrors the Flametongue Totem chain exactly (SPELL_EFFECT_ENCHANT_HELD_ITEM,
+      effect 92): passive "Windfury Totem Passive" (aura 23 PERIODIC_TRIGGER_SPELL, amplitude 5000ms)
+      -> every 5s triggers "Windfury Totem Effect" (effect 92, implicitA 20 TARGET_UNIT_CASTER_AREA_PARTY,
+      radiusIndex 9) which re-applies a temporary weapon ENCHANT (SpellItemEnchantment.dbc id, per
+      rank) to party members' held weapons. The enchant's ON-HIT PROC (chance %, trigger conditions)
+      lives entirely in SpellItemEnchantment.dbc, which is ABSENT from this extract — UNRESOLVED-BY-
+      EXTRACT, same gap class as Flametongue's enchant magnitude. What Spell.dbc DOES give directly:
+      the proc's PAYLOAD spell "Windfury Attack" (8516/10608/10610) = APPLY_AURA(99 MOD_ATTACK_POWER)
+      granting flat bonus AP, PLUS effect 19 SPELL_EFFECT_ADD_EXTRA_ATTACKS.
+      *** NON-OBVIOUS FINDING: the totem's "Windfury Attack" grants EffectBasePoints_2=0 -> mag
+      0+1=1 EXTRA ATTACK at every rank (verified identical across all 3 ranks) — this is ONE extra
+      attack, not two. The shaman's OWN "Windfury Weapon" personal imbue has separate, differently-
+      numbered "Windfury Attack" spells (8233/8236/10484/16361) with EffectBasePoints_2=1 -> mag 2
+      TWO extra attacks at every rank. Common assumption (and this project's own research report,
+      which did not distinguish the two) is that Windfury Totem and Windfury Weapon both grant 2
+      extra attacks — the 1.12.1 DBC says the TOTEM version is weaker: 1 extra attack, not 2. ***
+      ACQUISITION FLAG: all 3 ranks additionally have a distinct wrapper spell (8513/10615/10616,
+      Effect_1 = 36 LEARN_SPELL, triggerSpell -> the real summon, baseLevel=spellLevel=0,
+      rangeIndex=6) — the same "teach" signature used by quest/item-granted spells, DIFFERENT from
+      every other totem in this file (which are plain direct trainer summons with no LEARN_SPELL
+      wrapper). UNRESOLVED whether Windfury Totem requires a quest/item rather than plain trainer
+      levelling in 1.12 — cannot be confirmed from Spell.dbc alone (needs quest_template/
+      item_template, not in this extract). Flag for the controller before assuming trainer-only
+      availability.
+    vanilla:
+      ranksData:
+        - { rank: 1, summon: 8512,  level: 32, mana: 115, passive: 8515,  effect: 8514,  heldEnchantId: 1783, attack: 8516,  bonusAP: 122, extraAttacks: 1 }   # attack bp121 die1
+        - { rank: 2, summon: 10613, level: 42, mana: 175, passive: 10609, effect: 10607, heldEnchantId: 563,  attack: 10608, bonusAP: 229, extraAttacks: 1 }   # attack bp228 die1
+        - { rank: 3, summon: 10614, level: 52, mana: 250, passive: 10612, effect: 10611, heldEnchantId: 564,  attack: 10610, bonusAP: 315, extraAttacks: 1 }   # attack bp314 die1
+      learnWrapper: { rank1: 8513, rank2: 10615, rank3: 10616 }   # LEARN_SPELL "teach" ids; see ACQUISITION FLAG above
+      pulseAmplitudeMs: 5000
+      attackDurationIndex: 65     # short buff window carrying bonusAP after the proc; raw index,
+                                   # seconds unresolved (SpellDuration.dbc absent from extract)
+      mechanic: "SPELL_EFFECT_ENCHANT_HELD_ITEM (effect 92) re-applied to party every 5s via aura-23
+        passive — identical shape to Flametongue Totem, different enchant/payload"
+      procChanceSource: "UNRESOLVED-BY-EXTRACT — SpellItemEnchantment.dbc (absent). Design doc's
+        ~20% placeholder is NOT DBC-confirmed by this extract; do not promote it without that DBC."
+      procChanceResolved: >-
+        **RESOLVED 2026-09-01 (Plan 3b Task 2 batch 4b) — the placeholder was RIGHT, and no data
+        changed.** The DBC is absent from the 1.12 EXTRACT but PRESENT in this repo at
+        `azerothcore-wotlk/ip-dbc/SpellItemEnchantment.dbc`: rows **1783 / 563 / 564** (this entry's
+        own `heldEnchantId`s, named "Windfury Totem 1".."3") each read `type[0] = 1`
+        ITEM_ENCHANTMENT_TYPE_COMBAT_SPELL, `EffectPointsMin/Max = **20**`, `spellid[0]` = this
+        entry's own `attack` id. `Player::CastItemCombatSpell` (Player.cpp:7546) uses that column
+        verbatim as the percent chance (`chance = pEnchant->amount[s]`), so 20% is DBC-confirmed and
+        the shipped clones 931366-931368 carry the correct number. Documentary only — the shipped
+        Vanilla data is unchanged and this phase does not touch it.
+        NB the same read shows every `spellid[0]` payload (8516/10608/10610) is ABSENT from
+        `ip-dbc/Spell.dbc`, which is why neither era reconstructs the literal enchant chain. See
+        `era-data/_ref/tbc/shaman-totems-tbc.yaml` `accepted_gaps` id 13.
+      windfuryWeaponComparison:  # for-reference only, NOT part of the totem's own record
+        ranksData:
+          - { rank: 1, attack: 8233,  bonusAP: 91,  extraAttacks: 2 }
+          - { rank: 2, attack: 8236,  bonusAP: 238, extraAttacks: 2 }
+          - { rank: 3, attack: 10484, bonusAP: 497, extraAttacks: 2 }
+          - { rank: 4, attack: 16361, bonusAP: 665, extraAttacks: 2 }
+
+  ManaTideTotem:
+    element: water
+    disposition: retune           # id 16190 survives into 3.3.5a as a single unranked Restoration-
+                                   # talent grant (verified in ip-dbc: DurationIndex 564, a 2nd
+                                   # scripted effect — the %-max-mana/4-tick behaviour is core C++
+                                   # script (spell_sha_mana_tide), not decodable from Spell.dbc alone)
+    stockSummon: 16190             # same id both eras
+    stockPulse: absent              # WotLK's %-mana pulse is a script, not a simple pulse spell;
+                                     # no like-for-like 3.3.5a pulse id to record
+    learnLevel: 40                  # DBC spellLevel of summon 16190 r1
+    ranks: 3                        # *** PLAN CORRECTION: the plan (and this project's OWN Tier-3
+                                     # design doc, which treats 932407 as a single-rank rework) assumed
+                                     # 1 rank because that's the 3.3.5a talent shape. The 1.12.1
+                                     # Spell.dbc has 3 ranks: summons 16190/17354/17359, spellLevel
+                                     # 40/48/58 — the SAME per-rank trainer-curve shape as every other
+                                     # multi-rank totem in this file, not a single talent grant. ***
+    note: >
+      Each rank is a 3-spell chain, not a simple single pulse: (1) "Mana Tide" party-mana-restore
+      pulse — Effect_1 = 35 SPELL_EFFECT_APPLY_AREA_AURA_PARTY, aura 24 PERIODIC_ENERGIZE, amplitude
+      3000ms (heals mana every 3s), radiusIndex 9, buffDurationIndex 21 (structurally identical to
+      Mana Spring's pulse elsewhere in this file, just a party aura instead of self) — this is the
+      headline "flat mana per tick" number; PLUS (2) a parallel self-only aura (aura 23
+      PERIODIC_TRIGGER_SPELL, also amplitude 3000ms) that independently triggers (3) a
+      SPELL_EFFECT_THREAT (effect 63) pulse centered AT the totem (implicitA 22 TARGET_SRC_CASTER,
+      radiusIndex 13 — same radius index as Fire Nova's blast) with its OWN basePoints progression
+      (109/154/199 -> mag 110/155/200), unrelated in magnitude to the mana-per-tick number. This
+      threat pulse has no WotLK analog recorded anywhere in this file and reads as a genuine 1.12-only
+      totem-threat mechanic (a scripted threat value generated at the totem's location on the same 3s
+      cadence as the mana restore) — recorded as-is, not editorialized further.
+      ACQUISITION FLAG: rank 1 (16190) is a plain direct summon (spellLevel 40, no wrapper), but
+      ranks 2/3 (17354/17359) ADDITIONALLY carry a LEARN_SPELL wrapper spell (17362->17354,
+      17363->17359; baseLevel=spellLevel=0, rangeIndex=6) — the SAME "teach" signature seen on every
+      Windfury Totem rank above. UNRESOLVED whether ranks 2-3 require a quest/item rather than plain
+      trainer levelling (cannot be confirmed from Spell.dbc alone).
+      *** DESIGN-DOC IMPACT: the Tier-3 design doc's "Mana Tide Totem (flat) — pure data" section
+      plans a REWORK of the existing single-rank talent-grant spell 932407 to a custom flat pulse.
+      With 3 confirmed 1.12 ranks (not 1), that section's id allocation (a single 931373 pulse) and
+      the "talent-granted" framing both need revision before Tier-3 authoring — flag for the
+      controller. ***
+    vanilla:
+      ranksData:
+        - { rank: 1, summon: 16190, level: 40, mana: 20, pulse: 16191, manaPerTick: 140, threatTrigger: 16192, threatEffect: 16193, threatMag: 110 }                        # pulse bp139; threat bp109
+        - { rank: 2, summon: 17354, level: 48, mana: 40, pulse: 17355, manaPerTick: 155, threatTrigger: 17356, threatEffect: 17357, threatMag: 155, learnWrapper: 17362 }   # pulse bp154; threat bp154
+        - { rank: 3, summon: 17359, level: 58, mana: 60, pulse: 17360, manaPerTick: 240, threatTrigger: 17361, threatEffect: 17358, threatMag: 200, learnWrapper: 17363 }   # pulse bp239; threat bp199
+      pulseAura: "24 PERIODIC_ENERGIZE"
+      tickMs: 3000
+      radiusIndex: 9
+      buffDurationIndex: 21          # generic ~2min cap used by every other party pulse in this file
+      threatEffectRadiusIndex: 13
+
+# =============================================================================================
+# KNOWN DEFECTS in the SHIPPED Vanilla totem substrate — recorded 2026-09-01 by the TBC Phase 3
+# totem work. Mirrored here because the TBC reference that found them
+# (era-data/_ref/tbc/shaman-totems-tbc.yaml) stops being opened once TBC shaman closes out, and
+# this is the file a Vanilla maintainer actually reads. The clone blocks themselves carry a
+# matching `!!! KNOWN DEFECT` banner in era-data/vanilla/shaman.yaml.
+# =============================================================================================
+known_defects_shipped:
+  why_it_breaks: >-
+    `Totem::InitSummon` (Totem.cpp:88-105) casts `m_spells[0]` EXACTLY ONCE and `TotemAI::UpdateAI`
+    (TotemAI.cpp:63-66) returns immediately for a non-TOTEM_ACTIVE totem. A pulse that is neither an
+    APPLY_AREA_AURA nor self-periodic therefore fires once and never again.
+  scope: >-
+    EXACTLY the two below. The one-shot-pulse sweep (2026-09-01) checked all 69 era totem creatures
+    and cleared every other family: Healing Stream and Mana Tide are self-ticking periodic auras,
+    Searing and Fire Nova fire discretely by design (driven by TotemAI / npc_era_fire_nova_totem),
+    and the resistance and stat pulses are APPLY_AREA_AURA. Do NOT add drivers to any of those --
+    a redundant driver on Healing Stream would double-tick the heal.
+  fix: >-
+    Give each era creature a DRIVER as its Index-0 spell -- a clone of the stock driver, aura 23
+    PERIODIC_TRIGGER_SPELL -- and let the driver trigger the existing payload clone. The TBC side
+    already ships exactly this shape (947001 for Earthbind; batch 2's minted Magma drivers), so copy
+    it. Fix both together; they are one defect class. Needs its own regression pass and a fresh
+    patch-V.mpq for existing Vanilla players, which is why it was not fixed from inside the TBC phase.
+  defects:
+    - id: 1
+      what: "Earthbind snares for ~5 s out of a 45 s totem."
+      detail: >-
+        Era creature 920100 casts the slow FIELD 931010 directly. Stock creature 2630 casts DRIVER
+        6474 (aura 23 PERIODIC_TRIGGER_SPELL @3000 ms), which re-triggers the field for the totem's
+        whole life; 931010's own DurationIndex 28 is 5000 ms.
+    - id: 2
+      what: "Magma lands 1 of its 10 damage ticks."
+      detail: >-
+        Era creatures 920160-920163 cast the damage clones 931130-931133 directly. Stock creature
+        5929 casts DRIVER 8188 (aura 23 @2000 ms), re-triggering the damage every 2 s over 21 s.

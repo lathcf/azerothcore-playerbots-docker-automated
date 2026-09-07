@@ -186,3 +186,8 @@ std::string PBChatterContext::BuildGroundedBrief(Player* bot)
         brief += Acore::StringFormat(" Zones your level: {}.", zones);
     return brief;
 }
+
+std::string PBChatterContext::BuildIdentity(Player* bot)
+{
+    return Acore::StringFormat("You're a level {} {}.", bot->GetLevel(), ClassName(bot->getClass()));
+}

@@ -1,0 +1,24 @@
+-- =================================================================================================
+-- mod-era-talents — ROGUE FINAL REVIEW (2026-09-06), hand SQL.
+--
+-- M-44 — delete three STALE `spell_proc` rows left behind by a retired node design.
+--
+-- Node 18444 Improved Sap originally shipped as `mechanic: proc` (a data proc re-triggering Stealth
+-- 1784), which emitted one `spell_proc` row per rank on the node's custom passives
+-- 923552/923553/923554. On 2026-08-18 the node was reworked to `mechanic: scripted` (the band-gated
+-- DUMMY misc-14 marker read by the module SpellScript `era_rog_sap_stealth`, because Sap on this
+-- core keeps the rogue stealthed and the re-trigger was near-inert). The passive ids stayed the
+-- same, but they are now marker rows with no proc at all.
+--
+-- The generator CANNOT clean these up: its `spell_proc` statement is a DELETE-then-INSERT scoped to
+-- exactly the ids it is about to re-insert, so an id that stops being a proc is simply never named
+-- again and its old row survives in `acore_world` forever. Live query 2026-09-06 confirmed all
+-- three still present with SpellFamilyMask0 = 128 (the retired Sap mask). Left in place they are a
+-- live proc entry on a passive whose Effect_1 is a DUMMY -- harmless today only because the DUMMY
+-- carries no aura 42, and pure confusion for the next reader of `spell_proc`.
+--
+-- Idempotent: a DELETE over exactly the three band ids this file owns. AzerothCore re-applies a
+-- CHANGED file by hash rather than by name, so a re-run is a no-op re-delete. Nothing here touches
+-- a stock row -- all three ids are inside the reserved era band [920000, 950000).
+-- =================================================================================================
+DELETE FROM `spell_proc` WHERE `SpellId` IN (923552, 923553, 923554);

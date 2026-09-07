@@ -52,6 +52,36 @@ namespace
         "i would lose a 1v1 to a single murloc right now ngl",
     };
 
+    // MODE_BANTER topic pool: social/community, game-design takes, and light off-topic. These
+    // are "bring up this" instructions to the model (not literal lines), deliberately
+    // level-agnostic — banter about the server/community/blizzard/RDF works at any level. The
+    // banter prompt carries a level guard so a low-level bot still won't reference endgame it
+    // hasn't reached. Picked uniformly.
+    char const* const kBanterTopics[] = {
+        // social / community
+        "whether the server feels busy, dead, or dying lately",
+        "private-server nostalgia, or how long you've been playing on servers like this",
+        "guild stuff - looking for one, drama in one, or how yours is going",
+        "give another player or a whole class a hard time, or a genuine shoutout",
+        "the community here - helpful, toxic, or crawling with gold spammers",
+        // game-design takes
+        "the dungeon finder - loot rolls, need/greed etiquette, or people queuing the wrong role",
+        "your class right now - whether it's overpowered, garbage, or just how it feels to play",
+        "how blizzard or retail handled something, or how this server stacks up to others you've played",
+        "getting ganked or some world-PvP nonsense",
+        "a grind you think is badly designed - rep, dailies, whatever",
+        // off-topic / life (light)
+        "something totally off-topic - you're tired, it's late, you should log off",
+        "real life creeping in - the weekend, work or school, needing coffee or food",
+        "music you've got on while playing, or just zoning out",
+    };
+
+    char const* PickBanterTopic()
+    {
+        int const n = (int)(sizeof(kBanterTopics) / sizeof(*kBanterTopics));
+        return kBanterTopics[urand(0, n - 1)];
+    }
+
     // Topics valid at any level — variety that's never level-inappropriate.
     char const* const kTopicsAny[] = {
         "where you are right now or a quest you're working on",
@@ -163,7 +193,7 @@ std::string PBChatterAmbientPrompt::Build(int mode, Player* bot, uint8_t kind,
         {
             std::string p = Acore::StringFormat(
                 "{} You're chatting in {}. Here's the recent conversation (oldest first):\n",
-                PBChatterContext::BuildGroundedBrief(bot), where);
+                PBChatterContext::BuildIdentity(bot), where);
             for (auto const& [speaker, text] : recent)
                 p += Acore::StringFormat("{}: {}\n", speaker, text);
             p += "Reply directly to the last message like you're part of the conversation — agree, "
@@ -191,6 +221,17 @@ std::string PBChatterAmbientPrompt::Build(int mode, Player* bot, uint8_t kind,
                 "the way a real player would — no fanfare, never say \"Ding!\" or \"Quest "
                 "complete\".{}",
                 PBChatterContext::BuildGroundedBrief(bot), where, eventHint, StyleExamples(2)) + Tail();
+        }
+        case MODE_BANTER:
+        {
+            return Acore::StringFormat(
+                "{} You're hanging out and chatting in {}. Bring up this: {}. Say something short "
+                "and casual about it like a real player typing in chat - an opinion, an "
+                "observation, a gripe, or an off-hand aside. This is NOT a status update, so don't "
+                "just narrate what you're currently doing, and it's not a poll to the channel, so "
+                "don't start with \"anyone\". Keep any specific game references to stuff you'd "
+                "actually know at your level.{}",
+                PBChatterContext::BuildIdentity(bot), where, PickBanterTopic(), StyleExamples(3)) + Tail();
         }
         case MODE_GENERIC:
         default:

@@ -1,0 +1,60 @@
+-- TBC Hunter, Phase 7 Task 5 (substrate). Scorpid Sting trainer wiring for a TBC-era hunter.
+-- HAND-WRITTEN (not generated) — mirrors 2026_08_24_12_era_talent_hunter_scorpid_sting.sql (which
+-- built the Vanilla half of this same version-swap) and the TBC rogue Mutilate chain
+-- (2026_09_04_02). Idempotent: DELETE-before-INSERT on the one row this file owns.
+--
+-- This server loads trainers from the modern `trainer`/`trainer_spell` tables (ObjectMgr.cpp reads
+-- "SELECT ... FROM trainer_spell"), NOT the legacy `npc_trainer` table. The MAIN hunter trainer is
+-- `trainer.Id`=7 (Requirement=3 = CLASS_HUNTER, 148 spells) — the same id the stock 3043 row and the
+-- Vanilla clone chain 932300-303 use. `trainer.Id`=8 is the five-spell level-2..6 starter trainer and
+-- is untouched (_ref trainer_sets_audit). `.reload trainer` (or a restart) applies it live.
+--
+-- =====================================================================================================
+-- THE THREE-WAY HUNTER MARKER CHAIN
+--
+-- Scorpid Sting is a per-era baseline version-swap with THREE distinct era versions, so the hunter
+-- presence marker becomes a three-way chain (the shaman three-marker precedent, commit 9b69360).
+-- ReconcileBaselineSpells (EraTalents.cpp, CLASS_HUNTER) grants exactly ONE of them per character and
+-- strips the other two:
+--
+--   Vanilla  marker 932304 "Era: Vanilla Hunter"  ->  custom clones 932300-932303 (the authentic
+--            1.12.1 Strength/Agility drain chain, 4 ranks at L22/32/42/52). Rows shipped by
+--            2026_08_24_12; UNCHANGED by this file.
+--   TBC      marker 948280 "Era: TBC Hunter"      ->  custom clone 948281 (TBC 2.4.3 Scorpid Sting:
+--            a SINGLE rank, -5% chance to hit, ManaCostPct 9). THIS FILE adds that row.
+--   WotLK    marker 932305 "Era: WotLK Hunter"    ->  stock 3043 (WotLK's -3% rework, ManaCostPct 11),
+--            re-gated on 932305 by 2026_08_24_12. **That row is UNCHANGED by this file** — the
+--            TBC-side fix is purely the reconcile arm narrowing from "every post-Vanilla hunter" to
+--            "WotLK-band hunter only", so a TBC hunter simply stops holding 932305 (_ref
+--            baseline_leaks.scorpid_sting_3043 / .deterrence_19263: "marker-gate (Task 5) ... NO
+--            trainer SQL change is needed for this row").
+--
+-- A ReqAbility marker MUST have a client Spell.dbc row or the Blizzard trainer UI crashes formatting
+-- the "Requires <name>" line (the warlock-stone lesson). 948280 carries a `client:` block in
+-- era-data/tbc/hunter.yaml exactly like 932304/932305 do.
+--
+-- Per-era clone rows, never an OR-gate on one shared row (framework lesson 17e).
+--
+-- =====================================================================================================
+-- NOTHING IS DELETED OR RE-GATED
+--
+--   * Stock 3043's row stays as 2026_08_24_12 left it: (7, 3043, 6000, 0,0, 932305, 0,0, 22, 0).
+--   * ORPHANED-HIGHER-RANK CHECK (docs/era-talents-framework.md, MANDATORY before any stock DELETE):
+--     empty input set — this file deletes no stock row, so no orphan is possible. For the record,
+--     nothing in `trainer_spell` has `ReqAbility1 = 3043` anyway (TBC and 3.3.5a both have exactly ONE
+--     Scorpid Sting rank; the deleted 1.12.1 ranks 14275-14277 are absent from the 3.3.5a DBC).
+--   * No `spell_ranks` chain: TBC Scorpid Sting is a SINGLE rank (_ref capstone_chains.scorpid_sting
+--     "no spell_ranks row, no higher ids in wago"), so there is nothing to chain and nothing for a
+--     cascade to walk.
+--
+-- =====================================================================================================
+-- (a) TBC Scorpid Sting clone 948281, gated on the "TBC Hunter" marker 948280.
+--
+-- ReqLevel 22 and MoneyCost 6000 are copied VERBATIM from the stock 3043 row (the authentic stock cost
+-- at that level, never ReqLevel x 1000 — commits 1286f34 / d1263c5). Corroborated three ways: the
+-- live stock row, the wago 2.5.4 SpellLevels for 3043 (BaseLevel = SpellLevel = 22), and the cached
+-- Wowhead TBC tooltip ("Requires level 22"). See _ref trainer_cost_curve (level 22 -> 6000) and
+-- spec Amendment A.13.
+DELETE FROM `trainer_spell` WHERE `TrainerId`=7 AND `SpellId`=948281;
+INSERT INTO `trainer_spell` (`TrainerId`,`SpellId`,`MoneyCost`,`ReqSkillLine`,`ReqSkillRank`,`ReqAbility1`,`ReqAbility2`,`ReqAbility3`,`ReqLevel`,`VerifiedBuild`) VALUES
+(7, 948281, 6000, 0, 0, 948280, 0, 0, 22, 0);   -- TBC Scorpid Sting, gated on the "TBC Hunter" marker

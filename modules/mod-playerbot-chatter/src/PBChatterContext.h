@@ -22,5 +22,10 @@ namespace PBChatterContext
     // World-thread only. A grounding paragraph for ambient prompts: who the bot is, its
     // real current quest, a real character detail, and level-appropriate dungeons/zones.
     std::string BuildGroundedBrief(Player* bot);
+
+    // World-thread only. Bare identity ONLY: "You're a level N <class>." No current quest,
+    // inventory, zone, or content lists — used by MODE_BANTER/MODE_REACT so a small model
+    // isn't handed concrete current-activity hooks it will narrate instead of bantering.
+    std::string BuildIdentity(Player* bot);
 }
 #endif

@@ -11,12 +11,87 @@
 #   - The core BattlefieldWG.cpp hunk lives in the FORK-ROOT repo and MUST be appended, or a
 #     fork-only regen silently drops it (this bit production once).
 # LITERAL PATHS ONLY on every git/cp line.
+#
+# MODES: `regen-wg-siege-patch.sh` (default, or `0004`) re-cuts 0004; `regen-wg-siege-patch.sh 0003`
+# re-cuts patches/0003-playerbot-wintergrasp.patch (the battle-invite auto-accept). 0003 is the
+# FIRST patch in the stack, so its baseline is simply pristine — but that makes it regen-able ONLY
+# on a MINIMAL STACK (0003 applied, nothing after it), because every later patch that shares
+# AiFactory.cpp / PlayerbotAI.cpp / RandomPlayerbotMgr.cpp would otherwise leak into it. The 0003
+# branch gates on exactly that.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 AC="$ROOT/azerothcore-wotlk"
 PB="$AC/modules/mod-playerbots"
 OUT="$ROOT/patches/0004-playerbot-wintergrasp-siege.patch"
+
+MODE="${1:-0004}"
+if [[ "$MODE" == "0003" ]]; then
+  OUT3="$ROOT/patches/0003-playerbot-wintergrasp.patch"
+  [[ -d "$PB/.git" ]] || { echo "ERROR: $PB is not a git clone (run setup.sh first)" >&2; exit 1; }
+  for f in \
+    "$PB/src/Ai/Base/Actions/AcceptWintergraspInvitationAction.cpp" \
+    "$PB/src/Ai/Base/Actions/AcceptWintergraspInvitationAction.h" \
+    "$PB/src/Ai/Base/Strategy/WorldPacketHandlerStrategy.cpp" \
+    "$PB/src/Ai/Base/WorldPacketActionContext.h" \
+    "$PB/src/Ai/Base/WorldPacketTriggerContext.h" \
+    "$PB/src/Bot/Factory/AiFactory.cpp" \
+    "$PB/src/Bot/PlayerbotAI.cpp" \
+    "$PB/src/Bot/RandomPlayerbotMgr.cpp"
+  do
+    [[ -f "$f" ]] || { echo "ERROR: missing $f — 0003 edits not present in the fork worktree" >&2; exit 1; }
+  done
+  grep -q "AcceptWintergraspWarAction" "$PB/src/Ai/Base/WorldPacketActionContext.h" \
+    || { echo "ERROR: WorldPacketActionContext.h not wired — 0003 not applied?" >&2; exit 1; }
+  # MINIMAL-STACK GATE: none of 0003's shared files may carry a later patch's hunks.
+  if grep -q "wg siege" "$PB/src/Bot/Factory/AiFactory.cpp"; then
+    echo "GATE FAIL: AiFactory.cpp carries 0004 — regen 0003 on a MINIMAL stack (0003 only)" >&2; exit 1
+  fi
+  for probe in "perfMonEnabled:src/Bot/PlayerbotAI.cpp" "case 580::src/Bot/PlayerbotAI.cpp" \
+               "case 531::src/Bot/PlayerbotAI.cpp" "EraTalentBots_:src/Bot/PlayerbotAI.cpp" \
+               "EraTalentBots_SpecTabs:src/Bot/Factory/AiFactory.cpp"; do
+    needle="${probe%:*}"; rel="${probe##*:}"
+    if grep -q -- "$needle" "$PB/$rel"; then
+      echo "GATE FAIL: $rel carries a later patch ($needle) — regen 0003 on a MINIMAL stack" >&2; exit 1
+    fi
+  done
+  git -C "$PB" add -N -- \
+    src/Ai/Base/Actions/AcceptWintergraspInvitationAction.cpp \
+    src/Ai/Base/Actions/AcceptWintergraspInvitationAction.h
+  TMP3="$(mktemp -d)"
+  git -C "$PB" diff \
+    --src-prefix=a/modules/mod-playerbots/ --dst-prefix=b/modules/mod-playerbots/ -- \
+    src/Ai/Base/Actions/AcceptWintergraspInvitationAction.cpp \
+    src/Ai/Base/Actions/AcceptWintergraspInvitationAction.h \
+    src/Ai/Base/Strategy/WorldPacketHandlerStrategy.cpp \
+    src/Ai/Base/WorldPacketActionContext.h \
+    src/Ai/Base/WorldPacketTriggerContext.h \
+    src/Bot/Factory/AiFactory.cpp \
+    src/Bot/PlayerbotAI.cpp \
+    src/Bot/RandomPlayerbotMgr.cpp \
+    > "$TMP3/0003.patch"
+  git -C "$PB" reset -q -- \
+    src/Ai/Base/Actions/AcceptWintergraspInvitationAction.cpp \
+    src/Ai/Base/Actions/AcceptWintergraspInvitationAction.h 2>/dev/null || true
+  [[ -s "$TMP3/0003.patch" ]] || { echo "GATE FAIL: generated 0003 patch is empty" >&2; rm -rf "$TMP3"; exit 1; }
+  [[ "$(grep -c '^diff --git' "$TMP3/0003.patch")" -eq 8 ]] \
+    || { echo "GATE FAIL: expected 8 files in 0003, got $(grep -c '^diff --git' "$TMP3/0003.patch")" >&2; rm -rf "$TMP3"; exit 1; }
+  for needle in "SMSG_BATTLEFIELD_MGR_ENTRY_INVITE" "SMSG_BATTLEFIELD_MGR_QUEUE_INVITE" \
+                "AcceptWintergraspWarAction" "AcceptWintergraspQueueAction" \
+                "accept wg war" "accept wg queue" "IsInWintergraspWar"; do
+    grep -q -- "$needle" "$TMP3/0003.patch" \
+      || { echo "GATE FAIL: 0003 missing expected content: $needle" >&2; rm -rf "$TMP3"; exit 1; }
+  done
+  for canary in "wg siege" "WintergraspSiegeStrategy" "ArenaCoord" "perfMonEnabled" \
+                "case 580:" "case 531:" "EraTalentBots_"; do
+    if grep -q -- "$canary" "$TMP3/0003.patch"; then
+      echo "GATE FAIL: 0003 contaminated with other-patch content: $canary" >&2; rm -rf "$TMP3"; exit 1
+    fi
+  done
+  cp "$TMP3/0003.patch" "$OUT3"; rm -rf "$TMP3"
+  echo "OK: wrote $OUT3 ($(wc -l < "$OUT3") lines)"
+  exit 0
+fi
 P0003="$ROOT/patches/0003-playerbot-wintergrasp.patch"
 # PlayerbotAI.cpp is a shared registration file also touched by LATER patches (0011/0014/0016).
 # 0004 is a MIDDLE patch, so those can't be added to the pristine+0003 baseline (their hunks were
@@ -27,6 +102,8 @@ P0003="$ROOT/patches/0003-playerbot-wintergrasp.patch"
 P_LATER_PBAI=("$ROOT/patches/0016-playerbot-aq40-twins.patch" \
               "$ROOT/patches/0014-playerbot-sunwell.patch" \
               "$ROOT/patches/0011-playerbot-perfmon-hotpath.patch")  # REVERSE order (last patch first)
+# Per-patch PlayerbotAI.cpp presence markers, index-aligned with P_LATER_PBAI (see step 5b).
+P_LATER_PBAI_MARK=("case 531:" "case 580:" "perfMonEnabled")
 
 [[ -d "$PB/.git" ]] || { echo "ERROR: $PB is not a git clone (run setup.sh first)" >&2; exit 1; }
 [[ -f "$P0003" ]]   || { echo "ERROR: missing $P0003 (baseline needs 0003's shared-file hunks)" >&2; exit 1; }
@@ -149,14 +226,36 @@ cp "$TMP/BattlefieldWG.cpp"          "$AC/src/server/game/Battlefield/Zones/Batt
 #      REVERSE-apply their PlayerbotAI.cpp hunks (reverse order) to strip them back to
 #      pristine+0003+0004, so the diff below emits ONLY 0004's hunks. Without this the regen
 #      silently absorbs their registration lines into 0004 (the contamination trap).
-for p in "${P_LATER_PBAI[@]}"; do
-  git -C "$AC" apply -R --include=modules/mod-playerbots/src/Bot/PlayerbotAI.cpp "$p" \
-    || { echo "GATE FAIL: could not reverse $(basename "$p")'s PlayerbotAI.cpp hunks — is it applied/current?" >&2; exit 1; }
+#      NB the strip is CONDITIONAL on the patch's PlayerbotAI.cpp MARKER actually being present.
+#      When 0004 is regenerated on a MINIMAL STACK (numeric-order porting after an upstream bump —
+#      only 0001..0004 applied), 0011/0014/0016 are not on the tree and there is nothing to strip
+#      (and their patch files may be stale mid-bump, so `apply -R --check` is not a usable probe).
+#      The marker decides: present -> the reverse MUST succeed; absent -> skip. The output canaries
+#      below (case 531 / case 580 / PerfMonitorOperation) enforce the no-contamination result.
+PBAI_ABS="$PB/src/Bot/PlayerbotAI.cpp"
+for i in "${!P_LATER_PBAI[@]}"; do
+  p="${P_LATER_PBAI[$i]}"
+  marker="${P_LATER_PBAI_MARK[$i]}"
+  if grep -q -- "$marker" "$PBAI_ABS"; then
+    git -C "$AC" apply -R --include=modules/mod-playerbots/src/Bot/PlayerbotAI.cpp "$p" \
+      || { echo "GATE FAIL: $(basename "$p") is applied (marker '$marker') but its PlayerbotAI.cpp hunks would not reverse — stale patch?" >&2; exit 1; }
+  else
+    echo "note: $(basename "$p") not applied (no '$marker' in PlayerbotAI.cpp) — nothing to strip" >&2
+  fi
 done
-#    - ActionContext.h: the saved copy carries 0005 too. Rebuild pristine+0004-ONLY from the
-#      current patch's own ActionContext.h hunk (unchanged by these fixes).
-git -C "$PB" checkout -- src/Ai/Base/ActionContext.h
-git -C "$AC" apply --include=modules/mod-playerbots/src/Ai/Base/ActionContext.h "$OUT"
+#    - ActionContext.h: on a FULL stack the saved copy carries 0005 too, so rebuild
+#      pristine+0004-ONLY from the current patch's own ActionContext.h hunk. On a MINIMAL stack
+#      (numeric-order regen after an upstream bump — 0005 not applied yet, and $OUT possibly
+#      stale) the saved copy already IS pristine+0004, so leave it alone. 0005's marker in this
+#      file is ArenaCoord.
+if grep -q "ArenaCoord" "$TMP/ActionContext.h"; then
+  git -C "$PB" checkout -- src/Ai/Base/ActionContext.h
+  git -C "$AC" apply --include=modules/mod-playerbots/src/Ai/Base/ActionContext.h "$OUT" \
+    || { echo "GATE FAIL: 0005 is applied to ActionContext.h but the current 0004 patch's hunk will not re-apply to a pristine copy" >&2; exit 1; }
+else
+  echo "note: 0005 not applied to ActionContext.h (no ArenaCoord) — using the saved copy as-is" >&2
+  cp "$TMP/ActionContext.h" "$PB/src/Ai/Base/ActionContext.h"
+fi
 
 # 6. New files: intent-to-add so the diff emits their full content.
 git -C "$PB" add -N -- \

@@ -11,21 +11,29 @@ std::string g_PBChatUrl           = "http://localhost:11434/api/generate";
 std::string g_PBChatModel         = "gemma4:e4b";
 bool        g_PBChatThink         = false;
 std::string g_PBChatSystemPrompt  =
-    "You're a real person playing World of Warcraft (Wrath of the Lich King, 3.3.5a), "
-    "hanging out in-game and chatting with another player. Talk like a normal, friendly "
-    "gamer typing in chat: relaxed, easygoing, happy to help or just make small talk. "
-    "Keep it short and casual; light WoW slang is fine (lol, gg, lfg, ding, brb). You're "
-    "playing a character, but you're the person behind the keyboard, not the in-game "
-    "character and not an NPC, so skip the heavy fantasy roleplay voice or accent. "
-    "You're easygoing and mostly relaxed, but you've got a real personality and a "
-    "sense of humor, not a chipper customer-service bot. Often enough to notice, though "
-    "not every line, let some edge show: be dry or sarcastic, gripe about the usual WoW "
-    "pain (bad RNG, repair bills, wipes, endless rep and daily grinds), rib another "
-    "player good-naturedly, or crack a dumb joke. Keep it light: tease, don't insult; "
-    "never actually mean, hostile, or nasty toward the person you're talking to, and "
-    "still genuinely help if someone asks (a little sarcasm about it is fine). Vary how "
-    "the humor lands so you don't sound one-note. Never say you're an AI, "
-    "assistant, bot, or game master. No markdown, no emojis, no asterisk-actions, no quotes.";
+    "You're a real person playing WoW: Wrath of the Lich King (3.3.5a, level cap 80), "
+    "hanging out in-game and chatting with other players. Type like a normal gamer in chat: "
+    "short, relaxed, light slang (lol, gg, lfg, lfm, ding, brb, gz, ty, wtb, wts, pst). You're "
+    "here to hang out, not to narrate your play session - talk about the game, the server, other "
+    "players, your class, hot takes and gripes, the community, or whatever is on your mind, and "
+    "the occasional totally off-topic real-life aside (tired, it is late, need coffee) is fine "
+    "too. Don't invent fake WoW content or activities that do not exist. Each message quietly "
+    "tells you your current level, as background only: never announce or tack your level onto "
+    "what you say (no lvl-42 or level-42 tags), and keep any specific game references to things "
+    "you would actually know by that level - if you are low or mid level you have NOT been to "
+    "Northrend, run heroics, or raided (Naxxramas/Ulduar/ToC/ICC) and you never talk as if you "
+    "have; only level-80 characters talk about heroics, raids, dailies, rep grinds, or endgame "
+    "PvP. You're the person behind the keyboard, not the in-game character or an NPC - no fantasy "
+    "roleplay voice. Vary how you start; never open with the word anyone. You've got a real "
+    "personality: easygoing but opinionated, with a sense of humor, not a chipper "
+    "customer-service bot. Be cranky, dry, and sarcastic when it fits - gripe about bad RNG, "
+    "repair bills, wipes, grindy rep and dailies, class balance, the dungeon finder, blizzard, "
+    "other servers, or the community; rib other players and share blunt opinions. Keep a floor "
+    "though: no slurs, no real-world politics, and never genuinely hostile toward or targeting "
+    "the person you are talking to - cranky and sarcastic is fine, cruel is not. Still help if "
+    "someone actually asks (a little sarcasm about it is fine). Vary how the humor lands so you "
+    "do not sound one-note. Never say you're an AI, bot, or game master. No markdown, emojis, "
+    "asterisk-actions, or quotation marks.";
 uint32_t    g_PBChatReplyMaxLen   = 200;
 uint32_t    g_PBChatMaxConcurrent = 4;
 
@@ -56,10 +64,11 @@ uint32_t    g_PBChatAmbientCooldown      = 75;
 uint32_t    g_PBChatAmbientPerBotCooldown= 240;
 uint32_t    g_PBChatAmbientMaxPerMin     = 14;
 uint32_t    g_PBChatAmbientBufferLen     = 8;
-uint32_t    g_PBChatAmbientWGeneric      = 55;
-uint32_t    g_PBChatAmbientWReact        = 25;
-uint32_t    g_PBChatAmbientWFlavor       = 12;
+uint32_t    g_PBChatAmbientWGeneric      = 10;
+uint32_t    g_PBChatAmbientWReact        = 35;
+uint32_t    g_PBChatAmbientWFlavor       = 3;
 uint32_t    g_PBChatAmbientWEvent        = 8;
+uint32_t    g_PBChatAmbientWBanter       = 40;
 
 std::vector<std::string> g_PBChatCommandKeywords;
 
@@ -157,10 +166,11 @@ void PBChatterLoadConfig()
     g_PBChatAmbientPerBotCooldown= sConfigMgr->GetOption<uint32_t>("PlayerbotChatter.AmbientPerBotCooldown", 240);
     g_PBChatAmbientMaxPerMin     = sConfigMgr->GetOption<uint32_t>("PlayerbotChatter.AmbientMaxPerMin", 14);
     g_PBChatAmbientBufferLen     = sConfigMgr->GetOption<uint32_t>("PlayerbotChatter.AmbientBufferLen", 8);
-    g_PBChatAmbientWGeneric      = sConfigMgr->GetOption<uint32_t>("PlayerbotChatter.AmbientWeightGeneric", 55);
-    g_PBChatAmbientWReact        = sConfigMgr->GetOption<uint32_t>("PlayerbotChatter.AmbientWeightReact", 25);
-    g_PBChatAmbientWFlavor       = sConfigMgr->GetOption<uint32_t>("PlayerbotChatter.AmbientWeightFlavor", 12);
+    g_PBChatAmbientWGeneric      = sConfigMgr->GetOption<uint32_t>("PlayerbotChatter.AmbientWeightGeneric", 10);
+    g_PBChatAmbientWReact        = sConfigMgr->GetOption<uint32_t>("PlayerbotChatter.AmbientWeightReact", 35);
+    g_PBChatAmbientWFlavor       = sConfigMgr->GetOption<uint32_t>("PlayerbotChatter.AmbientWeightFlavor", 3);
     g_PBChatAmbientWEvent        = sConfigMgr->GetOption<uint32_t>("PlayerbotChatter.AmbientWeightEvent", 8);
+    g_PBChatAmbientWBanter       = sConfigMgr->GetOption<uint32_t>("PlayerbotChatter.AmbientWeightBanter", 40);
 
     std::string kw = sConfigMgr->GetOption<std::string>("PlayerbotChatter.CommandKeywords",
         "follow,stay,flee,grind,attack,tank attack,do attack,accept,talk,reset,runaway,summon,"

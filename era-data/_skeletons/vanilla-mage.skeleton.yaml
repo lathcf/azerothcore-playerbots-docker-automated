@@ -1,0 +1,730 @@
+era: 0
+class: 8
+eraName: Vanilla
+className: MAGE
+tabs:
+- key: 1
+  name: Arcane
+  background: MageArcane
+  nodes:
+  - id: 18001
+    slug: arcane_subtlety
+    name: Arcane Subtlety
+    tab: 1
+    tier: 0
+    col: 0
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Reduces your target's resistance to all your spells by 5 and reduces threat of Arcane spells by 20%.
+    - Reduces your target's resistance to all your spells by 10 and reduces threat of Arcane spells by 40%.
+  - id: 18002
+    slug: arcane_focus
+    name: Arcane Focus
+    tab: 1
+    tier: 0
+    col: 1
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Reduces the chance that the opponent can resist your Arcane spells by 2%.
+    - Reduces the chance that the opponent can resist your Arcane spells by 4%.
+    - Reduces the chance that the opponent can resist your Arcane spells by 6%.
+    - Reduces the chance that the opponent can resist your Arcane spells by 8%.
+    - Reduces the chance that the opponent can resist your Arcane spells by 10%.
+  - id: 18003
+    slug: improved_arcane_missiles
+    name: Improved Arcane Missiles
+    tab: 1
+    tier: 0
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Gives you a 20% chance to avoid interruption caused by damage while channeling Arcane Missiles.
+    - Gives you a 40% chance to avoid interruption caused by damage while channeling Arcane Missiles.
+    - Gives you a 60% chance to avoid interruption caused by damage while channeling Arcane Missiles.
+    - Gives you a 80% chance to avoid interruption caused by damage while channeling Arcane Missiles.
+    - Gives you a 100% chance to avoid interruption caused by damage while channeling Arcane Missiles.
+  - id: 18004
+    slug: wand_specialization
+    name: Wand Specialization
+    tab: 1
+    tier: 1
+    col: 0
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases your damage with Wands by 13%.
+    - Increases your damage with Wands by 25%.
+  - id: 18005
+    slug: magic_absorption
+    name: Magic Absorption
+    tab: 1
+    tier: 1
+    col: 1
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases all resistances by 2 and causes all spells you resist to restore 1% of your total mana.
+    - Increases all resistances by 4 and causes all spells you resist to restore 2% of your total mana.
+    - Increases all resistances by 6 and causes all spells you resist to restore 3% of your total mana.
+    - Increases all resistances by 8 and causes all spells you resist to restore 4% of your total mana.
+    - Increases all resistances by 10 and causes all spells you resist to restore 5% of your total mana.
+  - id: 18006
+    slug: arcane_concentration
+    name: Arcane Concentration
+    tab: 1
+    tier: 1
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Gives you a 2% chance of entering a Clearcasting state after any damage spell hits a target. The Clearcasting state
+      reduces the mana cost of your next damage spell by 100%.
+    - Gives you a 4% chance of entering a Clearcasting state after any damage spell hits a target. The Clearcasting state
+      reduces the mana cost of your next damage spell by 100%.
+    - Gives you a 6% chance of entering a Clearcasting state after any damage spell hits a target. The Clearcasting state
+      reduces the mana cost of your next damage spell by 100%.
+    - Gives you a 8% chance of entering a Clearcasting state after any damage spell hits a target. The Clearcasting state
+      reduces the mana cost of your next damage spell by 100%.
+    - Gives you a 10% chance of entering a Clearcasting state after any damage spell hits a target. The Clearcasting state
+      reduces the mana cost of your next damage spell by 100%.
+  - id: 18007
+    slug: magic_attunement
+    name: Magic Attunement
+    tab: 1
+    tier: 2
+    col: 0
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Increases the effect of your Amplify Magic and Dampen Magic spells by 25%.
+    - Increases the effect of your Amplify Magic and Dampen Magic spells by 50%.
+  - id: 18008
+    slug: improved_arcane_explosion
+    name: Improved Arcane Explosion
+    tab: 1
+    tier: 2
+    col: 1
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Increases the critical strike chance of your Arcane Explosion spell by an additional 2%
+    - Increases the critical strike chance of your Arcane Explosion spell by an additional 4%
+    - Increases the critical strike chance of your Arcane Explosion spell by an additional 6%
+  - id: 18009
+    slug: arcane_resilience
+    name: Arcane Resilience
+    tab: 1
+    tier: 2
+    col: 2
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Increases your armor by an amount equal to 50% of your Intellect.
+  - id: 18010
+    slug: improved_mana_shield
+    name: Improved Mana Shield
+    tab: 1
+    tier: 3
+    col: 0
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Decreases the mana lost per point of damage taken when Mana Shield is active by 10%.
+    - Decreases the mana lost per point of damage taken when Mana Shield is active by 20%.
+  - id: 18011
+    slug: improved_counterspell
+    name: Improved Counterspell
+    tab: 1
+    tier: 3
+    col: 1
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Gives your Counterspell a 50% chance to silence the target for 4 sec.
+    - Gives your Counterspell a 100% chance to silence the target for 4 sec.
+  - id: 18012
+    slug: arcane_meditation
+    name: Arcane Meditation
+    tab: 1
+    tier: 3
+    col: 3
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Allows 5% of your Mana regeneration to continue while casting.
+    - Allows 10% of your Mana regeneration to continue while casting.
+    - Allows 15% of your Mana regeneration to continue while casting.
+  - id: 18013
+    slug: presence_of_mind
+    name: Presence of Mind
+    tab: 1
+    tier: 4
+    col: 1
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Instant 3 min cooldown When activated, your next Mage spell with a casting time less than 10 sec becomes an instant
+      cast spell.
+  - id: 18014
+    slug: arcane_mind
+    name: Arcane Mind
+    tab: 1
+    tier: 4
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 18009
+    prereqPoints: 20
+    tooltip:
+    - Increases your maximum Mana by 2%.
+    - Increases your maximum Mana by 4%.
+    - Increases your maximum Mana by 6%.
+    - Increases your maximum Mana by 8%.
+    - Increases your maximum Mana by 10%.
+  - id: 18015
+    slug: arcane_instability
+    name: Arcane Instability
+    tab: 1
+    tier: 5
+    col: 1
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 18013
+    prereqPoints: 25
+    tooltip:
+    - Increases your spell damage and critical strike chance by 1%.
+    - Increases your spell damage and critical strike chance by 2%.
+    - Increases your spell damage and critical strike chance by 3%.
+  - id: 18016
+    slug: arcane_power
+    name: Arcane Power
+    tab: 1
+    tier: 6
+    col: 1
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 18015
+    prereqPoints: 30
+    tooltip:
+    - Instant 3 min cooldown When activated, your spells deal 30% more damage while costing 30% more mana to cast. This effect
+      lasts 15 sec.
+- key: 2
+  name: Fire
+  background: MageFire
+  nodes:
+  - id: 18017
+    slug: improved_fireball
+    name: Improved Fireball
+    tab: 2
+    tier: 0
+    col: 1
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Reduces the casting time of your Fireball spell by 0.1 sec.
+    - Reduces the casting time of your Fireball spell by 0.2 sec.
+    - Reduces the casting time of your Fireball spell by 0.3 sec.
+    - Reduces the casting time of your Fireball spell by 0.4 sec.
+    - Reduces the casting time of your Fireball spell by 0.5 sec.
+  - id: 18018
+    slug: impact
+    name: Impact
+    tab: 2
+    tier: 0
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Gives your Fire spells a 2% chance to stun the target for 2 sec.
+    - Gives your Fire spells a 4% chance to stun the target for 2 sec.
+    - Gives your Fire spells a 6% chance to stun the target for 2 sec.
+    - Gives your Fire spells a 8% chance to stun the target for 2 sec.
+    - Gives your Fire spells a 10% chance to stun the target for 2 sec.
+  - id: 18019
+    slug: ignite
+    name: Ignite
+    tab: 2
+    tier: 1
+    col: 0
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Your critical strikes from Fire damage spells cause the target to burn for an additional 8% of your spell's damage over
+      4 sec.
+    - Your critical strikes from Fire damage spells cause the target to burn for an additional 16% of your spell's damage
+      over 4 sec.
+    - Your critical strikes from Fire damage spells cause the target to burn for an additional 24% of your spell's damage
+      over 4 sec.
+    - Your critical strikes from Fire damage spells cause the target to burn for an additional 32% of your spell's damage
+      over 4 sec.
+    - Your critical strikes from Fire damage spells cause the target to burn for an additional 40% of your spell's damage
+      over 4 sec.
+  - id: 18020
+    slug: flame_throwing
+    name: Flame Throwing
+    tab: 2
+    tier: 1
+    col: 1
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases the range of your fire spells by 3 yards.
+    - Increases the range of your fire spells by 6 yards.
+  - id: 18021
+    slug: improved_fire_blast
+    name: Improved Fire Blast
+    tab: 2
+    tier: 1
+    col: 2
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Reduces the cooldown of your Fire Blast spell by 0.5 sec.
+    - Reduces the cooldown of your Fire Blast spell by 1 sec.
+    - Reduces the cooldown of your Fire Blast spell by 1.5 sec.
+  - id: 18022
+    slug: incinerate
+    name: Incinerate
+    tab: 2
+    tier: 2
+    col: 0
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Increases the critical strike chance of your Fire Blast and Scorch spells by 2%.
+    - Increases the critical strike chance of your Fire Blast and Scorch spells by 4%.
+  - id: 18023
+    slug: improved_flamestrike
+    name: Improved Flamestrike
+    tab: 2
+    tier: 2
+    col: 1
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Increases the critical strike chance of your Flamestrike spell by 5%.
+    - Increases the critical strike chance of your Flamestrike spell by 10%.
+    - Increases the critical strike chance of your Flamestrike spell by 15%.
+  - id: 18024
+    slug: pyroblast
+    name: Pyroblast
+    tab: 2
+    tier: 2
+    col: 2
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - 125 Mana 35 yd range 6 sec cast Hurls an immense fiery boulder that causes 148 to 195 Fire damage and an additional
+      56 Fire damage over 12 sec.
+  - id: 18025
+    slug: burning_soul
+    name: Burning Soul
+    tab: 2
+    tier: 2
+    col: 3
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Gives your fire spells a 35% chance to not lose casting time when you take damage and reduces the threat caused by your
+      Fire spells by 15%.
+    - Gives your fire spells a 70% chance to not lose casting time when you take damage and reduces the threat caused by your
+      Fire spells by 30%.
+  - id: 18026
+    slug: improved_scorch
+    name: Improved Scorch
+    tab: 2
+    tier: 3
+    col: 0
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Your Scorch spells have a 33% chance to cause your target to be vulnerable to Fire damage. This vulnerability increases
+      the Fire damage dealt to your target by 3% and lasts 30 sec. Stacks up to 5 times.
+    - Your Scorch spells have a 66% chance to cause your target to be vulnerable to Fire damage. This vulnerability increases
+      the Fire damage dealt to your target by 3% and lasts 30 sec. Stacks up to 5 times.
+    - Your Scorch spells have a 100% chance to cause your target to be vulnerable to Fire damage. This vulnerability increases
+      the Fire damage dealt to your target by 3% and lasts 30 sec. Stacks up to 5 times.
+  - id: 18027
+    slug: improved_fire_ward
+    name: Improved Fire Ward
+    tab: 2
+    tier: 3
+    col: 1
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Causes your Fire Ward to have a 10% chance to reflect Fire spells while active.
+    - Causes your Fire Ward to have a 20% chance to reflect Fire spells while active.
+  - id: 18028
+    slug: master_of_elements
+    name: Master of Elements
+    tab: 2
+    tier: 3
+    col: 3
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Your Fire and Frost spell criticals will refund 10% of the mana cost.
+    - Your Fire and Frost spell criticals will refund 20% of the mana cost.
+    - Your Fire and Frost spell criticals will refund 30% of the mana cost.
+  - id: 18029
+    slug: critical_mass
+    name: Critical Mass
+    tab: 2
+    tier: 4
+    col: 1
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Increases the critical strike chance of your fire spells by 2%.
+    - Increases the critical strike chance of your fire spells by 4%.
+    - Increases the critical strike chance of your fire spells by 6%.
+  - id: 18030
+    slug: blast_wave
+    name: Blast Wave
+    tab: 2
+    tier: 4
+    col: 2
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 18024
+    prereqPoints: 20
+    tooltip:
+    - 215 Mana Instant 45 sec cooldown A wave of flame radiates outward from the caster, damaging all enemies caught within
+      the blast for 160 to 192 Fire damage, and dazing them for 6 sec.
+  - id: 18031
+    slug: fire_power
+    name: Fire Power
+    tab: 2
+    tier: 5
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 25
+    tooltip:
+    - Increases the damage done by your fire spells by 2%.
+    - Increases the damage done by your fire spells by 4%.
+    - Increases the damage done by your fire spells by 6%.
+    - Increases the damage done by your fire spells by 8%.
+    - Increases the damage done by your fire spells by 10%.
+  - id: 18032
+    slug: combustion
+    name: Combustion
+    tab: 2
+    tier: 6
+    col: 1
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 18029
+    prereqPoints: 30
+    tooltip:
+    - Instant 3 min cooldown When activated, this spell causes each Fire damage spell you cast to increase your critical strike
+      chance with Fire damage spells by 10%. This effect lasts until you have caused 3 critical strikes with Fire spells.
+- key: 3
+  name: Frost
+  background: MageFrost
+  nodes:
+  - id: 18033
+    slug: frost_warding
+    name: Frost Warding
+    tab: 3
+    tier: 0
+    col: 0
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Increases the armor and resistances given by your Frost Armor and Ice Armor spells by 15%. In addition, gives your Frost
+      Ward a 10% chance to reflect Frost spells and effects while active.
+    - Increases the armor and resistances given by your Frost Armor and Ice Armor spells by 30%. In addition, gives your Frost
+      Ward a 20% chance to reflect Frost spells and effects while active.
+  - id: 18034
+    slug: improved_frostbolt
+    name: Improved Frostbolt
+    tab: 3
+    tier: 0
+    col: 1
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Reduces the casting time of your Frostbolt spell by 0.1 sec.
+    - Reduces the casting time of your Frostbolt spell by 0.2 sec.
+    - Reduces the casting time of your Frostbolt spell by 0.3 sec.
+    - Reduces the casting time of your Frostbolt spell by 0.4 sec.
+    - Reduces the casting time of your Frostbolt spell by 0.5 sec.
+  - id: 18035
+    slug: elemental_precision
+    name: Elemental Precision
+    tab: 3
+    tier: 0
+    col: 2
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 0
+    tooltip:
+    - Reduces the chance that an opponent can resist your Fire and Frost spells by 2%.
+    - Reduces the chance that an opponent can resist your Fire and Frost spells by 4%.
+    - Reduces the chance that an opponent can resist your Fire and Frost spells by 6%.
+  - id: 18036
+    slug: ice_shards
+    name: Ice Shards
+    tab: 3
+    tier: 1
+    col: 0
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases the critical strike damage bonus of your Frost spells by 20%.
+    - Increases the critical strike damage bonus of your Frost spells by 40%.
+    - Increases the critical strike damage bonus of your Frost spells by 60%.
+    - Increases the critical strike damage bonus of your Frost spells by 80%.
+    - Increases the critical strike damage bonus of your Frost spells by 100%.
+  - id: 18037
+    slug: frostbite
+    name: Frostbite
+    tab: 3
+    tier: 1
+    col: 1
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Gives your Chill effects a 5% chance to freeze the target for 5 sec.
+    - Gives your Chill effects a 10% chance to freeze the target for 5 sec.
+    - Gives your Chill effects a 15% chance to freeze the target for 5 sec.
+  - id: 18038
+    slug: improved_frost_nova
+    name: Improved Frost Nova
+    tab: 3
+    tier: 1
+    col: 2
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Reduces the cooldown of your Frost Nova spell by 2 sec.
+    - Reduces the cooldown of your Frost Nova spell by 4 sec.
+  - id: 18039
+    slug: perma_frost
+    name: Perma Frost
+    tab: 3
+    tier: 1
+    col: 3
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 5
+    tooltip:
+    - Increases the duration of your Chill effects by 1 sec and reduces the target's speed by an additional 4%.
+    - Increases the duration of your Chill effects by 2 sec and reduces the target's speed by an additional 7%.
+    - Increases the duration of your Chill effects by 3 sec and reduces the target's speed by an additional 10%.
+  - id: 18040
+    slug: piercing_ice
+    name: Piercing Ice
+    tab: 3
+    tier: 2
+    col: 0
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Increases the damage done by your Frost spells by 2%.
+    - Increases the damage done by your Frost spells by 4%.
+    - Increases the damage done by your Frost spells by 6%.
+  - id: 18041
+    slug: cold_snap
+    name: Cold Snap
+    tab: 3
+    tier: 2
+    col: 1
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Instant 10 min cooldown When activated, this spell finishes the cooldown on all of your Frost spells.
+  - id: 18042
+    slug: improved_blizzard
+    name: Improved Blizzard
+    tab: 3
+    tier: 2
+    col: 3
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 10
+    tooltip:
+    - Adds a chill effect to your Blizzard spell. This effect lowers the target's movement speed by 30%. Lasts 4.50 sec.
+    - Adds a chill effect to your Blizzard spell. This effect lowers the target's movement speed by 50%. Lasts 4.50 sec.
+    - Adds a chill effect to your Blizzard spell. This effect lowers the target's movement speed by 65%. Lasts 4.50 sec.
+  - id: 18043
+    slug: arctic_reach
+    name: Arctic Reach
+    tab: 3
+    tier: 3
+    col: 0
+    icon: ''
+    maxRank: 2
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Increases the range of your Frostbolt and Blizzard spells and the radius of your Frost Nova and Cone of Cold spells
+      by 10%.
+    - Increases the range of your Frostbolt and Blizzard spells and the radius of your Frost Nova and Cone of Cold spells
+      by 20%.
+  - id: 18044
+    slug: frost_channeling
+    name: Frost Channeling
+    tab: 3
+    tier: 3
+    col: 1
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 15
+    tooltip:
+    - Reduces the mana cost of your frost spells by 5% and reduces the threat caused by your Frost spells by 10%.
+    - Reduces the mana cost of your frost spells by 10% and reduces the threat caused by your Frost spells by 20%.
+    - Reduces the mana cost of your frost spells by 15% and reduces the threat caused by your Frost spells by 30%.
+  - id: 18045
+    slug: shatter
+    name: Shatter
+    tab: 3
+    tier: 3
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 18038
+    prereqPoints: 15
+    tooltip:
+    - Increases the critical strike chance of all your spells against frozen targets by 10%.
+    - Increases the critical strike chance of all your spells against frozen targets by 20%.
+    - Increases the critical strike chance of all your spells against frozen targets by 30%.
+    - Increases the critical strike chance of all your spells against frozen targets by 40%.
+    - Increases the critical strike chance of all your spells against frozen targets by 50%.
+  - id: 18046
+    slug: ice_block
+    name: Ice Block
+    tab: 3
+    tier: 4
+    col: 1
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - 15 Mana Instant cast 5 min cooldown You become encased in a block of ice, protecting you from all physical attacks and
+      spells for 10 sec, but during that time you cannot attack, move or cast spells.
+  - id: 18047
+    slug: improved_cone_of_cold
+    name: Improved Cone of Cold
+    tab: 3
+    tier: 4
+    col: 2
+    icon: ''
+    maxRank: 3
+    prereqTalentId: 0
+    prereqPoints: 20
+    tooltip:
+    - Increases the damage dealt by your Cone of Cold spell by 15%.
+    - Increases the damage dealt by your Cone of Cold spell by 25%.
+    - Increases the damage dealt by your Cone of Cold spell by 35%.
+  - id: 18048
+    slug: winter_s_chill
+    name: Winter's Chill
+    tab: 3
+    tier: 5
+    col: 2
+    icon: ''
+    maxRank: 5
+    prereqTalentId: 0
+    prereqPoints: 25
+    tooltip:
+    - Gives your Frost damage spells a 20% chance to apply the Winter's Chill effect, which increases the chance a Frost spell
+      will critically hit the target by 2%. Stacks up to 5 times.
+    - Gives your Frost damage spells a 40% chance to apply the Winter's Chill effect, which increases the chance a Frost spell
+      will critically hit the target by 2%. Stacks up to 5 times.
+    - Gives your Frost damage spells a 60% chance to apply the Winter's Chill effect, which increases the chance a Frost spell
+      will critically hit the target by 2%. Stacks up to 5 times.
+    - Gives your Frost damage spells a 80% chance to apply the Winter's Chill effect, which increases the chance a Frost spell
+      will critically hit the target by 2%. Stacks up to 5 times.
+    - Gives your Frost damage spells a 100% chance to apply the Winter's Chill effect, which increases the chance a Frost
+      spell will critically hit the target by 2%. Stacks up to 5 times.
+  - id: 18049
+    slug: ice_barrier
+    name: Ice Barrier
+    tab: 3
+    tier: 6
+    col: 1
+    icon: ''
+    maxRank: 1
+    prereqTalentId: 18046
+    prereqPoints: 30
+    tooltip:
+    - 305 Mana Instant cast 30 sec cooldown Instantly shields you, absorbing 438 damage. Lasts 1 min. While the shield holds,
+      spells will not be interrupted.

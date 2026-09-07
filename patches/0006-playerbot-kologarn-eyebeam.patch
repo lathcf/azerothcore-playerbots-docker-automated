@@ -1,17 +1,17 @@
 diff --git a/modules/mod-playerbots/src/Ai/Raid/Uld/UldActions.cpp b/modules/mod-playerbots/src/Ai/Raid/Uld/UldActions.cpp
-index 6f58e21..29e06b5 100644
+index 2179034..4b53c95 100644
 --- a/modules/mod-playerbots/src/Ai/Raid/Uld/UldActions.cpp
 +++ b/modules/mod-playerbots/src/Ai/Raid/Uld/UldActions.cpp
-@@ -5,6 +5,8 @@
- #include <FollowMasterStrategy.h>
- 
+@@ -27,6 +27,8 @@
+ #include "Unit.h"
+ #include "Vehicle.h"
  #include <cmath>
 +#include <limits>
 +#include <vector>
  
- #include "AiObjectContext.h"
- #include "DBCEnums.h"
-@@ -1200,8 +1202,8 @@ bool KologarnMarkDpsTargetAction::Execute(Event /*event*/)
+ const std::string ADD_STRATEGY_CHAR = "+";
+ const std::string REMOVE_STRATEGY_CHAR = "-";
+@@ -1202,8 +1204,8 @@ bool KologarnMarkDpsTargetAction::Execute(Event /*event*/)
  
      if (!targetToMark)
      {
@@ -22,7 +22,7 @@ index 6f58e21..29e06b5 100644
          {
              targetToMark = rightArm;
              additionalTargetToMark = boss;
-@@ -1218,7 +1220,7 @@ bool KologarnMarkDpsTargetAction::Execute(Event /*event*/)
+@@ -1220,7 +1222,7 @@ bool KologarnMarkDpsTargetAction::Execute(Event /*event*/)
      if (!targetToMark)
          return false;  // No target to mark
  
@@ -31,7 +31,7 @@ index 6f58e21..29e06b5 100644
      if (leftArm && leftArm->IsAlive())
          targetToCcMark = leftArm;
  
-@@ -1319,40 +1321,103 @@ bool KologarnRubbleSlowdownAction::Execute(Event /*event*/)
+@@ -1321,40 +1323,103 @@ bool KologarnRubbleSlowdownAction::Execute(Event /*event*/)
      return botAI->CastSpell("frost trap", currentSkullUnit);
  }
  
@@ -161,10 +161,10 @@ index 6f58e21..29e06b5 100644
  
  bool KologarnEyebeamAction::isUseful()
 diff --git a/modules/mod-playerbots/src/Ai/Raid/Uld/UldActions.h b/modules/mod-playerbots/src/Ai/Raid/Uld/UldActions.h
-index ebcdedc..b4b9d3f 100644
+index a282dc3..cc4d8ca 100644
 --- a/modules/mod-playerbots/src/Ai/Raid/Uld/UldActions.h
 +++ b/modules/mod-playerbots/src/Ai/Raid/Uld/UldActions.h
-@@ -168,6 +168,9 @@ public:
+@@ -173,6 +173,9 @@ public:
      KologarnEyebeamAction(PlayerbotAI* botAI) : MovementAction(botAI, "kologarn eyebeam action") {}
      bool Execute(Event event) override;
      bool isUseful() override;
@@ -175,18 +175,18 @@ index ebcdedc..b4b9d3f 100644
  
  class KologarnRtiTargetAction : public Action
 diff --git a/modules/mod-playerbots/src/Ai/Raid/Uld/UldTriggers.cpp b/modules/mod-playerbots/src/Ai/Raid/Uld/UldTriggers.cpp
-index 102bf0f..aea95a5 100644
+index 3b8eb70..30d02dd 100644
 --- a/modules/mod-playerbots/src/Ai/Raid/Uld/UldTriggers.cpp
 +++ b/modules/mod-playerbots/src/Ai/Raid/Uld/UldTriggers.cpp
-@@ -10,6 +10,7 @@
- #include "SharedDefines.h"
- #include "Trigger.h"
+@@ -18,6 +18,7 @@
+ #include "UldBossHelper.h"
+ #include "UldScripts.h"
  #include "Vehicle.h"
 +#include <vector>
- #include <MovementActions.h>
- #include <FollowMasterStrategy.h>
- #include <RtiTargetValue.h>
-@@ -358,12 +359,13 @@ bool KologarnMarkDpsTargetTrigger::IsActive()
+ 
+ const std::vector<uint32> availableVehicles = {NPC_VEHICLE_CHOPPER, NPC_SALVAGED_DEMOLISHER,
+                                                NPC_SALVAGED_DEMOLISHER_TURRET, NPC_SALVAGED_SIEGE_ENGINE,
+@@ -363,12 +364,13 @@ bool KologarnMarkDpsTargetTrigger::IsActive()
      // Check that right arm is marked
      if (currentSkullUnit && currentSkullUnit->IsAlive() && currentSkullUnit->GetEntry() == NPC_RIGHT_ARM)
      {
@@ -204,7 +204,7 @@ index 102bf0f..aea95a5 100644
      {
          return true;  // Found a right arm to mark
      }
-@@ -423,28 +425,40 @@ bool KologarnRubbleSlowdownTrigger::IsActive()
+@@ -428,28 +430,40 @@ bool KologarnRubbleSlowdownTrigger::IsActive()
  bool KologarnEyebeamTrigger::IsActive()
  {
      Unit* boss = AI_VALUE2(Unit*, "find target", "kologarn");
@@ -263,18 +263,18 @@ index 102bf0f..aea95a5 100644
  
      return false;
 diff --git a/modules/mod-playerbots/src/Ai/Raid/Uld/Util/UldBossHelper.h b/modules/mod-playerbots/src/Ai/Raid/Uld/Util/UldBossHelper.h
-index acc45a5..bfabbe3 100644
+index 6f2da22..c1dcf04 100644
 --- a/modules/mod-playerbots/src/Ai/Raid/Uld/Util/UldBossHelper.h
 +++ b/modules/mod-playerbots/src/Ai/Raid/Uld/Util/UldBossHelper.h
-@@ -13,6 +13,7 @@
+@@ -15,6 +15,7 @@
  #include "PlayerbotAI.h"
  #include "Playerbots.h"
  #include "ScriptedCreature.h"
 +#include "UldGeometry.h"
- 
- constexpr uint32 ULDUAR_MAP_ID = 603;
- 
-@@ -29,7 +30,10 @@ enum UlduarIDs
+ #include <string>
+ #include <unordered_map>
+ #include <vector>
+@@ -34,7 +35,10 @@ enum UlduarIDs
  
      // Kologarn
      NPC_RIGHT_ARM = 32934,
@@ -285,7 +285,7 @@ index acc45a5..bfabbe3 100644
      SPELL_CRUNCH_ARMOR = 64002,
  
      SPELL_FOCUSED_EYEBEAM_10_2 = 63346,
-@@ -144,7 +148,20 @@ enum UlduarIDs
+@@ -149,7 +153,20 @@ enum UlduarIDs
  };
  
  constexpr float ULDUAR_KOLOGARN_AXIS_Z_PATHING_ISSUE_DETECT = 420.0f;
@@ -307,7 +307,7 @@ index acc45a5..bfabbe3 100644
  constexpr float ULDUAR_THORIM_AXIS_Z_FLOOR_THRESHOLD = 429.6094f;
  constexpr float ULDUAR_THORIM_AXIS_Z_PATHING_ISSUE_DETECT = 410.0f;
  constexpr float ULDUAR_AURIAYA_AXIS_Z_PATHING_ISSUE_DETECT = 410.0f;
-@@ -193,6 +210,41 @@ extern const Position ULDUAR_YOGG_SARON_CHAMBER_OF_ASPECTS_ENTRANCE;
+@@ -198,6 +215,41 @@ extern const Position ULDUAR_YOGG_SARON_CHAMBER_OF_ASPECTS_ENTRANCE;
  extern const Position ULDUAR_YOGG_SARON_PHASE_3_MELEE_SPOT;
  extern const Position ULDUAR_YOGG_SARON_PHASE_3_RANGED_SPOT;
  

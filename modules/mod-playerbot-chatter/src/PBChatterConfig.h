@@ -47,6 +47,7 @@ extern uint32_t    g_PBChatAmbientWGeneric;    // content weight: generic small 
 extern uint32_t    g_PBChatAmbientWReact;      // content weight: react to recent
 extern uint32_t    g_PBChatAmbientWFlavor;     // content weight: class/zone/level
 extern uint32_t    g_PBChatAmbientWEvent;      // content weight: event riff
+extern uint32_t    g_PBChatAmbientWBanter;      // content weight: social/off-topic banter
 
 extern std::vector<std::string> g_PBChatCommandKeywords; // lowercased
 

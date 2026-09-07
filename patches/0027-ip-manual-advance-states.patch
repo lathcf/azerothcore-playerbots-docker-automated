@@ -1,0 +1,160 @@
+diff --git a/modules/mod-individual-progression/conf/individualProgression.conf.dist b/modules/mod-individual-progression/conf/individualProgression.conf.dist
+index 441ca84..b780f31 100644
+--- a/modules/mod-individual-progression/conf/individualProgression.conf.dist
++++ b/modules/mod-individual-progression/conf/individualProgression.conf.dist
+@@ -349,6 +349,21 @@ IndividualProgression.DisableDefaultProgression = 0
+ #
+ IndividualProgression.CustomProgression = ""
+ 
++# IndividualProgression.ManualAdvanceStates
++#
++#        Description: (Overlay patch 0027) Progression states that AUTOMATIC advancement may not enter.
++#                     A boss kill, achievement backfill or quest turn-in that would reach or pass one of
++#                     these states is clamped to the state just below it; only ForceUpdateProgressionState
++#                     (.ip set, group sync, the mod-era-talents faction-leader gossip) may cross it.
++#                     Space- or comma-separated list of stage numbers (see the ProgressionState enum).
++#                     Used with mod-era-talents so an expansion change (which wipes talents) is a choice.
++#
++#                     Example: IndividualProgression.ManualAdvanceStates = "8 13"
++#
++#        Default:     "" - Disabled (stock automatic progression)
++#
++IndividualProgression.ManualAdvanceStates = ""
++
+ # IndividualProgression.AllowEarlyDungeonSet2
+ #
+ #        Description: Dungeon Set 2 was introduced in patch 1.10 and requires completing some AQ content that is normally not available until a later phase
+diff --git a/modules/mod-individual-progression/src/IndividualProgression.cpp b/modules/mod-individual-progression/src/IndividualProgression.cpp
+index 67c926e..797fbde 100644
+--- a/modules/mod-individual-progression/src/IndividualProgression.cpp
++++ b/modules/mod-individual-progression/src/IndividualProgression.cpp
+@@ -342,6 +342,42 @@ void IndividualProgression::LoadCustomProgressionEntries(std::string const& cust
+     }
+ }
+ 
++// Patch 0027: parse "8 13" or "8,13" into manualAdvanceStates. Out-of-range tokens are dropped.
++void IndividualProgression::LoadManualAdvanceStates(std::string const& list)
++{
++    manualAdvanceStates.clear();
++    std::string normalized = list;
++    for (char& c : normalized)
++        if (c == ',')
++            c = ' ';
++    std::stringstream ss(normalized);
++    uint32 value;
++    while (ss >> value)
++        if (value >= PROGRESSION_MOLTEN_CORE && value <= PROGRESSION_WOTLK_TIER_5)
++            manualAdvanceStates.insert(static_cast<uint8>(value));
++}
++
++// Patch 0027: an AUTOMATIC advance may not cross into a held state; it lands at (held - 1).
++// std::set iterates ascending, so the first held state above the player's current state wins.
++ProgressionState IndividualProgression::ClampHeldAdvance(Player* player, ProgressionState newState) const
++{
++    if (manualAdvanceStates.empty() || !player)
++        return newState;
++
++    uint8 currentState = GetPlayerProgressionFromQuests(player);
++    for (uint8 held : manualAdvanceStates)
++    {
++        if (currentState < held && newState >= held)
++        {
++            ProgressionState clamped = static_cast<ProgressionState>(held - 1);
++            LOG_INFO("module", "[IP] manual-advance hold: {} auto-advance to {} clamped to {} (advance via the faction leader)",
++                player->GetName(), uint32(newState), uint32(clamped));
++            return clamped;
++        }
++    }
++    return newState;
++}
++
+ bool IndividualProgression::hasCustomProgressionValue(uint32 creatureEntry)
+ {
+     if (!creatureEntry)
+@@ -772,7 +808,7 @@ void IndividualProgression::checkIPProgression(Player* killer)
+         if (killer->HasAchieved(achievementId))
+         {
+             if (currentState < progState)
+-                UpdateProgressionState(killer, progState);
++                UpdateProgressionState(killer, ClampHeldAdvance(killer, progState));
+             return;
+         }
+     }
+@@ -790,7 +826,7 @@ bool IndividualProgression::checkCustomKillProgression(Player* killer, Creature*
+ 
+     if (hasCustomProgressionValue(entry))
+     {
+-        UpdateProgressionState(killer, static_cast<ProgressionState>(customProgressionMap[entry]));
++        UpdateProgressionState(killer, ClampHeldAdvance(killer, static_cast<ProgressionState>(customProgressionMap[entry])));
+         return true;
+     }
+ 
+@@ -842,7 +878,7 @@ void IndividualProgression::checkKillProgression(Player* killer, Creature* kille
+     {
+         ProgressionState prog = bossKill->second;
+         if (!progressionLimit || (progressionLimit >= prog))
+-            UpdateProgressionState(killer, prog);
++            UpdateProgressionState(killer, ClampHeldAdvance(killer, prog));
+ 
+         if (entry == KELTHUZAD_40)
+             UpdateProgressionAchievements(killer, KEL_THUZAD_40_KILL);
+@@ -1059,6 +1095,7 @@ private:
+         sIndividualProgression->RequiredZulGurubProgression = sConfigMgr->GetOption<uint8>("IndividualProgression.RequiredZulGurubProgression", 3);
+         sIndividualProgression->RequiredZulAmanProgression = sConfigMgr->GetOption<uint8>("IndividualProgression.RequiredZulAmanProgression", 12);
+         sIndividualProgression->LoadCustomProgressionEntries(sConfigMgr->GetOption<std::string>("IndividualProgression.CustomProgression", ""));
++        sIndividualProgression->LoadManualAdvanceStates(sConfigMgr->GetOption<std::string>("IndividualProgression.ManualAdvanceStates", ""));
+         sIndividualProgression->earlyDungeonSet2 = sConfigMgr->GetOption<bool>("IndividualProgression.AllowEarlyDungeonSet2", false);
+         sIndividualProgression->earlyScourgeBosses = sConfigMgr->GetOption<bool>("IndividualProgression.AllowEarlyScourgeBosses", false);
+         sIndividualProgression->tbcArenaSeason = sConfigMgr->GetOption<uint8>("IndividualProgression.TBC.ArenaSeason", 1);
+diff --git a/modules/mod-individual-progression/src/IndividualProgression.h b/modules/mod-individual-progression/src/IndividualProgression.h
+index 9a8d241..c731060 100644
+--- a/modules/mod-individual-progression/src/IndividualProgression.h
++++ b/modules/mod-individual-progression/src/IndividualProgression.h
+@@ -18,6 +18,7 @@
+ #include "AreaDefines.h"
+ #include "IWorld.h"
+ #include <regex>
++#include <set>
+ 
+ typedef std::unordered_map<uint32, uint32> questXpMapType;
+ 
+@@ -410,6 +411,16 @@ public:
+     uint32 VanillaPvpKillRank1, VanillaPvpKillRank2, VanillaPvpKillRank3, VanillaPvpKillRank4, VanillaPvpKillRank5, VanillaPvpKillRank6, VanillaPvpKillRank7, VanillaPvpKillRank8, VanillaPvpKillRank9, VanillaPvpKillRank10, VanillaPvpKillRank11, VanillaPvpKillRank12, VanillaPvpKillRank13, VanillaPvpKillRank14;
+     std::string excludedAccountsRegex, botAccountsRegex, sharedFactionIdsRegex;
+ 
++    // Overlay patch 0027 (manual expansion advance): progression states that AUTOMATIC
++    // advancement (boss kill, achievement backfill, quest turn-in) may not ENTER. Such an
++    // advance is clamped to (held - 1). ForceUpdateProgressionState (GM .ip set, group sync,
++    // the era-talents faction-leader gossip) is deliberately unaffected, and so is the
++    // login-time starting progression (new DKs -> 13, Draenei/Blood Elves -> 8), which is
++    // why the clamp is applied at the auto-advance CALL SITES, not inside UpdateProgressionState.
++    std::set<uint8> manualAdvanceStates;
++    void LoadManualAdvanceStates(std::string const& list);
++    ProgressionState ClampHeldAdvance(Player* player, ProgressionState newState) const;
++
+     // progression is derived from rewarded hidden quests (IDs 66000 + progression)
+     uint8 GetPlayerProgressionFromQuests(Player* player) const;
+ 
+diff --git a/modules/mod-individual-progression/src/IndividualProgressionPlayer.cpp b/modules/mod-individual-progression/src/IndividualProgressionPlayer.cpp
+index e60797f..a29902c 100644
+--- a/modules/mod-individual-progression/src/IndividualProgressionPlayer.cpp
++++ b/modules/mod-individual-progression/src/IndividualProgressionPlayer.cpp
+@@ -853,15 +853,15 @@ public:
+         case BANG_A_GONG:
+         case SIMPLY_BANG_A_GONG:
+             if (!sIndividualProgression->disableDefaultProgression)
+-                 sIndividualProgression->UpdateProgressionState(player, PROGRESSION_PRE_AQ);
++                 sIndividualProgression->UpdateProgressionState(player, sIndividualProgression->ClampHeldAdvance(player, PROGRESSION_PRE_AQ));
+             break;
+         case CHAOS_AND_DESTRUCTION:
+             if (!sIndividualProgression->disableDefaultProgression)
+-                 sIndividualProgression->UpdateProgressionState(player, PROGRESSION_AQ_WAR);
++                 sIndividualProgression->UpdateProgressionState(player, sIndividualProgression->ClampHeldAdvance(player, PROGRESSION_AQ_WAR));
+             break;
+         case INTO_THE_BREACH:
+             if (!sIndividualProgression->disableDefaultProgression)
+-                 sIndividualProgression->UpdateProgressionState(player, PROGRESSION_PRE_TBC);
++                 sIndividualProgression->UpdateProgressionState(player, sIndividualProgression->ClampHeldAdvance(player, PROGRESSION_PRE_TBC));
+             break;
+         case QUEST_MORROWGRAIN:
+         case QUEST_TROLL_NECKLACE:

@@ -1,0 +1,28 @@
+## Interface: 30300
+## Title: EraTalents
+## Notes: Era-authentic talent panel for era-wow characters
+## Author: era-wow
+## Version: 0.1
+data\generated\MageVanilla.lua
+data\generated\PriestVanilla.lua
+data\generated\WarlockVanilla.lua
+data\generated\HunterVanilla.lua
+data\generated\RogueVanilla.lua
+data\generated\WarriorVanilla.lua
+data\generated\PaladinVanilla.lua
+data\generated\DruidVanilla.lua
+data\generated\ShamanVanilla.lua
+data\generated\PaladinTBC.lua
+data\generated\DruidTBC.lua
+data\generated\ShamanTBC.lua
+data\generated\WarriorTBC.lua
+data\generated\RogueTBC.lua
+data\generated\PriestTBC.lua
+data\generated\HunterTBC.lua
+data\generated\WarlockTBC.lua
+data\generated\MageTBC.lua
+EraTalents.lua
+Comms.lua
+Tooltip.lua
+TalentUI.lua
+Hook.lua

@@ -1,0 +1,176 @@
+# Stock Warrior spell reference — live-verified from Spell.dbc (SpellClassSet=4, SPELLFAMILY_WARRIOR) +
+# `lookup spell` on the dev-box worldserver console (2026-08-18). DO NOT guess ids/flags; see
+# rogue-spells.yaml / hunter-spells.yaml / warlock-spells.yaml for the shape this mirrors and the
+# general verification method.
+#
+# Verification method (Phase 7 Task 3):
+#   - Spell.dbc pulled live out of the running container:
+#       docker exec ac-worldserver cat /azerothcore/env/dist/data/dbc/Spell.dbc > /tmp/.../Spell.dbc
+#   - spells: flagsA/flagsB/flagsC = SpellClassMask_1/_2/_3 (the spell's OWN identity mask — what a
+#     SPELLMOD's EffectSpellClassMask must intersect to bind it) read straight from that DBC via
+#       python3 tools/dump_spell_family.py <Spell.dbc> tools/spell_dbc_columns.txt --names "..."
+#         (comma-separated, exact Name_Lang_enUS)
+#     Every rank of every multi-rank line below was dumped; the recorded mask is the SHARED mask
+#     across the player-cast ranks, and every NPC/decoy id sharing the same NAME but a different
+#     family/mask (or family=4 with an EMPTY mask) is called out explicitly (warrior, like rogue, is
+#     an old class — many ability names were reused for boss/mob/other-class spells).
+#   - Effect-level detail (Effect_N / EffectAura_N / EffectTriggerSpell_N / EquippedItemSubclass /
+#     DurationIndex) came from
+#       python3 tools/dump_spell_effects.py <Spell.dbc> tools/spell_dbc_columns.txt --ids ... --cols ...
+#     Aura/effect numbers resolved against the fork's OWN headers, never from memory:
+#       SPELL_AURA_* -> azerothcore-wotlk/src/server/game/Spells/Auras/SpellAuraDefines.h
+#       SPELL_EFFECT_* -> azerothcore-wotlk/src/server/shared/SharedDefines.h
+#       ITEM_SUBCLASS_WEAPON_* -> azerothcore-wotlk/src/server/game/Entities/Item/ItemTemplate.h
+#   - grants:/triggers: stock ids resolved on the LIVE dev-box worldserver via
+#       python3 tools/wgconsole.py <out> "lookup spell <name>" "wait:N" ...
+#     taking the rank-1 [talent] entry. Raw output kept at /tmp/claude-1000/wrids.out + wrids2.out.
+#
+# HELPER-ID CHECK (Task 3 Step 1) — run 2026-08-18, result ALL FREE:
+#   grep -rn "9328[0-9][0-9]" era-data/ modules/mod-era-talents/data/sql/
+#     client-addons-src/EraTalents/data/  -> no hits (warrior reserves the 9328xx hand-assigned
+#   helper block). NOTE: the DBC already contains pre-existing era warrior custom ids from the Task-2
+#   skeleton import (923424-923428 Mace Spec, 923440-923444 Sword Spec, 932988 Mace Specialization) —
+#   all OUTSIDE the 9328xx helper band, so no collision; recorded here only so a later reader isn't
+#   surprised to see them in `lookup spell` output.
+
+familyName: 4            # WARRIOR (confirmed: every player-cast spell below dumped SpellClassSet=4)
+
+spells:                  # SpellClassMask_1..3 identity of each stock base spell a SPELLMOD `affects:`
+                         # would bind by family mask (rank-1 id). Bit position noted in the comment.
+  # --- word1 (flagsA) identity bits -------------------------------------------------------------
+  "Charge":              { id: 100,   flagsA: 1,          flagsB: 0, flagsC: 0 }  # A bit0; ranks 100/6178/11578/20508/22120/22911/24023/24193/25999(fam7 decoy)/... player ranks all mask 1. (many family=0 "Charge" decoys; 25999 family=7)
+  "Hamstring":           { id: 1715,  flagsA: 2,          flagsB: 0, flagsC: 0 }  # A bit1; ranks 1715/7372/7373/25212 identical. (27584 is family=4 EMPTY mask — do not bind; 10 family=0 decoys)
+  "Overpower":           { id: 7384,  flagsA: 4,          flagsB: 0, flagsC: 0 }  # A bit2; ranks 7384/7887/11584/11585/14895/17198 identical. (37529 family=4 EMPTY-mask decoy; 58516/65924 family=0)
+  "Recklessness":        { id: 1719,  flagsA: 16,         flagsB: 0, flagsC: 0 }  # A bit4; 1719 + 13847 (triggered effect) both family=4 mask 16
+  "Rend":                { id: 772,   flagsA: 32,         flagsB: 0, flagsC: 0 }  # A bit5; ranks 772/6546/6547/6548/11572/11573/11574 identical. (34 family=0 decoys — Rend is a heavily reused name)
+  "Heroic Strike":       { id: 78,    flagsA: 64,         flagsB: 0, flagsC: 0 }  # A bit6; ranks 78/284/285/1608/11564-11567/25286/... all mask 64. (53395/59035/62444 family=0 decoys)
+  "Thunder Clap":        { id: 6343,  flagsA: 128,        flagsB: 0, flagsC: 0 }  # A bit7; ranks 6343/8198/8204/8205/11580/11581/25264/47501/47502 identical. (13532 family=4 EMPTY-mask decoy; 57832/60019 family=0)
+  "Bloodrage":           { id: 2687,  flagsA: 256,        flagsB: 0, flagsC: 0 }  # A bit8; 2687 + 29131 (triggered rage) both family=4 mask 256
+  "Disarm":              { id: 676,   flagsA: 512,        flagsB: 0, flagsC: 0 }  # A bit9; single player rank 676. (27581 family=4 EMPTY-mask decoy; 13 family=0 decoys)
+  "Revenge":             { id: 6572,  flagsA: 1024,       flagsB: 0, flagsC: 0 }  # A bit10; ranks 6572/6574/7379/11600/11601/25269/30357 identical. (19130/28844/37517/40392 family=4 EMPTY-mask decoys; 12170 family=0)
+  "Shield Bash":         { id: 72,    flagsA: 2048,       flagsB: 0, flagsC: 0 }  # A bit11; ranks 72/1671/1672/29704 identical. (10 family=0 decoys)
+  "Shield Block":        { id: 2565,  flagsA: 4096,       flagsB: 0, flagsC: 0 }  # A bit12; single player rank 2565. (5 family=0 decoys)
+  "Shield Wall":         { id: 871,   flagsA: 8192,       flagsB: 0, flagsC: 0 }  # A bit13; player rank 871 = family 4 mask 8192 (dump 2026-08-18, Task 8). ranks 871/15062/29390/31731/41104/41196 share it. Category 132 (shared-cooldown sweep) — a SPELLMOD op-duration binds it fine (Prot Improved Shield Wall 18548); do NOT clone into category 132.
+  "Sunder Armor":        { id: 7386,  flagsA: 16384,      flagsB: 0, flagsC: 0 }  # A bit14; ranks 7386/7405/8380/11596/11597/25225 identical. (48893 family=4 EMPTY-mask decoy; 20 family=0 decoys)
+  "Taunt":               { id: 355,   flagsA: 32768,      flagsB: 0, flagsC: 0 }  # A bit15; player rank 355 (+37486/37548 same mask). WARNING: 26281 is family=5 (WARLOCK) mask(33554432,0,0); 49613 is family=9 (HUNTER) — total name collisions, NOT warrior Taunt.
+  "Battle Shout":        { id: 2048,  flagsA: 65536,      flagsB: 0, flagsC: 0 }  # A bit16; ranks 2048/5242/6192/6673/11549/11550/11551/25289/47435/47436 identical. (17 family=0 decoys)
+  "Demoralizing Shout":  { id: 1160,  flagsA: 131072,     flagsB: 0, flagsC: 0 }  # A bit17; ranks 1160/6190/11554/11555/11556/13730/... all 18 ids family=4 mask 131072 (no decoys)
+  "Intimidating Shout":  { id: 5246,  flagsA: 262144,     flagsB: 0, flagsC: 0 }  # A bit18; 5246/20511/65930 identical. (65931 family=0 = the fear-fleeing sub-effect)
+  "Challenging Shout":   { id: 1161,  flagsA: 524288,     flagsB: 0, flagsC: 0 }  # A bit19; single rank 1161
+  "Death Wish":          { id: 12292, flagsA: 1048576,    flagsB: 0, flagsC: 0 }  # A bit20; single rank (talent-granted active)
+  "Slam":                { id: 1464,  flagsA: 2097152,    flagsB: 0, flagsC: 0 }  # A bit21; ranks 1464/8820/11604/11605/25241/25242 identical. (4 family=0 decoys)
+  "Cleave":              { id: 845,   flagsA: 4194304,    flagsB: 0, flagsC: 0 }  # A bit22; ranks 845/7369/11608/11609/20569/25231 identical. (48 family=0 decoys — very reused name)
+  "Mortal Strike":       { id: 12294, flagsA: 33554432,   flagsB: 0, flagsC: 0 }  # A bit25; ranks 12294/21551/21552/21553/25248/27580 identical (talent-granted). (23 family=0 decoys)
+  "Concussion Blow":     { id: 12809, flagsA: 67108864,   flagsB: 0, flagsC: 0 }  # A bit26; talent 12809 = mask 67108864 (bit26 only). WARNING: 22427/32588/52719 are family=4 mask 69206016 = bits[21,26] (adds Slam's bit21) — NPC/other variants, NOT the talent.
+  "Berserker Rage":      { id: 18499, flagsA: 268435456,  flagsB: 0, flagsC: 0 }  # A bit28; single rank 18499
+  "Execute":             { id: 5308,  flagsA: 536870912,  flagsB: 0, flagsC: 0 }  # A bit29; ranks 5308/20647/20658/20660-20662/25234/25236/47470/47471 identical. (7160/38959/56426/61140 family=0)
+  "Intercept":           { id: 20252, flagsA: 1073741824, flagsB: 0, flagsC: 0 }  # A bit30; ranks 20252/20616/20617/25272/25275/27826/47995-47996 identical. (27577/58743/58769/67540 family=4 EMPTY-mask decoys; 20253/20614/20615 family=0 = the stun/charge sub-effects)
+  # --- word2 (flagsB) identity bits -------------------------------------------------------------
+  "Whirlwind":           { id: 1680,  flagsA: 0, flagsB: 4,        flagsC: 0 }    # B bit2; player ranks 1680/44949/50622. (87 family=0 decoys)
+  "Retaliation":         { id: 20230, flagsA: 0, flagsB: 8,        flagsC: 0 }    # B bit3; PLAYER talent 20230. WARNING: 20240/22858 are family=4 mask(-2147483648,0,0)=word1 bit31 — a DIFFERENT "Retaliation" (NPC/boss punish). Do NOT bind word1 bit31.
+  "Deep Wounds":         { id: 12721, flagsA: 0, flagsB: 16,       flagsC: 0 }    # B bit4; this is the BLEED DoT carrier (Effect_1=6/aura3 PERIODIC_DAMAGE, DurationIndex 32), NOT the talent passive. The talent proc passives 12834/12849/12867 are family=4 EMPTY mask (see triggers:).
+  "Piercing Howl":       { id: 12323, flagsA: 0, flagsB: 32,       flagsC: 0 }    # B bit5; talent 12323. (10576 family=0; 23600/38256/43530/52744 family=4 EMPTY-mask decoys)
+  "Shield Slam":         { id: 23922, flagsA: 0, flagsB: 512,      flagsC: 0 }    # B bit9; ranks 23922/23923/23924/23925/25258/30356/47487/47488 identical. (8242/15655/29684/30688 family=0 decoys)
+  "Bloodthirst":         { id: 23881, flagsA: 0, flagsB: 1024,     flagsC: 0 }    # B bit10; the ATTACK ranks 23881/23892/23893/23894/25251/30335. NOTE 23880/23885/57791/57792 are family=4 EMPTY mask (helper/heal spells sharing the name) — the bindable identity is the attack's word2 bit10.
+  "Last Stand":          { id: 12975, flagsA: 0, flagsB: 524288,   flagsC: 0 }    # B bit19; talent 12975 (+ 12976 family=0 = the triggered heal). WARNING: 53478 is family=9 (HUNTER pet) "Last Stand" [talent] — collision.
+  "Sweeping Strikes":    { id: 12328, flagsA: 0, flagsB: 1048576,  flagsC: 0 }    # B bit20; single talent 12328. (12723/18765/26654/35429 family=0 = the triggered extra-swing effects)
+
+  # --- family=4 but EMPTY mask (carry NO identity bit — cannot be a SPELLMOD `affects:` target) ---
+  # Recorded so a later tab author does NOT try to bind them by family mask (there is no bit to hit).
+  # These are the talent PASSIVES / applied BUFFS themselves; they are the SPELLMOD *carriers* /
+  # granted auras, not targets.
+  "Flurry (buff)":       { id: 12966, flagsA: 0, flagsB: 0, flagsC: 0 }           # family=4, mask 0. The haste BUFF (aura138 MOD_MELEE_HASTE), ranks 12966-12970. See triggers.flurry_buff.
+  "Tactical Mastery":    { id: 12295, flagsA: 0, flagsB: 0, flagsC: 0 }           # family=4, mask 0. Ranks 12295/12676/12677 (rage-retention passive).
+
+  # --- family=0 (NO warrior family at all — pure passives; a family-4 SPELLMOD will NOT reach them) --
+  # Enrage, Unbridled Wrath, Anger Management, the Flurry TALENT proc, and the Deep Wounds
+  # intermediate all dumped family=0. Important: a "boost all warrior X" family-mask SPELLMOD cannot
+  # touch these — they must be handled by direct id or by their own effect. (ids: see triggers/grants.)
+
+grants:                  # stock WotLK ids a Bound node GRANTS (live-verified via `lookup spell`,
+                         # /tmp/claude-1000/wrids.out). Rank-1 [talent] id unless noted. Multi-rank
+                         # chains listed for the owning-tab task; DEFAULT DISPOSITION = single-rank
+                         # grant of rank 1 (do NOT build a chain in this task).
+  mortal_strike:     { 1: 12294 }   # "12294 - Mortal Strike, rank 1 [talent]"; WotLK chain 12294/21551/21552/21553/25248/30330 (6 ranks). Effect: aura118 MOD_HEALING_PCT -51% (Mortal Wounds heal debuff) + Effect_2=121 NORMALIZED_WEAPON_DMG. Vanilla mechanic identical (weapon dmg + heal reduction).
+  bloodthirst:       { 1: 23881 }   # "23881 - Bloodthirst, rank 1 [talent]"; WotLK chain 23881/23892/23893/23894/25251/30335. Effect_1=2 SCHOOL_DAMAGE (AP-scaled) + Effect_2=3 DUMMY. Vanilla = instant AP-based damage — same shape.
+  death_wish:        { 1: 12292 }   # "12292 - Death Wish, rank 1 [talent]" (single rank both eras)
+  sweeping_strikes:  { 1: 12328 }   # "12328 - Sweeping Strikes, rank 1 [talent]" (single rank)
+  last_stand:        { 1: 12975 }   # "12975 - Last Stand, rank 1 [talent]" (single rank). WARN: do NOT pick 53478 (hunter-pet Last Stand).
+  concussion_blow:   { 1: 12809 }   # "12809 - Concussion Blow, rank 1 [talent]" (single rank). Effect_1=6/aura12 MOD_STUN (DurationIndex 28) + Effect_2=2 SCHOOL_DAMAGE. This is the only stock WARRIOR stun active.
+  shield_slam:       { 1: 23922 }   # "23922 - Shield Slam, rank 1"; chain 23922/23923/23924/23925/25258/30356/47487/47488. Effect_1=38 DISPEL (1 magic) + Effect_2=2 SCHOOL_DAMAGE. NOT tagged [talent] in WotLK (trainer-learned there) but IS the Vanilla Prot talent active.
+  piercing_howl:     { 1: 12323 }   # "12323 - Piercing Howl, rank 1 [talent]" (single rank)
+  anger_management:  { 1: 12296 }   # "12296 - Anger Management, rank 1 [talent] [passive]" — family=0 passive (periodic rage gain)
+  recklessness:      { 1: 1719 }    # "1719 - Recklessness, rank 1" (single rank)
+  retaliation:       { 1: 20230 }   # "20230 - Retaliation, rank 1" (single rank). WARN: 20240/22858 are the family=4 word1-bit31 NPC variant — do NOT grant those.
+
+triggers:                # stock ids a data-proc/trigger node casts (live-verified against the DBC).
+  # ---- Deep Wounds proc + bleed chain (Task-3 Step 3 ask; owning tab = ARMS, node feeds Task 6) --
+  deep_wounds_proc:  { 1: 12834, 2: 12849, 3: 12867 }
+  # ^ the TALENT proc passives (family=4, EMPTY mask). Each = Effect_1=6/aura42 PROC_TRIGGER_SPELL,
+  #   EffectTriggerSpell_1=12162, ProcChance=100, ProcTypeMask=69972 (melee/crit hit). It does NOT
+  #   trigger the bleed directly — it triggers 12162 (below), which carries the bleed damage.
+  deep_wounds_intermediate: 12162   # family=0; the spell 12834's proc actually casts (the % -> bleed math lives here in WotLK)
+  deep_wounds_bleed: 12721          # family=4 word2 bit4 (see spells:"Deep Wounds"); Effect_1=6/aura3 PERIODIC_DAMAGE, DurationIndex 32 = the applied bleed DoT
+  # ---- Flurry haste buff (owning tab = FURY) ---------------------------------------------------
+  flurry_buff:       { 1: 12966, 2: 12967, 3: 12968, 4: 12969, 5: 12970 }
+  # ^ family=4 EMPTY mask; Effect_1=6/aura138 MOD_MELEE_HASTE, EffectBasePoints scales, DurationIndex 8,
+  #   ProcTypeMask 4 (charge-consuming on melee). This is the BUFF applied on crit.
+  flurry_talent:     { 1: 12319, 2: 12971, 3: 12972, 4: 12973, 5: 12974 }
+  # ^ family=0; the passive that watches for crits and applies flurry_buff. (Separate from the buff.)
+  # ---- Weapon-spec extra-attack trigger (reusable for Sword/Mace spec proc) ---------------------
+  extra_attack_1:    16459          # "16459 - Sword Specialization, rank 1" (no tag; the TRIGGERED payload).
+  # ^ family=0 (shared, class-agnostic); Effect_1=19 SPELL_EFFECT_ADD_EXTRA_ATTACKS,
+  #   EffectBasePoints_1=0 -> 1 extra attack. The reusable "chance of an extra attack" payload for a
+  #   Sword-Specialization-style proc (identical to the id rogue-spells.yaml recorded for Rogue Sword Spec).
+  # ---- Mace 3s-stun trigger: DOES NOT EXIST as a stock spell in this 3.3.5a DBC -----------------
+  # RESOLVED: `lookup spell Mace Stun` -> "No spells found!". The historical Vanilla "Mace
+  # Specialization: chance to stun 3s" was reworked in WotLK. In THIS DBC:
+  #   * 5530 "Mace Specialization" (untalented base) = Effect_1=30 ENERGIZE (base 99), NOT a stun.
+  #   * The TALENT ranks 12284/12701-12704 (and the 13709 chain) = Effect_1=6/aura280
+  #     MOD_ARMOR_PENETRATION_PCT (2/4/6/8/10%) — flat armor-pen passive, NO proc/trigger/stun.
+  #   * Passives 20864/59224 = aura240 MOD_EXPERTISE (further TBC/WotLK revision), also stun-free.
+  # => A Vanilla "Mace Spec: chance to stun 3s" analog has ZERO stock support and must be AUTHORED as
+  #    a custom proc (Task 7/owning-tab call). The only stock warrior STUN active is Concussion Blow
+  #    12809 (grants.concussion_blow), a 5s targeted stun+damage — not a bare 3s on-hit proc trigger.
+
+weaponSubclassMasks:     # equipSubclass bitmasks for the weapon-spec talents (Task 6-8 consumers).
+                         # SOURCE: azerothcore-wotlk/src/server/game/Entities/Item/ItemTemplate.h
+                         # enum ItemSubclassWeapon (verified directly), CROSS-CHECKED against the
+                         # stock talents' own EquippedItemSubclass field dumped from Spell.dbc.
+  equipClass: 2          # ITEM_CLASS_WEAPON (ItemTemplate.h:293)
+  # Real enum bit order (ItemTemplate.h:344-364):
+  #   AXE=0, AXE2=1, BOW=2, GUN=3, MACE=4, MACE2=5, POLEARM=6, SWORD=7, SWORD2=8, (obsolete=9),
+  #   STAFF=10, EXOTIC=11, EXOTIC2=12, FIST=13, MISC=14, DAGGER=15, THROWN=16, SPEAR=17,
+  #   CROSSBOW=18, WAND=19, FISHING_POLE=20.
+  axe1h: 1        # 1 << 0  (ITEM_SUBCLASS_WEAPON_AXE)
+  axe2h: 2        # 1 << 1  (ITEM_SUBCLASS_WEAPON_AXE2)
+  axeSpecMask: 3       # axe1h | axe2h — matches the task prompt (3). NB: stock WotLK MERGED axe+polearm
+                       # into "Poleaxe Specialization" 12700 (EquippedItemSubclass=67=axe|axe2|polearm);
+                       # for VANILLA we split them, so Axe Spec = 3 (axes only). (The racial Axe Spec
+                       # 20574 = 8195 = axe|axe2|fist — also not what a warrior Axe Spec talent wants.)
+  mace1h: 16      # 1 << 4  (ITEM_SUBCLASS_WEAPON_MACE)
+  mace2h: 32      # 1 << 5  (ITEM_SUBCLASS_WEAPON_MACE2)
+  maceSpecMask: 48     # mace1h | mace2h — matches the prompt (48); CONFIRMED by stock Mace Spec 12284 (EquippedItemSubclass=48).
+  sword1h: 128    # 1 << 7  (ITEM_SUBCLASS_WEAPON_SWORD)  — prompt said "1<<2 = 4"; WRONG, corrected
+  sword2h: 256    # 1 << 8  (ITEM_SUBCLASS_WEAPON_SWORD2) — prompt said "1<<7 = 128"; WRONG, corrected
+  swordSpecMask: 384   # sword1h | sword2h — prompt's "Sword Spec mask 132" is WRONG; real value 384, CONFIRMED by stock Sword Spec 12281 (EquippedItemSubclass=384).
+  polearm: 64     # 1 << 6  (ITEM_SUBCLASS_WEAPON_POLEARM)
+  polearmSpecMask: 64  # polearm only — matches the prompt (64). Polearm Spec IS a separate Vanilla Arms talent (node 18516); split out from the WotLK Poleaxe merge (12700=67).
+  # Two-Handed / One-Handed Weapon Specialization — authoritative masks taken from the STOCK talents'
+  # own EquippedItemSubclass (dumped), not assembled by hand:
+  twoHandSpecMask: 354   # stock Two-Handed Weapon Spec 12163 EquippedItemSubclass=354 = axe2(2)|mace2(32)|polearm(64)|sword2(256). NOTE: does NOT include staff(1024). This is the exact stock set.
+  oneHandSpecMask: 41105 # stock One-Handed Weapon Spec 16538 EquippedItemSubclass=41105 = axe(1)|mace(16)|sword(128)|fist(8192)|dagger(32768). Exact stock set.
+
+coreScriptSupport:       # what the fork's C++ implements for the reused ids (recorded for Task 6-8
+                         # Bound-vs-Authored calls; enum values verified against the fork headers).
+  # SPELL_EFFECT_ADD_EXTRA_ATTACKS = 19 (SharedDefines.h) dispatches (&Spell::EffectAddExtraAttacks,
+  #   SpellEffects.cpp) — proven by the rogue Sword Spec precedent; 16459 above reuses it directly.
+  # SPELL_AURA_MOD_STUN = 12, SPELL_AURA_PERIODIC_DAMAGE = 3, SPELL_AURA_PROC_TRIGGER_SPELL = 42,
+  #   SPELL_AURA_MOD_MELEE_HASTE = 138, SPELL_AURA_MOD_HEALING_PCT = 118,
+  #   SPELL_AURA_MOD_ARMOR_PENETRATION_PCT = 280, SPELL_AURA_MOD_DAMAGE_PERCENT_DONE = 79,
+  #   SPELL_AURA_MOD_WEAPON_CRIT_PERCENT = 52, SPELL_AURA_MOD_EXPERTISE = 240
+  #   (SpellAuraDefines.h — all confirmed by grep, not memory).
+  # No warrior-specific script handlers (spell_warrior.cpp) were grepped in this task (out of scope —
+  # Task 3 is DBC + live-id resolution only); a Task 6-equivalent Bound-vs-Authored pass for any
+  # authored proc (Mace-stun, weapon-spec extra attack) should grep
+  # azerothcore-wotlk/src/server/scripts/Spells/spell_warrior.cpp directly.

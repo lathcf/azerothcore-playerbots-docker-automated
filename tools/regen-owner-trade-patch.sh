@@ -63,7 +63,7 @@ git -C "$PB" diff \
 [[ -s "$TMP/0017.patch" ]] || { echo "GATE FAIL: generated patch is empty" >&2; exit 1; }
 [[ "$(grep -c '^diff --git' "$TMP/0017.patch")" -eq 1 ]] \
   || { echo "GATE FAIL: expected exactly 1 file in the patch" >&2; exit 1; }
-for needle in "ownerTrade" "PLAYERBOT_SECURITY_ALLOW_ALL" "HasActivePlayerMaster"; do
+for needle in "ownerTrade" "PLAYERBOT_SECURITY_ALLOW_ALL" "IsRealPlayer(GetMaster())"; do
   grep -q -- "$needle" "$TMP/0017.patch" \
     || { echo "GATE FAIL: patch missing expected content: $needle" >&2; exit 1; }
 done

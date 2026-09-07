@@ -1,0 +1,4 @@
+# Build artifacts — regenerate with build-mpqpack.sh / build-client-patch.sh
+out/
+mpqpack
+mpqread

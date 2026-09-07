@@ -1,0 +1,96 @@
+# Stock Priest spell reference — live-verified from Spell.dbc (family=6) + `lookup spell` on the
+# dev-box worldserver console (2026-08-13). DO NOT guess; see mage-spells.yaml for the shape this
+# mirrors and the general verification method.
+#
+# Verification method:
+#   - spells: flagsA/flagsB = SpellClassMask_1/_2 read straight from Spell.dbc for the rank-1 id
+#     (lowest id among the family=6, nonzero-mask entries sharing the spell's Name_Lang_enUS);
+#     flagsC is ALWAYS 0 here (word 3 is a shared category flag reused across many priest spells
+#     — e.g. value 1024 appears on Renew/Holy Fire/PW:Shield/PW:Fortitude/Inner Fire/SW:Pain alike
+#     — dropping it avoids a SPELLMOD over-matching unrelated spells; mirrors the Mage _ref
+#     convention).
+#   - grants/triggers: reused stock spell ids resolved on the LIVE dev-box worldserver via
+#     `tools/wgconsole.py ... "lookup spell <name>"` / "lookup spell id <id>", disambiguated
+#     against the [talent]/[passive] tags where a talent's own aura id and its separate
+#     proc-data/buff id both exist under the same name.
+#
+# CONCERNS surfaced during verification (see task report for full detail):
+#   - "Mind Flay" (15407) carries its ENTIRE identity in word 3 (raw mask 0,0,1088); word1/word2
+#     are both 0. Dropping word3 per the flagsC convention leaves flagsA=flagsB=0, which will not
+#     usefully target this spell alone via a SPELLMOD class mask. Flagging for whoever authors a
+#     node with `affects: Mind Flay` — may need to special-case this one (keep flagsC, or target
+#     via SPELLMOD_ALL_EFFECTS keyed differently) rather than trust the dropped-word3 default.
+#   - triggers.blackout_stun: the plan's expected id 15269 (and the talent aura 15268) DO NOT
+#     EXIST anywhere in this server's Spell.dbc (confirmed both by direct id lookup and a full
+#     name scan — only unrelated ids 44415/46025 are literally named "Blackout"). Left null; do
+#     NOT substitute a guessed id. Needs a design decision (this server's WotLK Spell.dbc may
+#     simply not carry the Vanilla "Blackout" stun-proc spell under any id/name).
+#   - triggers.shadow_vulnerability: the plan's expected name was "Shadow Vulnerability" but no
+#     spell of that name exists on this server; id 15258 IS present and is the correct untagged
+#     rank-1 debuff-data spell, but its real name here is "Shadow Weaving" (the talent aura itself
+#     is the separate tagged id 15257/rank1, 15331/rank2, 15332/rank3). Used 15258 since it's
+#     clearly the intended data spell, just under a different name than the plan expected.
+#   - triggers.inspiration_buff: id 15363 exists and is named "Inspiration" (matches), but it is
+#     tagged [talent][passive] — i.e. it is the RANK-3 TALENT AURA ITSELF, not a separate
+#     buff-application data spell (those exist as untagged siblings 14893/15357/15359 for ranks
+#     1/2/3 respectively). Recorded as instructed (15363) since the name matches exactly; flagging
+#     that 15359 (untagged rank-3 data spell) may be the more correct proc target depending on how
+#     the era-talents trigger is wired.
+familyName: 6
+spells:
+  Renew:                       { id: 139,   flagsA: 64,      flagsB: 0,    flagsC: 0 }
+  "Flash Heal":                { id: 2061,  flagsA: 2048,    flagsB: 0,    flagsC: 0 }
+  Heal:                        { id: 2054,  flagsA: 1024,    flagsB: 0,    flagsC: 0 }
+  "Greater Heal":               { id: 2060,  flagsA: 4096,    flagsB: 0,    flagsC: 0 }
+  "Lesser Heal":                { id: 2050,  flagsA: 262144,  flagsB: 0,    flagsC: 0 }
+  "Prayer of Healing":          { id: 596,   flagsA: 512,     flagsB: 0,    flagsC: 0 }
+  "Holy Nova":                  { id: 15237, flagsA: 4194304, flagsB: 0,    flagsC: 0 }
+  Smite:                        { id: 585,   flagsA: 128,     flagsB: 0,    flagsC: 0 }
+  "Holy Fire":                  { id: 14914, flagsA: 1048576, flagsB: 0,    flagsC: 0 }
+  "Power Word: Shield":         { id: 17,    flagsA: 1,       flagsB: 0,    flagsC: 0 }
+  "Power Word: Fortitude":      { id: 1243,  flagsA: 8,       flagsB: 0,    flagsC: 0 }
+  "Inner Fire":                  { id: 588,   flagsA: 2,       flagsB: 0,    flagsC: 0 }
+  "Mana Burn":                  { id: 8129,  flagsA: 16,      flagsB: 0,    flagsC: 0 }
+  "Shadow Word: Pain":           { id: 589,   flagsA: 32768,   flagsB: 0,    flagsC: 0 }
+  "Mind Blast":                  { id: 8092,  flagsA: 8192,    flagsB: 0,    flagsC: 0 }
+  # Mind Flay's identity is ENTIRELY in word3: raw mask (0,0,1088) = 1024 (shared category, dropped)
+  # | 64 (Mind Flay's own bit). Unlike every other priest spell (identity in word1), we MUST keep
+  # word3 here or a SPELLMOD `affects: [Mind Flay]` (e.g. Shadow Reach) matches nothing. flagsC = 64.
+  "Mind Flay":                   { id: 15407, flagsA: 0,       flagsB: 0,    flagsC: 64 }
+  "Psychic Scream":              { id: 8122,  flagsA: 65536,   flagsB: 0,    flagsC: 0 }
+  # word1 0x1000 (bit12) is a SHARED family-6 category bit carried by ~43 priest spells (Devouring
+  # Plague, Fear Ward, Levitate, ...) -- per family6_bit_census.word1.12 in _ref/tbc/priest-spells.yaml,
+  # "never bind alone". SpellInfo::IsAffected ORs across the flag words, so keeping it here made
+  # Improved Fade (node 18140) reduce the cooldown of every one of those 43 spells. DROPPED to 0 --
+  # Fade's unique identity is word0 bit14 (0x4000) alone; bind by that. This matches the TBC priest
+  # ref (which already drops it) and completes the Vanilla convention, which already drops Fade's
+  # word2 shared bit10. Any SPELLMOD affects: [Fade] must bind by word0 0x4000 only.
+  Fade:                          { id: 586,   flagsA: 16384,   flagsB: 0,    flagsC: 0 }
+  # Vampiric Embrace's OWN id (15286), NOT the spell_proc row's family mask. dump_spell_family.py
+  # read raw mask (4,0,0) for 15286 — identity is entirely in word1 (flagsA=4), like the majority
+  # of this table (no word3 special-case needed here, unlike Mind Flay).
+  "Vampiric Embrace":            { id: 15286, flagsA: 4,       flagsB: 0,    flagsC: 0 }
+grants:              # reused stock spell ids for Bound nodes (live-verified via `lookup spell`)
+  inner_focus:            { 1: 14751 }  # single-rank talent
+  divine_spirit:          { 1: 14752 }  # rank chain: 1:14752 2:14818 3:14819 4:27841 5:25312 6:48073
+  power_infusion:         { 1: 10060 }  # single-rank talent
+  holy_nova:              { 1: 15237 }  # rank chain: 1:15237 2:15430 3:15431 ... (base rank shown)
+  lightwell:              { 1: 724 }    # rank chain: 1:724 2:27870 3:27871 4:28275 5:48086 6:48087
+  # rank chain: 1:15407 2:17311 3:17312 4:17313 5:17314 6:18807 7:25387 8:48155 9:48156
+  mind_flay:              { 1: 15407 }
+  silence:                { 1: 15487 }  # single-rank talent
+  shadowform:             { 1: 15473 }  # single-rank talent
+  spirit_of_redemption:   { 1: 20711 }  # single-rank talent, passive
+triggers:            # data-proc target spells (live-verified via `lookup spell`)
+  spirit_tap_buff:        15271   # untagged rank-1 buff-data id; talent aura itself is 15270
+  # NOT FOUND on this server — see CONCERNS above. Plan's expected ids (talent 15268 / stun 15269)
+  # do not exist anywhere in this server's Spell.dbc under any name. Do not guess a substitute.
+  blackout_stun:          null
+  # Real name on this server is "Shadow Weaving" (plan expected "Shadow Vulnerability") — see
+  # CONCERNS above. This is the untagged rank-1 debuff-data id; talent aura itself is 15257.
+  shadow_vulnerability:   15258
+  # Exists and name matches ("Inspiration"), but is tagged [talent][passive] — i.e. the rank-3
+  # TALENT AURA itself, not a separate buff-data id. See CONCERNS above; untagged rank-3 data-spell
+  # sibling is 15359 if a plain buff id is actually wanted.
+  inspiration_buff:       15363
+  blessed_recovery_hot:   27813   # untagged rank-1 HoT data id; talent aura itself is 27811

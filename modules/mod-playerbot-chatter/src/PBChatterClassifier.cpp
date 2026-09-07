@@ -20,8 +20,10 @@ namespace
 
     bool IsBot(Player* p)
     {
+        // upstream 17214b3 renamed PlayerbotAI::IsRealPlayer() (which meant "selfbot") to the
+        // free IsSelfBot(Player*); the free IsRealPlayer(Player*) now means "no bot AI at all".
         PlayerbotAI* ai = GET_PLAYERBOT_AI(p);
-        return ai && !ai->IsRealPlayer();
+        return ai && !IsSelfBot(p);
     }
 
     bool NameMentioned(Player* bot, std::string const& lowerMsg)
@@ -93,8 +95,11 @@ bool PBChatterClassifier::IsRealPlayerSender(Player* sender)
 {
     if (!sender)
         return false;
+    // "a human at a client": no bot AI at all, or a selfbot (a real person whose own character
+    // carries a PlayerbotAI). Upstream 17214b3 split the old PlayerbotAI::IsRealPlayer() member
+    // into the free IsRealPlayer(Player*) / IsSelfBot(Player*) pair.
     PlayerbotAI* ai = GET_PLAYERBOT_AI(sender);
-    return !ai || ai->IsRealPlayer();
+    return !ai || IsSelfBot(sender);
 }
 
 std::vector<Player*> PBChatterClassifier::ResolveSayTargets(Player* sender, std::string const& msg)
