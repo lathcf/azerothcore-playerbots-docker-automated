@@ -112,37 +112,33 @@ fi
 # The SERVER half (Spell.dbc + profession DBCs) is overlaid by setup.sh, not here.
 # dbc.7z's only client files are cosmetic (patch-J/U) and are skipped by choice.
 if [[ "${IP_CLIENT_PATCH_V:-1}" == "1" ]]; then
-  if command -v 7z >/dev/null; then
-    DATADIR="$DEST/_data-patches"; mkdir -p "$DATADIR"
+  DATADIR="$DEST/_data-patches"; mkdir -p "$DATADIR"
+  # mod-era-talents ships a few CUSTOM visible client spells (the Improved Blizzard "Chilled" debuff,
+  # etc.) the stock client can't render. Its client-patch/build-client-patch.sh fetches IP's patch-V,
+  # merges those rows INTO it (patch-V loads after our own patch-4 slot and its Spell.dbc would
+  # otherwise override ours) and writes the result here. It uses the native MPQ tools when present
+  # and otherwise builds+runs everything in a throwaway Docker image, so no host toolchain (7z,
+  # compilers, PyYAML) is required — Docker is the one thing every host of this project has.
+  if [[ -x "$ERA_MOD/client-patch/build-client-patch.sh" ]]; then
+    echo "==> Staging IP client patch-V.mpq with era-talent client spells merged (mod-era-talents)"
+    ERA_LOG="$(mktemp)"
+    if bash "$ERA_MOD/client-patch/build-client-patch.sh" --from-ip --out "$DATADIR/patch-V.mpq" > "$ERA_LOG" 2>&1; then
+      rm -f "$ERA_LOG"
+    else
+      echo "ERROR: mod-era-talents client patch build failed — patch-V.mpq NOT staged. Last lines:" >&2
+      tail -15 "$ERA_LOG" >&2; rm -f "$ERA_LOG"
+      exit 1
+    fi
+  elif command -v 7z >/dev/null; then
+    # No era-talents module clone (ERATALENTS off / setup.sh not run yet): stage IP's stock patch-V.
     IPTMP="$(mktemp -d)"
     git clone --depth 1 https://github.com/ZhengPeiRu21/mod-individual-progression.git "$IPTMP/ip" >/dev/null 2>&1
-    echo "==> Staging IP client patch-V.mpq (era mana costs)"
+    echo "==> Staging IP client patch-V.mpq (era mana costs; no era-talents merge — module not cloned)"
     7z x -y -o"$IPTMP/v" "$IPTMP/ip/optional/patch-V.7z" >/dev/null
     find "$IPTMP/v" -type f -iname 'patch-V.mpq' -exec cp -f {} "$DATADIR/patch-V.mpq" \;
     rm -rf "$IPTMP"
-
-    # mod-era-talents ships a few CUSTOM visible client spells (the Improved Blizzard "Chilled"
-    # debuff, etc.) the stock client can't render. Merge those rows INTO this same patch-V.mpq —
-    # patch-V loads after our own patch-4 slot and its Spell.dbc would otherwise override ours, so
-    # coexisting inside one file is the only reliable option. Needs client-patch/mpqpack+mpqread
-    # (prebuilt, or its client-patch/build-mpqpack.sh + StormLib); degrade gracefully if absent.
-    # The toolchain lives in the mod-era-talents module clone.
-    if [[ -x "$ERA_MOD/client-patch/mpqpack" && -x "$ERA_MOD/client-patch/mpqread" ]]; then
-      echo "==> Merging era-talent client spells into patch-V.mpq"
-      MERGED="$(mktemp -u).mpq"
-      if bash "$ERA_MOD/client-patch/merge-into-patch.sh" "$DATADIR/patch-V.mpq" "$MERGED" >/dev/null 2>&1; then
-        mv -f "$MERGED" "$DATADIR/patch-V.mpq"
-      else
-        rm -f "$MERGED"
-        echo "NOTE: era-talent client-spell merge failed; patch-V.mpq staged without custom icons"
-      fi
-    else
-      echo "NOTE: mod-era-talents' client-patch/mpqpack+mpqread not built — patch-V.mpq staged WITHOUT"
-      echo "      era-talent custom debuff icons. Run azerothcore-wotlk/modules/mod-era-talents/client-patch/build-mpqpack.sh"
-      echo "      then re-run this script."
-    fi
   else
-    echo "NOTE: '7z' (p7zip) needed to stage IP patch-V.mpq; skipping"
+    echo "NOTE: neither modules/mod-era-talents (run setup.sh) nor '7z' available — IP patch-V.mpq not staged"
   fi
 fi
 
