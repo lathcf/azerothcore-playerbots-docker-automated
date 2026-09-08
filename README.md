@@ -9,7 +9,7 @@ community modules in Docker. On top of that orchestration it adds **several cust
 own** — AI bot chat, a lore Q&A sidecar, a persistent raid roster, rated-arena support,
 bot-driven Wintergrasp, an AH price tool, scripted raid-boss AI, and a web registration site. The
 era-authentic Vanilla/TBC talent trees for the Individual Progression era system are a **separate
-module repo, [mod-era-talents](https://github.com/lathcf/mod-era-talents)**, which this setup
+module repo, [azerothcore-mod-era-talents](https://github.com/lathcf/azerothcore-mod-era-talents)**, which this setup
 installs automatically (and which anyone can install on their own AzerothCore server).
 
 The goal is to take you from a bare Linux or Windows host to a populated, self-running world with a
@@ -70,7 +70,7 @@ this repo.
   [mod-individual-progression](https://github.com/ZhengPeiRu21/mod-individual-progression):
   every character starts in Vanilla and earns its way into TBC and WotLK on one realm, with the
   world, level cap, and gear scaled to its era. On by default (`IP_ENABLE`).
-- **Era talents** ([mod-era-talents](https://github.com/lathcf/mod-era-talents) — **its own
+- **Era talents** ([azerothcore-mod-era-talents](https://github.com/lathcf/azerothcore-mod-era-talents) — **its own
   repo**, cloned and patched in by `setup.sh`): the missing piece of that progression — real Vanilla
   and TBC talent trees (all nine original classes) for characters in those eras, with the talents
   actually doing what their tooltips say, era-correct spellbooks, and WotLK-only glyphs. On by
@@ -806,11 +806,11 @@ replaced by that era's real trees for its class — and the talents do what thei
 are unaffected). Expansion advances are a player choice at Anduin/Thrall. Bots can use era builds too.
 
 **This mod is no longer part of this repository.** It was split out on 2026-09-07 into its own
-module repo — **[lathcf/mod-era-talents](https://github.com/lathcf/mod-era-talents)** — so that it
+module repo — **[lathcf/azerothcore-mod-era-talents](https://github.com/lathcf/azerothcore-mod-era-talents)** — so that it
 can be installed on any AzerothCore + Individual Progression server without this Docker setup (its
 README has the install guide; playerbots support is optional there). Here, `setup.sh` clones it,
 applies its patches and builds it automatically; nothing extra to do. What each class gets:
-[Era talents — class by class](https://github.com/lathcf/mod-era-talents/blob/main/docs/era-talents-classes.md).
+[Era talents — class by class](https://github.com/lathcf/azerothcore-mod-era-talents/blob/main/docs/era-talents-classes.md).
 
 **Enable / tune** (`.env`, then re-run `./setup.sh`): `ERATALENTS_ENABLE` (default 1, requires
 `IP_ENABLE=1`), `ERATALENTS_BOTS` (default 0), `ERATALENTS_GLYPHGATE`, `ERATALENTS_DEBUG`,
@@ -959,7 +959,7 @@ star and support the original projects; they did the hard part.
   jobs); the battle-invite and siege-vehicle AI ship as fork patches `patches/0003`/`0004`.
 - **`modules/mod-ahbot-price/`** — read-only `.ahprice` AH price lookup, paired with the
   **`AHPrice`** client addon (`client-addons-src/AHPrice/`).
-- **[mod-era-talents](https://github.com/lathcf/mod-era-talents)** (own repo, installed by
+- **[azerothcore-mod-era-talents](https://github.com/lathcf/azerothcore-mod-era-talents)** (own repo, installed by
   `setup.sh`) — era-authentic Vanilla/TBC talent trees for Individual Progression characters (and
   optionally bots), with the **`EraTalents`** client addon, a `patch-V.mpq` merge and its own core /
   IP / playerbots patches. See [Era talents](#era-talents-mod-era-talents).
