@@ -1,0 +1,86 @@
+[worldserver]
+###############################################################################
+# mod-battleground-bots: team director for random bots in WS/AB/AV/EY/IC
+###############################################################################
+
+# Master switch. 0 = inert (stock mod-playerbots BG behaviour, exactly).
+BattlegroundBots.Enable = 1
+
+# Log assignment transitions per director tick (Logger "module").
+BattlegroundBots.Debug = 0
+
+# Director cadence (ms).
+BattlegroundBots.TickMs = 2000
+
+# Seconds after BG start during which posture stays at its random opening seed.
+BattlegroundBots.OpeningSeconds = 60
+
+# Score gap that flips posture (WS captures, AB/EY resources, AV/IC held-node count).
+BattlegroundBots.PostureMargin.WS = 1
+BattlegroundBots.PostureMargin.AB = 300
+BattlegroundBots.PostureMargin.AV = 150
+BattlegroundBots.PostureMargin.EY = 300
+BattlegroundBots.PostureMargin.IC = 100
+
+# Base guards per held objective (x1.5 DEFENSIVE, x0.5 min 1 OFFENSIVE, +1 when contestable).
+BattlegroundBots.GuardMin = 2
+
+# Max share of a team's bots (percent) spent guarding; the contest bonus is dropped first,
+# then GuardMin, never below 1 per held objective.
+BattlegroundBots.GuardMaxPercent = 50
+
+# AV: release non-guard bots to stock boss/captain logic once the enemy captain is dead and this many
+# enemy towers are destroyed.
+BattlegroundBots.AV.EndgameTowers = 2
+
+# AV: also require the enemy captain (Galvangar/Balinda) to be dead before the endgame release.
+# 0 = tower count alone releases (bots rarely kill the captain on their own).
+BattlegroundBots.AV.EndgameNeedsCaptain = 0
+
+# IC: also release non-guard bots once this team controls the Hangar, the Workshop or the Docks.
+# Siege capability unlocked — stock IC logic boards the gunship / takes vehicles and breaks the gate
+# (Hangar gunship, Workshop siege engines/demolishers, Docks glaive throwers/catapults); the director
+# keeps only guards. With this off, the release waits on the enemy keep gate already being open,
+# which never happens if nobody sieges it.
+BattlegroundBots.IC.SiegeRelease = 1
+
+# "Recently contested" window (seconds) and contestable distance (yards) to an enemy objective.
+BattlegroundBots.ContestSeconds = 30
+BattlegroundBots.ContestDistance = 300
+
+# Flag jobs (WS/EY): escorts for our carrier, chasers for theirs.
+BattlegroundBots.EscortCount = 2
+BattlegroundBots.ChaseCount = 3
+
+# Max bots pulled to an objective under attack.
+BattlegroundBots.ReinforceMax = 4
+
+# Squads: target size, members present before pushing, staging timeout (seconds).
+BattlegroundBots.SquadSize = 4
+BattlegroundBots.SquadMinPresent = 3
+BattlegroundBots.StageTimeoutSeconds = 20
+
+# Don't re-target an objective we lost within this many seconds.
+BattlegroundBots.RefocusCooldownSeconds = 45
+
+# Percent of bots left to stock dice (deterministic per bot GUID).
+BattlegroundBots.RoamPercent = 15
+
+# Choke points (Phase 3): guards needed before a choke is held; enemy surplus that pulls back to the flag.
+BattlegroundBots.ChokeMinGuards = 2
+BattlegroundBots.PullbackMargin = 2
+
+# Dismount when an enemy is within this many yards of the destination.
+BattlegroundBots.DismountRange = 30
+
+# Kill priority (Phase 2): healer tier on/off; retarget cooldown (ms).
+BattlegroundBots.HealerPriority = 1
+# Max yards a MELEE/tank bot will treat an enemy healer as a kill target (further = not worth the walk).
+BattlegroundBots.HealerRangeMelee = 12
+# Same for a ranged/healer bot, which can shoot from where it stands.
+BattlegroundBots.HealerRangeRanged = 35
+# This many enemies swinging at the bot = under pressure: fight back instead of chasing a healer.
+BattlegroundBots.PressureAttackers = 2
+# Bot HP% at or below which it counts as under pressure regardless of attacker count.
+BattlegroundBots.PressureHpPct = 50
+BattlegroundBots.RetargetCooldownMs = 3000

@@ -1,0 +1,789 @@
+diff --git a/modules/mod-playerbots/src/Ai/Base/ActionContext.h b/modules/mod-playerbots/src/Ai/Base/ActionContext.h
+index fa3c93b..149801b 100644
+--- a/modules/mod-playerbots/src/Ai/Base/ActionContext.h
++++ b/modules/mod-playerbots/src/Ai/Base/ActionContext.h
+@@ -13,6 +13,7 @@
+ #include "AutoMaintenanceOnLevelupAction.h"
+ #include "BattleGroundJoinAction.h"
+ #include "BattleGroundTactics.h"
++#include "BgPriorityActions.h"
+ #include "BuyAction.h"
+ #include "CancelChannelAction.h"
+ #include "CastCustomSpellAction.h"
+@@ -229,6 +230,9 @@ public:
+         creators["bg protect fc"] = &ActionContext::bg_protect_fc;
+         creators["bg use buff"] = &ActionContext::bg_use_buff;
+         creators["attack enemy flag carrier"] = &ActionContext::attack_enemy_fc;
++        creators["attack bg priority target"] = &ActionContext::attack_bg_priority_target;   // overlay patch 0019
++        creators["bg peel for ally"] = &ActionContext::bg_peel_for_ally;
++        creators["bg healer follow squad"] = &ActionContext::bg_healer_follow_squad;
+         creators["bg check flag"] = &ActionContext::bg_check_flag;
+ 
+         // Vehicles
+@@ -436,6 +440,9 @@ private:
+     static Action* bg_attack_fc(PlayerbotAI* botAI) { return new BGTactics(botAI, "attack fc"); }
+     static Action* bg_protect_fc(PlayerbotAI* botAI) { return new BGTactics(botAI, "protect fc"); }
+     static Action* attack_enemy_fc(PlayerbotAI* botAI) { return new AttackEnemyFlagCarrierAction(botAI); }
++    static Action* attack_bg_priority_target(PlayerbotAI* botAI) { return new AttackBgPriorityTargetAction(botAI); }
++    static Action* bg_peel_for_ally(PlayerbotAI* botAI) { return new BgPeelForAllyAction(botAI); }
++    static Action* bg_healer_follow_squad(PlayerbotAI* botAI) { return new BgHealerFollowSquadAction(botAI); }
+     static Action* bg_use_buff(PlayerbotAI* botAI) { return new BGTactics(botAI, "use buff"); }
+     static Action* bg_check_flag(PlayerbotAI* botAI) { return new BGTactics(botAI, "check flag"); }
+ 
+diff --git a/modules/mod-playerbots/src/Ai/Base/Actions/BattleGroundTactics.cpp b/modules/mod-playerbots/src/Ai/Base/Actions/BattleGroundTactics.cpp
+index fe0982a..ddc0c9b 100644
+--- a/modules/mod-playerbots/src/Ai/Base/Actions/BattleGroundTactics.cpp
++++ b/modules/mod-playerbots/src/Ai/Base/Actions/BattleGroundTactics.cpp
+@@ -5,6 +5,7 @@
+  */
+ 
+ #include "BattleGroundTactics.h"
++#include "BattlegroundBotsApi.h"
+ #include "ArenaCoordValues.h"
+ #include "ArenaTeam.h"
+ #include "ArenaTeamMgr.h"
+@@ -30,6 +31,7 @@
+ #include "PositionValue.h"
+ #include "PvpTriggers.h"
+ #include "ServerFacade.h"
++#include "Timer.h"           // getMSTime() — overlay patch 0019 dismount memory
+ #include "Vehicle.h"
+ #include <algorithm>
+ 
+@@ -1853,6 +1855,19 @@ bool BGTactics::selectObjective(bool reset)
+     if (pos.isSet() && !reset)
+         return false;
+ 
++    // mod-battleground-bots director (overlay patch 0019): when the director owns this bot its
++    // assignment replaces the stock dice below. No assignment (module off, ROAM share, unknown BG,
++    // bot not in census, bot IS the flag carrier) falls through to stock behaviour unchanged.
++    {
++        BattlegroundBotsApi::BgAssignment directed;
++        if (BattlegroundBotsApi::Enabled() && BattlegroundBotsApi::GetAssignment(bot, directed))
++        {
++            pos.Set(directed.target.GetPositionX(), directed.target.GetPositionY(), directed.target.GetPositionZ(), bot->GetMapId());
++            posMap["bg objective"] = pos;
++            return true;
++        }
++    }
++
+     WorldObject* BgObjective = nullptr;
+ 
+     BattlegroundTypeId bgType = bg->GetBgTypeID();
+@@ -3214,6 +3229,38 @@ bool BGTactics::moveToObjective(bool ignoreDist)
+         // std::ostringstream out; out << "Moving to objective " << pos.x << ", " << pos.y << ", Distance: " <<
+         // ServerFacade::instance().GetDistance2d(bot, pos.x, pos.y); bot->Say(out.str(), LANG_UNIVERSAL);
+ 
++        // mod-battleground-bots (patch 0019): arrive on foot when contact is imminent FOR THIS BOT.
++        // Keying purely on "an enemy is near the objective" dismounted bots that were still 100+y
++        // out; stock CheckMountStateAction then remounted them (far from any target), and the bot
++        // mount/dismount-thrashed all the way in. So dismount only when either
++        //   (a) an alive enemy is within DismountRange of the BOT, or
++        //   (b) the BOT is within DismountRange of the destination AND an enemy is too.
++        // The dismount is then remembered in "bg dismount time" so CheckMountStateAction::isUseful
++        // can hold the remount off for a few seconds (hysteresis) — see that file.
++        if (BattlegroundBotsApi::Enabled() && bot->IsMounted())
++        {
++            float const range = BattlegroundBotsApi::Knobs().dismountRange;
++            bool const botAtDest = bot->GetExactDist2d(pos.x, pos.y) <= range;
++            bool dismount = false;
++            for (ObjectGuid const& guid : AI_VALUE(GuidVector, "nearest enemy players"))
++            {
++                Unit* enemy = botAI->GetUnit(guid);
++                if (!enemy || !enemy->IsAlive())
++                    continue;
++                if (bot->GetExactDist2d(enemy) <= range ||
++                    (botAtDest && enemy->GetExactDist2d(pos.x, pos.y) <= range))
++                {
++                    dismount = true;
++                    break;
++                }
++            }
++            if (dismount)
++            {
++                bot->RemoveAurasByType(SPELL_AURA_MOUNTED);
++                context->GetValue<uint32>("bg dismount time")->Set(getMSTime());
++            }
++        }
++
+         // dont increase from 1.5 will cause bugs with horde capping AV towers
+         return MoveNear(bot->GetMapId(), pos.x, pos.y, pos.z, 1.5f);
+     }
+@@ -3381,8 +3428,15 @@ bool BGTactics::resetObjective()
+         bot->HasAura(BG_WS_SPELL_SILVERWING_FLAG) ||
+         bot->HasAura(BG_EY_NETHERSTORM_FLAG_SPELL);
+ 
+-    // Change role if allowed by odds and not carrying flag
+-    if (urand(0, 99) < oddsToChangeRole && !isCarryingFlag)
++    // Change role if allowed by odds and not carrying flag. A director-owned bot (patch 0019) keeps
++    // its role: the director, not the dice, decides what it does.
++    bool directed = false;
++    if (BattlegroundBotsApi::Enabled())
++    {
++        BattlegroundBotsApi::BgAssignment a;
++        directed = BattlegroundBotsApi::GetAssignment(bot, a);
++    }
++    if (!directed && urand(0, 99) < oddsToChangeRole && !isCarryingFlag)
+         context->GetValue<uint32>("bg role")->Set(urand(0, 9));
+ 
+     // Reset objective position
+diff --git a/modules/mod-playerbots/src/Ai/Base/Actions/BgPriorityActions.cpp b/modules/mod-playerbots/src/Ai/Base/Actions/BgPriorityActions.cpp
+new file mode 100644
+index 0000000..2f96799
+--- /dev/null
++++ b/modules/mod-playerbots/src/Ai/Base/Actions/BgPriorityActions.cpp
+@@ -0,0 +1,63 @@
++// Ai/Base/Actions/BgPriorityActions.cpp
++#include "BgPriorityActions.h"
++#include "BattlegroundBotsApi.h"
++#include "Player.h"
++#include "PlayerbotAI.h"
++#include "Playerbots.h"
++#include "Timer.h"
++
++// The live-BG gate is the single InLiveOpenWorldBg() in BgKillTargetValue.h (pulled in by
++// BgPriorityActions.h) — it is stricter than InBattleground() && !InArena() because it also
++// requires STATUS_IN_PROGRESS, matching the values these actions read.
++
++bool AttackBgPriorityTargetAction::isUseful() { return InLiveOpenWorldBg(bot) && BattlegroundBotsApi::Enabled(); }
++
++bool AttackBgPriorityTargetAction::Execute(Event /*event*/)
++{
++    uint32 now = getMSTime();
++    if (now - _lastSwitchMs < BattlegroundBotsApi::Knobs().retargetCooldownMs) return false;
++    Unit* target = AI_VALUE(Unit*, "bg kill target");
++    if (!target || bot->GetVictim() == target) return false;
++    if (!Attack(target)) return false;
++    _lastSwitchMs = now;
++    return true;
++}
++
++bool BgPeelForAllyAction::isUseful()
++{
++    return InLiveOpenWorldBg(bot) && BattlegroundBotsApi::Enabled()
++        && (PlayerbotAI::IsTank(bot, true) || PlayerbotAI::IsMelee(bot, true));
++}
++
++bool BgPeelForAllyAction::Execute(Event /*event*/)
++{
++    uint32 now = getMSTime();
++    if (now - _lastPeelMs < BattlegroundBotsApi::Knobs().retargetCooldownMs) return false;
++    Unit* target = AI_VALUE(Unit*, "bg peel target");
++    if (!target) return false;
++    static char const* const kPeels[] = { "hamstring", "frost shock", "concussive shot", "earthbind totem",
++                                          "hammer of justice", "intimidating shout", "death grip" };
++    bool cast = false;
++    for (char const* name : kPeels)
++        if (botAI->CanCastSpell(name, target)) { cast = botAI->CastSpell(name, target); if (cast) break; }
++    bool switched = bot->GetVictim() != target && Attack(target);
++    if (!cast && !switched) return false;
++    _lastPeelMs = now;
++    return true;
++}
++
++bool BgHealerFollowSquadAction::isUseful()
++{
++    if (!InLiveOpenWorldBg(bot) || !BattlegroundBotsApi::Enabled() || !PlayerbotAI::IsHeal(bot, true)) return false;
++    ObjectGuid anchor;
++    return BattlegroundBotsApi::GetSquadAnchor(bot, anchor);
++}
++
++bool BgHealerFollowSquadAction::Execute(Event /*event*/)
++{
++    ObjectGuid guid;
++    if (!BattlegroundBotsApi::GetSquadAnchor(bot, guid)) return false;
++    Unit* anchor = botAI->GetUnit(guid);
++    if (!anchor || !anchor->IsAlive() || bot->GetDistance(anchor) <= 20.0f) return false;
++    return MoveNear(anchor, 8.0f);
++}
+diff --git a/modules/mod-playerbots/src/Ai/Base/Actions/BgPriorityActions.h b/modules/mod-playerbots/src/Ai/Base/Actions/BgPriorityActions.h
+new file mode 100644
+index 0000000..1b63964
+--- /dev/null
++++ b/modules/mod-playerbots/src/Ai/Base/Actions/BgPriorityActions.h
+@@ -0,0 +1,57 @@
++// Ai/Base/Actions/BgPriorityActions.h   (overlay patch 0019)
++#ifndef _PLAYERBOT_BGPRIORITYACTIONS_H
++#define _PLAYERBOT_BGPRIORITYACTIONS_H
++#include "AiObjectContext.h"
++#include "AttackAction.h"
++#include "BgKillTargetValue.h"
++#include "MovementActions.h"
++#include "Player.h"
++
++class PlayerbotAI;
++
++// overlay patch 0019: true while the bot's current victim IS a standing director pick, so stock
++// target choosers must leave the target slot alone. Both values are nullptr when the module is
++// off / not in a live BG, so stock behaviour is byte-identical when disabled.
++// Spelled out rather than via AI_VALUE: that macro lives in Playerbots.h, which this header does
++// not (and should not) pull in — the expansion is exactly this.
++inline bool BgDirectorOwnsVictim(Player* bot, AiObjectContext* context)
++{
++    Unit* v = bot->GetVictim();
++    if (!v) return false;
++    return v == context->GetValue<Unit*>("bg kill target")->Get()
++        || v == context->GetValue<Unit*>("bg peel target")->Get();
++}
++
++// Switch to the director-ranked kill target, with a per-bot retarget cooldown so the bot commits.
++class AttackBgPriorityTargetAction : public AttackAction
++{
++public:
++    AttackBgPriorityTargetAction(PlayerbotAI* botAI) : AttackAction(botAI, "attack bg priority target") {}
++    std::string const GetTargetName() override { return "bg kill target"; }
++    bool isUseful() override;
++    bool Execute(Event event) override;
++private:
++    uint32 _lastSwitchMs = 0;
++};
++
++// Melee only: snare/stun the enemy melee on our FC/healer, then turn on it.
++class BgPeelForAllyAction : public AttackAction
++{
++public:
++    BgPeelForAllyAction(PlayerbotAI* botAI) : AttackAction(botAI, "bg peel for ally") {}
++    std::string const GetTargetName() override { return "bg peel target"; }
++    bool isUseful() override;
++    bool Execute(Event event) override;
++private:
++    uint32 _lastPeelMs = 0;
++};
++
++// Healers with a squad stay within 20y of the squad's living melee anchor instead of the flag.
++class BgHealerFollowSquadAction : public MovementAction
++{
++public:
++    BgHealerFollowSquadAction(PlayerbotAI* botAI) : MovementAction(botAI, "bg healer follow squad") {}
++    bool isUseful() override;
++    bool Execute(Event event) override;
++};
++#endif
+diff --git a/modules/mod-playerbots/src/Ai/Base/Actions/CheckMountStateAction.cpp b/modules/mod-playerbots/src/Ai/Base/Actions/CheckMountStateAction.cpp
+index c63cd1a..9f3db67 100644
+--- a/modules/mod-playerbots/src/Ai/Base/Actions/CheckMountStateAction.cpp
++++ b/modules/mod-playerbots/src/Ai/Base/Actions/CheckMountStateAction.cpp
+@@ -7,6 +7,7 @@
+ #include "CheckMountStateAction.h"
+ #include "AreaDefines.h"
+ #include "BattleGroundTactics.h"
++#include "BattlegroundBotsApi.h"   // overlay patch 0019 (mod-battleground-bots)
+ #include "BattlegroundEY.h"
+ #include "BattlegroundWS.h"
+ #include "DBCStores.h"
+@@ -16,6 +17,7 @@
+ #include "Playerbots.h"
+ #include "ServerFacade.h"
+ #include "SpellAuraEffects.h"
++#include "Timer.h"                 // getMSTime() — overlay patch 0019
+ 
+ static constexpr uint32 SPELL_COLD_WEATHER_FLYING = 54197;
+ static constexpr float PARACHUTE_LAND_THRESHOLD = 15.0f;
+@@ -199,6 +201,19 @@ bool CheckMountStateAction::isUseful()
+         if (Battleground* bg = bot->GetBattleground())
+             if (bg->GetStatus() == STATUS_WAIT_JOIN && bg->GetStartDelayTime() > BG_START_DELAY_30S)
+                 return false;
++
++        // mod-battleground-bots (overlay patch 0019): hold the remount off for a few seconds after
++        // the director dismounted this bot on approach to a contested objective (BGTactics::
++        // moveToObjective). Without it the bot remounts the very next tick — it is still far from
++        // any target — and mount/dismount-thrashes its way in. The hold is the existing retarget
++        // cooldown knob x4 (~12s at the 3000ms default) on purpose: no new knob for this.
++        // Guarded on !IsMounted() so the action's DISMOUNT/cleanup paths keep running regardless.
++        if (!bot->IsMounted() && BattlegroundBotsApi::Enabled())
++        {
++            uint32 const t = AI_VALUE(uint32, "bg dismount time");
++            if (t && getMSTime() - t < BattlegroundBotsApi::Knobs().retargetCooldownMs * 4)
++                return false;
++        }
+     }
+ 
+     return true;
+diff --git a/modules/mod-playerbots/src/Ai/Base/Actions/ChooseTargetActions.cpp b/modules/mod-playerbots/src/Ai/Base/Actions/ChooseTargetActions.cpp
+index f3347d1..412d873 100644
+--- a/modules/mod-playerbots/src/Ai/Base/Actions/ChooseTargetActions.cpp
++++ b/modules/mod-playerbots/src/Ai/Base/Actions/ChooseTargetActions.cpp
+@@ -5,6 +5,7 @@
+  */
+ 
+ #include "ChooseTargetActions.h"
++#include "BgPriorityActions.h"
+ #include "ChooseRpgTargetAction.h"
+ #include "Event.h"
+ #include "LootObjectStack.h"
+@@ -136,12 +137,23 @@ bool AttackAnythingAction::isPossible() { return GetTarget() && AttackAction::is
+ 
+ bool DpsAssistAction::isUseful()
+ {
++    // overlay patch 0019: the BG director already owns this bot's victim. "dps target" comes from
++    // the threat-based "attackers" list, which never contains an enemy healer/FC that is not
++    // hitting our side, so "not dps target active" stays true forever after a director switch and
++    // this action would flip the victim back every tick (cancelling the bot's movement with it).
++    if (BgDirectorOwnsVictim(bot, context))
++        return false;
++
+     if (PlayerHasFlag::IsCapturingFlag(bot))
+         return false;
+ 
+     return true;
+ }
+ 
++// overlay patch 0019: same hazard for tank specs — AiFactory's class switch adds "tank assist"
++// unconditionally, so it rides into a battleground at relevance 50 alongside "dps assist".
++bool TankAssistAction::isUseful() { return !BgDirectorOwnsVictim(bot, context); }
++
+ bool AttackRtiTargetAction::Execute(Event /*event*/)
+ {
+     Unit* rtiTarget = AI_VALUE(Unit*, "rti target");
+diff --git a/modules/mod-playerbots/src/Ai/Base/Actions/ChooseTargetActions.h b/modules/mod-playerbots/src/Ai/Base/Actions/ChooseTargetActions.h
+index 80c9d6a..e73be79 100644
+--- a/modules/mod-playerbots/src/Ai/Base/Actions/ChooseTargetActions.h
++++ b/modules/mod-playerbots/src/Ai/Base/Actions/ChooseTargetActions.h
+@@ -34,6 +34,7 @@ public:
+     TankAssistAction(PlayerbotAI* botAI) : AttackAction(botAI, "tank assist") {}
+ 
+     std::string const GetTargetName() override { return "tank target"; }
++    bool isUseful() override;   // overlay patch 0019: yield the target slot to the BG director
+ };
+ 
+ class AggressiveTargetAction : public AttackAction
+diff --git a/modules/mod-playerbots/src/Ai/Base/Strategy/BattlegroundStrategy.cpp b/modules/mod-playerbots/src/Ai/Base/Strategy/BattlegroundStrategy.cpp
+index cf2a4be..3327d81 100644
+--- a/modules/mod-playerbots/src/Ai/Base/Strategy/BattlegroundStrategy.cpp
++++ b/modules/mod-playerbots/src/Ai/Base/Strategy/BattlegroundStrategy.cpp
+@@ -7,6 +7,20 @@
+ #include "BattlegroundStrategy.h"
+ #include "Playerbots.h"
+ 
++// mod-battleground-bots (overlay patch 0019): BG-aware targeting for every open-world BG strategy.
++// The per-BG strategies live in the COMBAT engine (AiFactory.cpp), so these fire mid-fight.
++// Relevance sits just above "dps assist" (50, DpsAssistStrategy.cpp) so the priority target wins
++// the retarget while any ACTION_RAID/EMERGENCY node still preempts it.
++// Healer follow is 5.0: above the BG movement nodes (ACTION_BG = 1..2) and below every heal
++// (ACTION_LIGHT_HEAL = 10), so a healer finishes healing before it walks — a bot cannot cast a
++// cast-time spell while moving, so ranking the follow above the heals would silently mute it.
++static void AddBgDirectorNodes(std::vector<TriggerNode*>& triggers)
++{
++    triggers.push_back(new TriggerNode("bg priority target near", { NextAction("attack bg priority target", 51.0f) }));
++    triggers.push_back(new TriggerNode("bg ally needs peel", { NextAction("bg peel for ally", 52.0f) }));
++    triggers.push_back(new TriggerNode("bg healer squad far", { NextAction("bg healer follow squad", 5.0f) }));
++}
++
+ void BGStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+ {
+     triggers.push_back(new TriggerNode("often", { NextAction("bg join", relevance)}));
+@@ -34,12 +48,14 @@ void WarsongStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+     triggers.push_back(new TriggerNode("low mana", { NextAction("bg use buff", ACTION_MOVE)}));
+     triggers.push_back(new TriggerNode("player has flag", { NextAction("bg move to objective", ACTION_EMERGENCY)}));
+     triggers.push_back(new TriggerNode("timer bg", { NextAction("bg reset objective force", ACTION_EMERGENCY)}));
++    AddBgDirectorNodes(triggers);
+ }
+ 
+ void AlteracStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+ {
+     triggers.push_back(new TriggerNode("alliance no snowfall gy", { NextAction("bg move to objective", ACTION_EMERGENCY)}));
+     triggers.push_back(new TriggerNode("timer bg", { NextAction("bg reset objective force", ACTION_EMERGENCY)}));
++    AddBgDirectorNodes(triggers);
+ }
+ 
+ void ArathiStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+@@ -48,6 +64,7 @@ void ArathiStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+     triggers.push_back(new TriggerNode("often", { NextAction("bg use buff", ACTION_BG)}));
+     triggers.push_back(new TriggerNode("low health", { NextAction("bg use buff", ACTION_MOVE)}));
+     triggers.push_back(new TriggerNode("low mana", { NextAction("bg use buff", ACTION_MOVE)}));
++    AddBgDirectorNodes(triggers);
+ }
+ 
+ void EyeStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+@@ -58,6 +75,7 @@ void EyeStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+     triggers.push_back(new TriggerNode("low mana", { NextAction("bg use buff", ACTION_MOVE)}));
+     triggers.push_back(new TriggerNode("enemy flagcarrier near", { NextAction("attack enemy flag carrier", ACTION_RAID)}));
+     triggers.push_back(new TriggerNode("player has flag",{ NextAction("bg move to objective", ACTION_EMERGENCY)}));
++    AddBgDirectorNodes(triggers);
+ }
+ 
+ //TODO: Do Priorities
+@@ -78,6 +96,7 @@ void IsleStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+     // this is bugged: it doesn't work, and stops glaive throw working (which is needed to take down gate)
+     // triggers.push_back(new TriggerNode("in vehicle", { NextAction("blade salvo", ACTION_MOVE + 9.0f)}));
+     triggers.push_back(new TriggerNode("in vehicle", { NextAction("glaive throw", ACTION_MOVE + 9.0f)}));
++    AddBgDirectorNodes(triggers);
+ }
+ 
+ void ArenaStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+diff --git a/modules/mod-playerbots/src/Ai/Base/Trigger/BgDirectorTriggers.cpp b/modules/mod-playerbots/src/Ai/Base/Trigger/BgDirectorTriggers.cpp
+new file mode 100644
+index 0000000..886df01
+--- /dev/null
++++ b/modules/mod-playerbots/src/Ai/Base/Trigger/BgDirectorTriggers.cpp
+@@ -0,0 +1,28 @@
++// Ai/Base/Trigger/BgDirectorTriggers.cpp
++#include "BgDirectorTriggers.h"
++#include "BattlegroundBotsApi.h"
++#include "Player.h"
++#include "PlayerbotAI.h"
++#include "Playerbots.h"
++
++bool BgPriorityTargetNearTrigger::IsActive()
++{
++    Unit* t = AI_VALUE(Unit*, "bg kill target");
++    if (!t || bot->GetVictim() == t) return false;
++    // Defer to the peel job: while the bot is already on its peel target, the two nodes (51 and
++    // 52) would otherwise take turns pulling the victim back and forth every tick.
++    if (Unit* p = AI_VALUE(Unit*, "bg peel target"))
++        if (bot->GetVictim() == p) return false;
++    return true;
++}
++
++bool BgAllyNeedsPeelTrigger::IsActive() { return AI_VALUE(Unit*, "bg peel target") != nullptr; }
++
++bool BgHealerSquadFarTrigger::IsActive()
++{
++    if (!PlayerbotAI::IsHeal(bot, true)) return false;
++    ObjectGuid guid;
++    if (!BattlegroundBotsApi::GetSquadAnchor(bot, guid)) return false;
++    Unit* anchor = botAI->GetUnit(guid);
++    return anchor && anchor->IsAlive() && bot->GetDistance(anchor) > 20.0f;
++}
+diff --git a/modules/mod-playerbots/src/Ai/Base/Trigger/BgDirectorTriggers.h b/modules/mod-playerbots/src/Ai/Base/Trigger/BgDirectorTriggers.h
+new file mode 100644
+index 0000000..13b3ce5
+--- /dev/null
++++ b/modules/mod-playerbots/src/Ai/Base/Trigger/BgDirectorTriggers.h
+@@ -0,0 +1,28 @@
++// Ai/Base/Trigger/BgDirectorTriggers.h   (overlay patch 0019)
++#ifndef _PLAYERBOT_BGDIRECTORTRIGGERS_H
++#define _PLAYERBOT_BGDIRECTORTRIGGERS_H
++#include "Trigger.h"
++
++class PlayerbotAI;
++
++class BgPriorityTargetNearTrigger : public Trigger
++{
++public:
++    BgPriorityTargetNearTrigger(PlayerbotAI* botAI) : Trigger(botAI, "bg priority target near", 1) {}
++    bool IsActive() override;
++};
++
++class BgAllyNeedsPeelTrigger : public Trigger
++{
++public:
++    BgAllyNeedsPeelTrigger(PlayerbotAI* botAI) : Trigger(botAI, "bg ally needs peel", 1) {}
++    bool IsActive() override;
++};
++
++class BgHealerSquadFarTrigger : public Trigger
++{
++public:
++    BgHealerSquadFarTrigger(PlayerbotAI* botAI) : Trigger(botAI, "bg healer squad far", 2) {}
++    bool IsActive() override;
++};
++#endif
+diff --git a/modules/mod-playerbots/src/Ai/Base/TriggerContext.h b/modules/mod-playerbots/src/Ai/Base/TriggerContext.h
+index af157d9..d138d58 100644
+--- a/modules/mod-playerbots/src/Ai/Base/TriggerContext.h
++++ b/modules/mod-playerbots/src/Ai/Base/TriggerContext.h
+@@ -7,6 +7,7 @@
+ #ifndef PLAYERBOTS_TRIGGERCONTEXT_H
+ #define PLAYERBOTS_TRIGGERCONTEXT_H
+ 
++#include "BgDirectorTriggers.h"
+ #include "CureTriggers.h"
+ #include "FishingTriggers.h"
+ #include "GenericTriggers.h"
+@@ -193,6 +194,9 @@ public:
+         creators["team has flag"] = &TriggerContext::team_has_flag;
+         creators["enemy team has flag"] = &TriggerContext::enemy_team_has_flag;
+         creators["enemy flagcarrier near"] = &TriggerContext::enemy_flagcarrier_near;
++        creators["bg priority target near"] = &TriggerContext::bg_priority_target_near;   // overlay patch 0019
++        creators["bg ally needs peel"] = &TriggerContext::bg_ally_needs_peel;
++        creators["bg healer squad far"] = &TriggerContext::bg_healer_squad_far;
+         creators["in Battleground"] = &TriggerContext::player_is_in_BATTLEGROUND;
+         creators["in Battleground without flag"] = &TriggerContext::player_is_in_BATTLEGROUND_no_flag;
+         creators["wants in bg"] = &TriggerContext::player_wants_in_bg;
+@@ -416,6 +420,9 @@ private:
+     static Trigger* team_has_flag(PlayerbotAI* botAI) { return new TeamHasFlag(botAI); }
+     static Trigger* enemy_team_has_flag(PlayerbotAI* botAI) { return new EnemyTeamHasFlag(botAI); }
+     static Trigger* enemy_flagcarrier_near(PlayerbotAI* botAI) { return new EnemyFlagCarrierNear(botAI); }
++    static Trigger* bg_priority_target_near(PlayerbotAI* botAI) { return new BgPriorityTargetNearTrigger(botAI); }
++    static Trigger* bg_ally_needs_peel(PlayerbotAI* botAI) { return new BgAllyNeedsPeelTrigger(botAI); }
++    static Trigger* bg_healer_squad_far(PlayerbotAI* botAI) { return new BgHealerSquadFarTrigger(botAI); }
+     static Trigger* player_is_in_BATTLEGROUND(PlayerbotAI* botAI) { return new PlayerIsInBattleground(botAI); }
+     static Trigger* player_is_in_BATTLEGROUND_no_flag(PlayerbotAI* botAI) { return new PlayerIsInBattlegroundWithoutFlag(botAI); }
+     static Trigger* alliance_no_snowfall_gy(PlayerbotAI* botAI) { return new AllianceNoSnowfallGY(botAI); }
+diff --git a/modules/mod-playerbots/src/Ai/Base/Value/BgKillTargetValue.cpp b/modules/mod-playerbots/src/Ai/Base/Value/BgKillTargetValue.cpp
+new file mode 100644
+index 0000000..c2e0721
+--- /dev/null
++++ b/modules/mod-playerbots/src/Ai/Base/Value/BgKillTargetValue.cpp
+@@ -0,0 +1,169 @@
++// Ai/Base/Value/BgKillTargetValue.cpp
++#include "BgKillTargetValue.h"
++#include "BattleGroundTactics.h"   // SPELL_CAPTURE_BANNER (21651)
++#include "BattlegroundBotsApi.h"
++#include "BgKillRank.h"
++#include "Battleground.h"
++#include "Player.h"
++#include "PlayerbotAI.h"
++#include "Playerbots.h"
++#include "Spell.h"
++#include "SpellInfo.h"
++#include <cmath>
++
++namespace
++{
++    constexpr float kKillRange = 40.0f;
++    constexpr float kPeelRange = 15.0f;
++    bool IsMeleePlayer(Player* p) { return !PlayerbotAI::IsRangedDps(p, true) && !PlayerbotAI::IsHeal(p, true); }
++}
++
++// In AB/AV/EY towers/IC a node is taken by CASTING SPELL_CAPTURE_BANNER on the banner, and ANY
++// damage interrupts it. A guard that ignores the channeller loses the node to a single unpunished
++// cast, which is exactly what was seen live — so a capturer ranks with the flag carrier (tier 1).
++// NB: WS has no capture cast (the flag is a click), and the module API exposes only a bot's own
++// jittered GUARD post — not the flag position — so WS gets no equivalent here (a post can sit
++// 20y+ and a storey above the flag, so "enemy near my post" is not "enemy on our flag").
++static bool IsCapturingNode(Player* p)
++{
++    Spell* s = p->GetCurrentSpell(CURRENT_GENERIC_SPELL);
++    return s && s->m_spellInfo && s->m_spellInfo->Id == SPELL_CAPTURE_BANNER;
++}
++
++bool BgKillTargetValue::IsHealerLike(Player* p) const
++{
++    if (Spell* s = p->GetCurrentSpell(CURRENT_GENERIC_SPELL))
++        if (s->m_spellInfo &&
++            PlayerbotAI::IsHealingSpell(s->m_spellInfo->SpellFamilyName, s->m_spellInfo->SpellFamilyFlags))
++            return true;
++    return PlayerbotAI::IsHeal(p, true);
++}
++
++bool BgKillTargetValue::Unreachable(Player* target, std::vector<Player*> const& enemies) const
++{
++    // No LoS raycast here: LoS is inherited from the source value — "nearest enemy players"
++    // (NearestEnemyPlayersValue -> NearestUnitsValue::Calculate) already drops anything the bot
++    // cannot see, with ignoreLos defaulted false the whole way down.
++    if (std::fabs(bot->GetPositionZ() - target->GetPositionZ()) > 8.0f) return true;
++    if (IsMeleePlayer(bot))
++    {
++        uint32 screen = 0;
++        for (Player* e : enemies)
++            if (e != target && IsMeleePlayer(e) && e->GetDistance(target) <= 5.0f) ++screen;
++        if (screen > 2) return true;
++    }
++    return false;
++}
++
++Unit* BgKillTargetValue::Calculate()
++{
++    if (!InLiveOpenWorldBg(bot) || !BattlegroundBotsApi::Enabled()) return nullptr;
++    BattlegroundBotsApi::BgKnobs const knobs = BattlegroundBotsApi::Knobs();
++
++    // Players only: this vector also feeds the melee-screen test in Unreachable().
++    std::vector<Player*> enemies;
++    for (ObjectGuid const& guid : AI_VALUE(GuidVector, "nearest enemy players"))
++    {
++        Unit* u = botAI->GetUnit(guid);
++        Player* p = u ? u->ToPlayer() : nullptr;
++        if (!p || !p->IsAlive() || bot->GetDistance(p) > kKillRange) continue;
++        // A player riding a vehicle is NOT targetable — the vehicle is, and the scan below adds it.
++        if (p->GetVehicle()) continue;
++        enemies.push_back(p);
++    }
++
++    // Ranking context (about the BOT, not the candidates). Both halves answer the same live
++    // report — bots walking 30y to a healer while a pack beats on them: a bot that is being hit
++    // (or already low) stops shopping for healers, and a melee bot's healer radius is short enough
++    // that the "kill" is not really a cross-field walk.
++    BgKillRank::RankCtx ctx;
++    ctx.healerPriority = knobs.healerPriority;
++    ctx.underPressure  = bot->getAttackers().size() >= knobs.pressureAttackers ||
++                         bot->GetHealthPct() < static_cast<float>(knobs.pressureHpPct);
++    ctx.healerMaxDist  = (PlayerbotAI::IsMelee(bot, true) || PlayerbotAI::IsTank(bot, true))
++                         ? knobs.healerRangeMelee : knobs.healerRangeRanged;
++
++    Unit* enemyFc = AI_VALUE(Unit*, "enemy flag carrier");
++    Unit* teamFc  = AI_VALUE(Unit*, "team flag carrier");
++    Unit* victim  = bot->GetVictim();
++    ObjectGuid hint = BattlegroundBotsApi::GetTeamKillHint(bot);
++
++    // ONE units vector for both candidate kinds, index-aligned with `cands`: the pick is a Unit*,
++    // and AttackBgPriorityTargetAction::Attack() takes any Unit.
++    std::vector<Unit*> units;
++    std::vector<BgKillRank::Cand> cands;
++    units.reserve(enemies.size() + 4);
++    cands.reserve(enemies.size() + 4);
++    for (Player* p : enemies)
++    {
++        BgKillRank::Cand c;
++        c.isFc = enemyFc && p == enemyFc;
++        c.capturing = IsCapturingNode(p);
++        c.healer = IsHealerLike(p);
++        c.dist = bot->GetDistance(p);
++        // Short-circuit on everything that already disqualifies the healer tier (knob off, out of
++        // reach, under pressure): the screening scan inside Unreachable() is O(enemies) per healer
++        // and must not run on a react tick when its answer cannot change the pick.
++        c.unreachable = knobs.healerPriority && c.healer && !ctx.underPressure &&
++                        c.dist <= ctx.healerMaxDist && Unreachable(p, enemies);
++        c.hpPct = p->GetHealthPct();
++        Unit* v = p->GetVictim();
++        c.attackingMe = v == bot;
++        Player* vp = v ? v->ToPlayer() : nullptr;
++        c.attackingProtectee = vp && vp != bot && vp->GetBgTeamId() == bot->GetBgTeamId()
++                               && ((teamFc && vp == teamFc) || PlayerbotAI::IsHeal(vp, true));
++        c.isHint = !hint.IsEmpty() && p->GetGUID() == hint;
++        c.isVictim = victim == p;
++        units.push_back(p);
++        cands.push_back(c);
++    }
++
++    // Hostile siege vehicles (IC demolishers/siege engines/catapults/glaive throwers, and the keep
++    // cannons). They are CREATURES and the driver inside is untargetable, so a ranking built from
++    // "nearest enemy players" alone cannot see one at all — which is exactly how a demolisher parked
++    // on a keep gate went unanswered live. "possible targets" is the engine's own shared, cached
++    // unfriendly-unit value (LoS-filtered, AttackersValue::IsPossibleTarget), so this adds no new
++    // world query on the react tick.
++    for (ObjectGuid const& guid : AI_VALUE(GuidVector, "possible targets"))
++    {
++        Unit* u = botAI->GetUnit(guid);
++        // IsCreature() also keeps a player who happens to carry a vehicle kit out of the list twice.
++        if (!u || !u->IsCreature() || !u->IsVehicle() || !u->IsAlive()) continue;
++        if (!bot->IsValidAttackTarget(u)) continue;
++        float const dist = bot->GetDistance(u);
++        if (dist > kKillRange) continue;
++        BgKillRank::Cand c;
++        c.vehicle = true;
++        c.attackingMe = u->GetVictim() == bot;   // tier 1 already, but keep the flag honest
++        c.hpPct = u->GetHealthPct();
++        c.dist = dist;
++        c.isHint = !hint.IsEmpty() && u->GetGUID() == hint;
++        c.isVictim = victim == u;
++        units.push_back(u);
++        cands.push_back(c);
++    }
++    if (cands.empty()) return nullptr;
++
++    int best = BgKillRank::Best(cands, ctx);
++    if (best < 0) return nullptr;
++    Unit* pick = units[static_cast<std::size_t>(best)];
++    BattlegroundBotsApi::ReportKillPick(bot, pick->GetGUID());
++    return pick;
++}
++
++Unit* BgPeelTargetValue::Calculate()
++{
++    if (!InLiveOpenWorldBg(bot) || !BattlegroundBotsApi::Enabled()) return nullptr;
++    Unit* teamFc = AI_VALUE(Unit*, "team flag carrier");
++    for (ObjectGuid const& guid : AI_VALUE(GuidVector, "nearest enemy players"))
++    {
++        Unit* u = botAI->GetUnit(guid);
++        Player* p = u ? u->ToPlayer() : nullptr;
++        if (!p || !p->IsAlive() || bot->GetDistance(p) > kPeelRange || !IsMeleePlayer(p)) continue;
++        Unit* v = p->GetVictim();
++        Player* vp = v ? v->ToPlayer() : nullptr;
++        if (!vp || vp == bot || vp->GetBgTeamId() != bot->GetBgTeamId()) continue;
++        if ((teamFc && vp == teamFc) || PlayerbotAI::IsHeal(vp, true)) return p;
++    }
++    return nullptr;
++}
+diff --git a/modules/mod-playerbots/src/Ai/Base/Value/BgKillTargetValue.h b/modules/mod-playerbots/src/Ai/Base/Value/BgKillTargetValue.h
+new file mode 100644
+index 0000000..3b075fc
+--- /dev/null
++++ b/modules/mod-playerbots/src/Ai/Base/Value/BgKillTargetValue.h
+@@ -0,0 +1,42 @@
++// Ai/Base/Value/BgKillTargetValue.h   (mod-playerbots, added by overlay patch 0019)
++#ifndef _PLAYERBOT_BGKILLTARGETVALUE_H
++#define _PLAYERBOT_BGKILLTARGETVALUE_H
++#include "Battleground.h"
++#include "Player.h"
++#include "Value.h"
++#include <vector>
++
++class PlayerbotAI;
++
++// The ONE live-BG gate shared by the 0019 value, actions and triggers: a real (non-arena)
++// battleground that has actually started. Everything 0019 adds no-ops outside it.
++inline bool InLiveOpenWorldBg(Player* bot)
++{
++    Battleground* bg = bot->GetBattleground();
++    return bg && !bg->isArena() && bg->GetStatus() == STATUS_IN_PROGRESS;
++}
++
++// Deterministic BG kill target: enemy FC/capturer/siege vehicle > whoever is attacking ME > an
++// enemy healer within my role's reach (unless I am under pressure) > <35% HP > attacker of our
++// FC/healer — and a current victim already under 35% is finished before anything but tier 1.
++// nullptr when nothing qualifies, so the stock "dps assist" target stands. Pure ranking lives in
++// mod-battleground-bots/src/BgKillRank.h (unit-tested); this class only builds the candidates.
++class BgKillTargetValue : public UnitCalculatedValue
++{
++public:
++    BgKillTargetValue(PlayerbotAI* botAI) : UnitCalculatedValue(botAI, "bg kill target", 1000) {}
++    Unit* Calculate() override;
++
++private:
++    bool IsHealerLike(Player* p) const;
++    bool Unreachable(Player* target, std::vector<Player*> const& enemies) const;
++};
++
++// Enemy melee within 15y hitting our flag carrier or one of our healers (peel target).
++class BgPeelTargetValue : public UnitCalculatedValue
++{
++public:
++    BgPeelTargetValue(PlayerbotAI* botAI) : UnitCalculatedValue(botAI, "bg peel target", 1000) {}
++    Unit* Calculate() override;
++};
++#endif
+diff --git a/modules/mod-playerbots/src/Ai/Base/Value/PvpValues.h b/modules/mod-playerbots/src/Ai/Base/Value/PvpValues.h
+index 4354b9d..0c4e8de 100644
+--- a/modules/mod-playerbots/src/Ai/Base/Value/PvpValues.h
++++ b/modules/mod-playerbots/src/Ai/Base/Value/PvpValues.h
+@@ -32,6 +32,16 @@ public:
+     BgRoleValue(PlayerbotAI* botAI) : ManualSetValue<uint32>(botAI, 0, "bg role") {}
+ };
+ 
++// mod-battleground-bots (overlay patch 0019): getMSTime() of the last director-forced dismount
++// (BGTactics::moveToObjective). 0 = never. CheckMountStateAction reads it to hold off the stock
++// remount for a few seconds, so a bot walking into a contested objective does not mount/dismount
++// in a loop. Mirrors BgRoleValue exactly: a manual-set uint32 defaulting to 0.
++class BgDismountTimeValue : public ManualSetValue<uint32>
++{
++public:
++    BgDismountTimeValue(PlayerbotAI* botAI) : ManualSetValue<uint32>(botAI, 0, "bg dismount time") {}
++};
++
+ class BgMastersValue : public SingleCalculatedValue<std::vector<CreatureData const*>>, public Qualified
+ {
+ public:
+diff --git a/modules/mod-playerbots/src/Ai/Base/ValueContext.h b/modules/mod-playerbots/src/Ai/Base/ValueContext.h
+index 264478c..8dc378e 100644
+--- a/modules/mod-playerbots/src/Ai/Base/ValueContext.h
++++ b/modules/mod-playerbots/src/Ai/Base/ValueContext.h
+@@ -17,6 +17,7 @@
+ #include "AttackerWithoutAuraTargetValue.h"
+ #include "AttackersValue.h"
+ #include "AvailableLootValue.h"
++#include "BgKillTargetValue.h"
+ #include "BudgetValues.h"
+ #include "CcTargetValue.h"
+ #include "ChatValue.h"
+@@ -265,6 +266,9 @@ public:
+         creators["bg master"] = &ValueContext::bg_master;
+         creators["enemy flag carrier"] = &ValueContext::enemy_fc;
+         creators["team flag carrier"] = &ValueContext::team_fc;
++        creators["bg kill target"] = &ValueContext::bg_kill_target;      // overlay patch 0019
++        creators["bg peel target"] = &ValueContext::bg_peel_target;
++        creators["bg dismount time"] = &ValueContext::bg_dismount_time;
+ 
+         creators["home bind"] = &ValueContext::home_bind;
+         creators["last long move"] = &ValueContext::last_long_move;
+@@ -519,6 +523,9 @@ private:
+     static UntypedValue* rpg_bg_type(PlayerbotAI* botAI) { return new RpgBgTypeValue(botAI); }
+     static UntypedValue* team_fc(PlayerbotAI* botAI) { return new FlagCarrierValue(botAI, true, true); }
+     static UntypedValue* enemy_fc(PlayerbotAI* botAI) { return new FlagCarrierValue(botAI, false, true); }
++    static UntypedValue* bg_kill_target(PlayerbotAI* botAI) { return new BgKillTargetValue(botAI); }
++    static UntypedValue* bg_peel_target(PlayerbotAI* botAI) { return new BgPeelTargetValue(botAI); }
++    static UntypedValue* bg_dismount_time(PlayerbotAI* botAI) { return new BgDismountTimeValue(botAI); }
+ 
+     static UntypedValue* last_long_move(PlayerbotAI* botAI) { return new LastLongMoveValue(botAI); }
+     static UntypedValue* home_bind(PlayerbotAI* botAI) { return new HomeBindValue(botAI); }

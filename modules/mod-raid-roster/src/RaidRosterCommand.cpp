@@ -3,11 +3,13 @@
 #include "RaidRosterComp.h"
 #include "RaidRosterStore.h"
 #include "RaidRosterGear.h"
+#include "RaidRosterLoginPlan.h"   // ComputeLoginPlan — the pure login arithmetic (tests/ covers it)
 #include "Chat.h"
 #include "StringFormat.h"   // Acore::StringFormat for the login era-band suffix
 #include "CommandScript.h"
 #include "RBAC.h"
 #include "Player.h"
+#include "Group.h"                 // Group::MemberSlot census + RemoveMember for stale offline seats
 #include "PlayerbotMgr.h"
 #include "RaidRosterEra.h"           // era-sync shim (isolates mod-individual-progression's headers)
 #include "Playerbots.h"
@@ -25,12 +27,12 @@
 #include "Field.h"
 #include "SharedDefines.h"
 #include "Containers.h"
-#include <set>
 #include <array>
 #include <utility>
 #include <unordered_set>
 #include <vector>
 #include <map>
+#include <unordered_map>
 #include <cctype>
 #include <algorithm>
 
@@ -210,89 +212,164 @@ bool RaidRosterCommand::HandleLogin(ChatHandler* handler, Optional<uint32> sizeA
     bool const wotlkBand = masterLevel >= kWotlkBandMinLevel;
     auto eligible = [masterLevel](RaidRosterRow const& r) { return RaidCompEligible(r.band, masterLevel); };
 
-    // Roster capacity per role (caps how many of each we can actually field) — eligible rows only.
-    uint8 availT = 0, availH = 0, availD = 0;
-    for (RaidRosterRow const& r : rows)
-    {
-        if (!eligible(r)) continue;
-        if (r.role == 0) ++availT; else if (r.role == 1) ++availH; else ++availD;
-    }
-
-    // Bot sub-comp for this size; then let the player take their slot: drop one bot of the
-    // player's role and backfill the freed slot (prefer dps, then heal, then tank) within roster
-    // capacity, so the group stays full. A DPS player leaves the comp unchanged.
-    uint8 needT = sc->tanks, needH = sc->heals, needD = sc->dps;
-    bool tookSlot = false;
-    if (playerRole == 0 && needT) { --needT; tookSlot = true; }
-    else if (playerRole == 1 && needH) { --needH; tookSlot = true; }
-    if (tookSlot)
-    {
-        if (needD < availD) ++needD;
-        else if (needH < availH) ++needH;
-        else if (needT < availT) ++needT;
-    }
-    uint8 const botT = needT, botH = needH, botD = needD;   // final line-up, for the report
-
     PlayerbotMgr* mgr = GET_PLAYERBOT_MGR(master);
     if (!mgr) { handler->SendSysMessage("Playerbot manager unavailable."); return true; }
     uint32 acct = master->GetSession()->GetAccountId();
 
-    // Pick `need` bots per role: keep those already online first (so re-running login doesn't churn
-    // the current group), then fill the remainder from a random shuffle of the role's offline bots
-    // — so a fresh session brings a different assortment each time. Role balance is unchanged; we
-    // only vary *which* reserved bots of a role get picked (each still runs its pinned tank/heal/dps
-    // spec once you .raidroster sync).
-    std::vector<RaidRosterRow> want;
-    auto selectRole = [&](uint8 role, uint8 need)
+    std::unordered_map<uint32, RaidRosterRow const*> rowByGuid;   // group member -> roster row (if any)
+    for (RaidRosterRow const& r : rows) rowByGuid.emplace(r.botGuid, &r);
+
+    // Census of the master's current group — the master alone when ungrouped. Every ONLINE member
+    // holds a seat: a roster bot under its pinned role, everyone else (the master with the override
+    // applied, other humans, non-roster bots) by active spec. An OFFLINE non-roster member still
+    // holds a seat we can't classify, so it counts as dps. An OFFLINE roster bot (a previous
+    // session's raid whose bots logged out with the master) is NOT present: it becomes a
+    // preferred candidate below (it needs no re-invite — OnBotLogin keeps a group the master is
+    // in) and is removed from the group if the plan doesn't pick it
+    // (unless an offline non-roster member is seated — see the unseat pass below).
+    Group* grp = master->GetGroup();
+    RoleCounts present{};
+    uint32 offlineNonRoster = 0;                             // offline member we cannot classify
+    std::vector<RaidRosterRow const*> rosterOnlineInGroup;    // surplus-trim candidates
+    std::vector<RaidRosterRow const*> rosterOfflineInGroup;   // seat-holding candidates
+    std::unordered_set<uint32> seatedRoster;                  // every roster guid with a group seat
+    auto census = [&](ObjectGuid guid)
     {
-        std::vector<RaidRosterRow> online, offline;
-        for (RaidRosterRow const& r : rows)
+        if (guid == master->GetGUID()) { ++present[playerRole]; return; }
+        if (auto it = rowByGuid.find(guid.GetCounter()); it != rowByGuid.end())
         {
-            if (r.role != role || !eligible(r)) continue;
-            ObjectGuid g = ObjectGuid::Create<HighGuid::Player>(r.botGuid);
-            (mgr->GetPlayerBot(g) ? online : offline).push_back(r);
+            seatedRoster.insert(guid.GetCounter());
+            if (mgr->GetPlayerBot(guid)) { ++present[it->second->role]; rosterOnlineInGroup.push_back(it->second); }
+            else                           rosterOfflineInGroup.push_back(it->second);
+            return;
         }
-        Acore::Containers::RandomShuffle(offline);
-        for (RaidRosterRow const& r : online)  { if (!need) break; want.push_back(r); --need; }
-        for (RaidRosterRow const& r : offline) { if (!need) break; want.push_back(r); --need; }
+        Player* p = ObjectAccessor::FindPlayer(guid);
+        if (!p) { ++present[2]; ++offlineNonRoster; return; }
+        ++present[PlayerbotAI::IsTank(p, true) ? 0 : (PlayerbotAI::IsHeal(p, true) ? 1 : 2)];
     };
-    selectRole(0, needT);   // tanks
-    selectRole(1, needH);   // heals
-    selectRole(2, needD);   // dps
+    if (grp)
+        for (Group::MemberSlot const& slot : grp->GetMemberSlots()) census(slot.guid);
+    else
+        census(master->GetGUID());
 
-    // Set of wanted guids for trim-down.
-    std::set<uint32> wantSet;
-    for (RaidRosterRow const& r : want) wantSet.insert(r.botGuid);
-
-    // Trim: log out every online roster bot that is NOT in the wanted set
-    // (membership-based, so iteration order is irrelevant).
-    uint32 dismissed = 0;
+    // Offline pool per role — the only source of new logins. Seat-holding offline roster bots go
+    // FIRST (no re-invite needed); the rest are shuffled so a fresh session brings a different
+    // assortment. A roster bot that is online but NOT in the group can't be re-invited
+    // (AddPlayerBot skips online bots and the fork only auto-invites at login), so it is dismissed
+    // and left for a later login.
+    std::array<std::vector<RaidRosterRow const*>, 3> pool;
+    std::array<std::vector<RaidRosterRow const*>, 3> loose;   // eligible, offline, no seat
+    std::vector<ObjectGuid> strayOnline;
     for (RaidRosterRow const& r : rows)
     {
-        if (wantSet.count(r.botGuid)) continue;
+        if (seatedRoster.count(r.botGuid)) continue;
         ObjectGuid g = ObjectGuid::Create<HighGuid::Player>(r.botGuid);
-        if (mgr->GetPlayerBot(g)) { mgr->LogoutPlayerBot(g); ++dismissed; }
+        if (mgr->GetPlayerBot(g)) { strayOnline.push_back(g); continue; }
+        if (eligible(r)) loose[r.role].push_back(&r);
     }
-
-    // Add wanted bots that aren't online yet.
-    for (RaidRosterRow const& r : want)
+    for (RaidRosterRow const* r : rosterOfflineInGroup)
+        if (eligible(*r)) pool[r->role].push_back(r);
+    RoleCounts avail{};
+    for (uint8 role = 0; role < 3; ++role)
     {
-        ObjectGuid g = ObjectGuid::Create<HighGuid::Player>(r.botGuid);
-        if (mgr->GetPlayerBot(g)) continue;
-        mgr->AddPlayerBot(g, acct);   // OnBotLogin auto-invites + converts group to raid at >=5
+        Acore::Containers::RandomShuffle(loose[role]);
+        pool[role].insert(pool[role].end(), loose[role].begin(), loose[role].end());
+        avail[role] = uint8(std::min<size_t>(pool[role].size(), 255));
     }
 
-    // Re-scan for honest online count: AddPlayerBot is async, so a just-submitted bot may not
-    // appear as online on this same tick. Report the current count; it will rise momentarily.
-    uint32 online = 0;
-    for (RaidRosterRow const& r : want)
-        if (mgr->GetPlayerBot(ObjectGuid::Create<HighGuid::Player>(r.botGuid))) ++online;
+    LoginPlan const plan = ComputeLoginPlan(size, LoginTargetComp(sc->tanks, sc->heals, sc->dps), present, avail);
 
-    // `size` is the raid size incl. you; you fill one slot, bots fill the rest.
+    // Seat-holding offline roster bots the plan didn't pick stop holding seats. Done BEFORE the
+    // logins are queued (AddPlayerBot is async, so those bots join on later ticks regardless).
+    // Group::RemoveMember disbands the group when, AFTER the removal, fewer than two ONLINE
+    // members remain — NOT "one member left", and that is the NORMAL path here rather than an
+    // edge case: a master re-entering last session's stale raid is its only online member, so the
+    // FIRST removal disbands the group and drops every remaining offline seat at once. Accepted,
+    // because the selected bots are logged in via AddPlayerBot either way and OnBotLogin forms a
+    // fresh group around a master who has none. It is only safe because the whole pass is SKIPPED
+    // when an offline NON-roster member holds a seat (`offlineNonRoster`), so a disband can never
+    // drop an offline human. Because the disband frees the Group object, `grp` is re-read after
+    // every removal and the loops stop once it is gone.
+    uint32 unseated = 0;
+    uint32 keptOffline = 0;
+    bool disbanded = false;
+    auto unseat = [&](uint32 botGuid) -> bool
+    {
+        if (!grp) return false;
+        grp->RemoveMember(ObjectGuid::Create<HighGuid::Player>(botGuid));
+        ++unseated;
+        grp = master->GetGroup();   // Disband() may have destroyed the group we just called into
+        disbanded = (grp == nullptr);
+        return grp != nullptr;
+    };
+    if (offlineNonRoster)
+    {
+        // An offline non-roster member (a human between sessions) holds a seat: any removal can
+        // trip the disband above and drop it. Keep every offline roster seat instead — the ones
+        // the plan picked still log in normally, the rest simply stay seated until a later login.
+        for (uint8 role = 0; role < 3; ++role)
+            for (size_t i = plan.need[role]; i < pool[role].size(); ++i)
+                if (seatedRoster.count(pool[role][i]->botGuid)) ++keptOffline;
+        for (RaidRosterRow const* r : rosterOfflineInGroup)
+            if (!eligible(*r)) ++keptOffline;   // ineligible seat-holders never entered the pool
+    }
+    else
+    {
+        bool groupAlive = grp != nullptr;
+        for (uint8 role = 0; role < 3 && groupAlive; ++role)
+            for (size_t i = plan.need[role]; i < pool[role].size() && groupAlive; ++i)
+            {
+                RaidRosterRow const* r = pool[role][i];
+                if (!seatedRoster.count(r->botGuid)) continue;   // loose bots hold no seat
+                groupAlive = unseat(r->botGuid);
+            }
+        // Ineligible seat-holders (wrong era band) never entered the pool; unseat them too.
+        for (RaidRosterRow const* r : rosterOfflineInGroup)
+        {
+            if (!groupAlive) break;
+            if (!eligible(*r)) groupAlive = unseat(r->botGuid);
+        }
+    }
+
+    // Log in the missing roles. plan.need[role] <= pool[role].size() by construction (roster cap).
+    uint32 added = 0;
+    for (uint8 role = 0; role < 3; ++role)
+        for (uint8 i = 0; i < plan.need[role]; ++i)
+        {
+            mgr->AddPlayerBot(ObjectGuid::Create<HighGuid::Player>(pool[role][i]->botGuid), acct);   // OnBotLogin joins the master's group; raid-converts only at >=5
+            ++added;
+        }
+
+    // Dismiss: every stray online roster bot, then `surplus` roster bots FROM the group — dps
+    // first, then heal, then tank (kLoginRoleOrder). Humans and non-roster bots are never removed;
+    // whatever surplus they account for is reported, not fixed. LogoutPlayerBot queues the fork's
+    // BotLogoutGroupCleanupOperation, which drops the bot from the group.
+    uint32 dismissed = 0;
+    for (ObjectGuid g : strayOnline) { mgr->LogoutPlayerBot(g); ++dismissed; }
+    uint8 surplusLeft = plan.surplus;
+    for (int role : kLoginRoleOrder)
+        for (RaidRosterRow const* r : rosterOnlineInGroup)
+        {
+            if (!surplusLeft) break;
+            if (r->role != role) continue;
+            mgr->LogoutPlayerBot(ObjectGuid::Create<HighGuid::Player>(r->botGuid));
+            ++dismissed; --surplusLeft;
+        }
+
     char const* roleName = playerRole == 0 ? "TANK" : (playerRole == 1 ? "HEALER" : "DPS");
-    handler->PSendSysMessage("Raid {} — you fill the {} slot; {} bots ({} tank / {} heal / {} dps): "
-        "{} online now, dismissed {}. Death Knights {} (Bots load async; re-check or see .raidroster status.)",
-        size, roleName, (uint32)want.size(), (uint32)botT, (uint32)botH, (uint32)botD, online, dismissed,
+    std::string extra;
+    if (plan.shortfall) extra += Acore::StringFormat("; short {} (roster exhausted)", (uint32)plan.shortfall);
+    if (surplusLeft)    extra += Acore::StringFormat("; {} over size (non-roster members, not removed)", (uint32)surplusLeft);
+    // A disband dropped every remaining offline seat, not just the one RemoveMember named; in
+    // that path every non-master member was an offline roster bot (the skip above rules out a
+    // non-roster offline member, and a second ONLINE member would have prevented the disband).
+    if (disbanded)      extra += Acore::StringFormat("; stale group disbanded ({} offline seat(s) dropped)", (uint32)rosterOfflineInGroup.size());
+    else if (unseated)  extra += Acore::StringFormat("; unseated {} offline bot(s)", unseated);
+    if (keptOffline)    extra += Acore::StringFormat("; kept {} offline roster seat(s) (offline group member present)", keptOffline);
+    handler->PSendSysMessage("Group {} — you as {}; {} present ({} tank / {} heal / {} dps); adding {} bots "
+        "({} tank / {} heal / {} dps), dismissed {}{}. Death Knights {} (Bots load async; re-check or see .raidroster status.)",
+        size, roleName, RoleSum(present), (uint32)present[0], (uint32)present[1], (uint32)present[2],
+        added, (uint32)plan.need[0], (uint32)plan.need[1], (uint32)plan.need[2], dismissed, extra,
         wotlkBand ? Acore::StringFormat("active (level {}+).", (uint32)kWotlkBandMinLevel)
                   : Acore::StringFormat("benched (below level {}; substitutes active).", (uint32)kWotlkBandMinLevel));
     return true;

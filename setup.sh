@@ -31,7 +31,7 @@ MODULES=(
 )
 
 # Modules we author and ship from THIS repo (copied in, not git-cloned). Kept by the reconcile.
-LOCAL_MODULES=( "mod-playerbot-chatter" "mod-raid-roster" "mod-ahbot-price" "mod-wintergrasp-bots" "mod-arena-roster" )
+LOCAL_MODULES=( "mod-playerbot-chatter" "mod-raid-roster" "mod-ahbot-price" "mod-wintergrasp-bots" "mod-arena-roster" "mod-battleground-bots" )
 
 # Optional commit pins (repo-pins.txt): freeze the fork and/or a module at a known-good commit
 # instead of its branch tip — used to hold a stable upstream when the latest HEAD is broken.
@@ -350,6 +350,14 @@ innodb_flush_log_at_trx_commit = ${DB_FLUSH_LOG_AT_TRX_COMMIT:-2}
 CNF
 # Must NOT be world-writable or mysqld ignores it ("World-writable config file is ignored").
 chmod 0644 "$AC_DIR/config/mysql-tuning.cnf"
+# On filesystems that don't honor POSIX modes (a Windows drive under WSL2, NTFS/CIFS mounts) the
+# chmod is a no-op and every file reads 0777 — MySQL then silently runs on stock settings (128M
+# buffer pool, fsync per commit), which makes the first-boot imports many times slower.
+if [[ "$(stat -c %a "$AC_DIR/config/mysql-tuning.cnf" 2>/dev/null)" =~ [2367]$ ]]; then
+  echo "WARNING: $AC_DIR/config/mysql-tuning.cnf is world-writable (this filesystem ignores chmod);" >&2
+  echo "         mysqld will IGNORE the tuning file. Move the repo to a native Linux filesystem" >&2
+  echo "         (e.g. inside the WSL2 distro, not /mnt/c) to get the DB_* tuning." >&2
+fi
 
 # Safety: never let the server go public with the placeholder DB password. PUBLIC_REALM_ADDRESS
 # being set is our "exposing this to the internet" signal — if it's set, the root password must
@@ -936,6 +944,46 @@ if [[ -f "$WGBOTS_CONF" ]]; then
   set_conf "WintergraspBots.KeepScreen"         "${WGBOTS_KEEP_SCREEN:-4}"           "$WGBOTS_CONF"
 fi
 
+# ── Battleground bots (mod-battleground-bots) ────────────────────────────────
+# Team director for random bots in WS/AB/AV/EY/IC: guarded objectives, squads, live-score
+# posture, healer/FC kill priority, choke points. Built always; BGBOTS_ENABLE=0 = stock behaviour.
+BGBOTS_CONF="$MODETC/mod_battleground_bots.conf"
+if [[ -f "$BGBOTS_CONF" ]]; then
+  set_conf "BattlegroundBots.Enable"            "${BGBOTS_ENABLE:-1}"            "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.Debug"             "${BGBOTS_DEBUG:-0}"             "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.TickMs"            "${BGBOTS_TICK_MS:-2000}"        "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.OpeningSeconds"    "${BGBOTS_OPENING_S:-60}"        "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.PostureMargin.WS"  "${BGBOTS_POSTURE_MARGIN_WS:-1}"   "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.PostureMargin.AB"  "${BGBOTS_POSTURE_MARGIN_AB:-300}" "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.PostureMargin.AV"  "${BGBOTS_POSTURE_MARGIN_AV:-150}" "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.PostureMargin.EY"  "${BGBOTS_POSTURE_MARGIN_EY:-300}" "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.PostureMargin.IC"  "${BGBOTS_POSTURE_MARGIN_IC:-100}" "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.GuardMin"          "${BGBOTS_GUARD_MIN:-2}"         "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.GuardMaxPercent"  "${BGBOTS_GUARD_MAX_PCT:-50}"    "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.AV.EndgameTowers" "${BGBOTS_AV_ENDGAME_TOWERS:-2}" "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.AV.EndgameNeedsCaptain" "${BGBOTS_AV_ENDGAME_NEEDS_CAPTAIN:-0}" "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.IC.SiegeRelease"  "${BGBOTS_IC_SIEGE_RELEASE:-1}"  "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.ContestSeconds"    "${BGBOTS_CONTEST_S:-30}"        "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.ContestDistance"   "${BGBOTS_CONTEST_DIST:-300}"    "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.EscortCount"       "${BGBOTS_ESCORT_N:-2}"          "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.ChaseCount"        "${BGBOTS_CHASE_N:-3}"           "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.ReinforceMax"      "${BGBOTS_REINFORCE_MAX:-4}"     "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.SquadSize"         "${BGBOTS_SQUAD_SIZE:-4}"        "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.SquadMinPresent"   "${BGBOTS_SQUAD_MIN_PRESENT:-3}" "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.StageTimeoutSeconds" "${BGBOTS_STAGE_TIMEOUT_S:-20}" "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.RefocusCooldownSeconds" "${BGBOTS_REFOCUS_CD_S:-45}" "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.RoamPercent"       "${BGBOTS_ROAM_PCT:-15}"         "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.ChokeMinGuards"    "${BGBOTS_CHOKE_MIN_GUARDS:-2}"  "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.PullbackMargin"    "${BGBOTS_PULLBACK_MARGIN:-2}"   "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.DismountRange"     "${BGBOTS_DISMOUNT_RANGE:-30}"   "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.HealerPriority"    "${BGBOTS_HEALER_PRIORITY:-1}"   "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.HealerRangeMelee"  "${BGBOTS_HEALER_RANGE_MELEE:-12}"  "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.HealerRangeRanged" "${BGBOTS_HEALER_RANGE_RANGED:-35}" "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.PressureAttackers" "${BGBOTS_PRESSURE_ATTACKERS:-2}"   "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.PressureHpPct"     "${BGBOTS_PRESSURE_HP_PCT:-50}"     "$BGBOTS_CONF"
+  set_conf "BattlegroundBots.RetargetCooldownMs" "${BGBOTS_RETARGET_CD_MS:-3000}" "$BGBOTS_CONF"
+fi
+
 echo "==> 7/10 Hardening auth/world for external exposure"
 # Authserver brute-force lockout. The shipped default is WrongPass.MaxCount=0 — i.e. UNLIMITED
 # password guesses, which is fine on a trusted LAN but unacceptable once 3724 faces the internet.
@@ -1204,7 +1252,56 @@ else
 fi
 
 echo "==> 9/10 Restarting worldserver to apply config"
-docker compose restart ac-worldserver
+# WAIT FOR THE FIRST BOOT TO FINISH BEFORE RESTARTING. On a fresh install the worldserver is the
+# ONLY thing that creates and populates acore_playerbots (dbimport handles auth/characters/world
+# only), and DBUpdater::Populate applies base/*.sql in sorted order, aborting on the first failure.
+# The step-5 wait only proves the entrypoint ran (worldserver.conf is written BEFORE the binary
+# starts), so restarting here used to land mid-import: SIGTERM during StartDB just sets a stop flag,
+# Docker SIGKILLs at 10s, the mysql client child dies, and every base table sorted after the kill
+# point (playerbots_weightscale*, updates*, version_db_playerbots) is never created. The next boot
+# sees a non-empty DB, skips Populate, and loops forever on "playerbots_weightscales doesn't exist"
+# (GitHub issue #1). Readiness signal = the world socket accepting connections: StartNetwork runs
+# after SetInitialWorldSettings, so an open port means DB setup and world load are complete.
+# Probed INSIDE the container so it doesn't depend on host port publishing (WSL2/Docker Desktop).
+WS_READY_TIMEOUT="${WORLDSERVER_READY_TIMEOUT:-3600}"
+_ws_ready() {
+  docker compose exec -T ac-worldserver bash -c 'exec 3<>/dev/tcp/127.0.0.1/8085' >/dev/null 2>&1
+}
+_ws_restarts() {
+  docker inspect -f '{{.RestartCount}}' ac-worldserver 2>/dev/null || echo 0
+}
+_ws_restarts_start="$(_ws_restarts)"
+_ws_waited=0
+if ! _ws_ready; then
+  echo "    Waiting for the worldserver to finish its first boot (DB population + world load;"
+  echo "    a fresh install can take 10-30+ min on slow disks). Timeout: ${WS_READY_TIMEOUT}s"
+  echo "    (WORLDSERVER_READY_TIMEOUT in .env). Progress: docker compose logs -f ac-worldserver"
+  while ! _ws_ready; do
+    if (( $(_ws_restarts) - _ws_restarts_start >= 2 )); then
+      echo "ERROR: ac-worldserver is crash-looping during startup; NOT restarting it." >&2
+      echo "       Inspect: docker compose logs ac-worldserver" >&2
+      echo "       Fresh install with 'Table acore_playerbots.* doesn't exist' errors = an interrupted" >&2
+      echo "       first-boot import. Recover by dropping the (regenerable, bot-only) playerbots DB and" >&2
+      echo "       letting the worldserver repopulate it:" >&2
+      echo "         docker compose exec -T ac-database sh -c 'mysql -uroot -p\"\$MYSQL_ROOT_PASSWORD\" -e \"DROP DATABASE acore_playerbots\"'" >&2
+      echo "         docker compose restart ac-worldserver" >&2
+      exit 1
+    fi
+    if (( _ws_waited >= WS_READY_TIMEOUT )); then
+      echo "ERROR: worldserver not ready after ${WS_READY_TIMEOUT}s; NOT restarting it (a restart" >&2
+      echo "       mid-import corrupts the playerbots DB). Check: docker compose logs ac-worldserver" >&2
+      echo "       Re-run ./setup.sh once it is up, or raise WORLDSERVER_READY_TIMEOUT in .env." >&2
+      exit 1
+    fi
+    sleep 15
+    _ws_waited=$((_ws_waited + 15))
+    (( _ws_waited % 120 == 0 )) && echo "    ... still starting (${_ws_waited}s)"
+  done
+  echo "    worldserver is up (${_ws_waited}s)."
+fi
+# -t 120: on a re-run against a live server the bots need time to save (same grace as stop.sh);
+# the default 10s SIGKILLs them mid-save.
+docker compose restart -t 120 ac-worldserver
 
 echo "==> 10/10 Installing nightly database-backup cron job"
 # Idempotent: a marked line is replaced on re-run. Skip with BACKUP_CRON=0.
