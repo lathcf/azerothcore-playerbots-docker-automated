@@ -11,27 +11,26 @@
 #     mod-aoe-loot, ...   = any other module under azerothcore-wotlk/modules/
 #
 # --- ACTIVE PINS ---
-# Every repo our tracked patches (patches/0001-0017, plus mod-era-talents' own) modify is pinned so an upstream push can
-# never break an update. Bumped 2026-09-07 (from core 190184a0 / mpb ba46fcd / IP df10164 /
-# bridge 5e5ff75 — 416 / 65 / 2 / 36 commits behind): all patches re-verified applying cleanly
-# in setup.sh order at these tips. 0002 (Heigan dance) was RETIRED — upstream re-enabled the
-# safety dance itself (mod-playerbots a773b8c, a Plague-Cloud-anchored fight clock); our version
-# is recoverable from git history if the upstream dance proves worse in-game. The playerbots-side
-# patches (0003-0006, 0014, 0016, 0017, 0020, 0021) were regenerated for upstream refactors
-# (include order, east-const, raid-helper move to Util/EncounterHelpers, GenericAction removal).
-# mod-player-bot-level-brackets was DROPPED from setup.sh — upstream merged it into mod-playerbots
-# (6cc5e3a, AiPlayerbot.LevelBrackets.*) and the module README says it is no longer needed.
+# Every repo our tracked patches (patches/0001-0019, plus mod-era-talents' own) modify is pinned so an upstream push can
+# never break an update. Bumped 2026-09-25 (from core 413bea61 / mpb b949b50 / IP 977e200 /
+# bridge 759c100 — 288 / 50 / 3 / 1 non-merge commits behind): all patches re-verified applying
+# cleanly in setup.sh order at these tips. Core and mod-playerbots MUST move together here — core
+# f15ad949 stripped the fork's Playerbot DB layer and mpb af07882 switched to core's modular DB.
+# Regenerated for context-only upstream churn: 0003 / 0014 / 0016 / 0019 (new raid/dungeon
+# registrations, #2793 includes) + 0004 offsets; era-talents core/02 for core fe691366 (spell
+# casters widened from Unit* to WorldObject*). Previous bump 2026-09-07 (core 190184a0 -> 413bea61)
+# retired 0002 and dropped mod-player-bot-level-brackets — see git history of this file.
 # To take upstream later: comment out the pin(s), run ./update.sh, regenerate any patch that
 # aborts, test, then re-pin at new tips.
-azerothcore-wotlk 413bea61a85e20d9caef7d66fc601a661fdddd9d
-mod-playerbots b949b50bfcdd4fab937781bac2d7765e39330e4b
-mod-individual-progression 977e2005bacf97f35e506eb27b8af6b2ea1136af
+azerothcore-wotlk 7f12e89ee5f467a50e62eba1d525eac7dc953d03
+mod-playerbots 7bae1b5c58c76a0aa20381155edc08096d1485b2
+mod-individual-progression 0180b9172d0d29bbce53dd84af133b3d998b0622
 # mod-multibot-bridge: its old pin (5e5ff75) only existed because the bridge's Self-Bot code needed
 # IsSelfBot(), which mod-playerbots ba46fcd lacked; b949b50 defines it, so the bridge now rides its
 # tip. Upstream REWROTE the bridge's main as an orphan history (no shared ancestry with 5e5ff75) —
 # patch 0022 was re-verified against it. Pinned like the others so an update can't outrun 0022.
-mod-multibot-bridge 759c100d5e508b9af28531a2642ded70619828ba
+mod-multibot-bridge 1da05982e478cb00e0b6c87314afe7e0e9653ffb
 # era talents module (own repo: https://github.com/lathcf/azerothcore-mod-era-talents). The sha is a commit on the PUBLIC
 # GitHub history (an orphan branch; the private Gitea history has different shas) — production clones from
 # GitHub, so a private sha would never fetch. Bump after each public sync, after verifying a build.
-mod-era-talents f34117eb639d475e76f46b1d9a69b4ecd16d6095
+mod-era-talents fe8aa67ac578fe90738e7d669d5f5b77dd67c8b7

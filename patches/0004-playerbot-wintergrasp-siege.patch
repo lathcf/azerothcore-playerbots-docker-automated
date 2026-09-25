@@ -1056,10 +1056,10 @@ index 5219992..af157d9 100644
      static Trigger* near_dark_portal(PlayerbotAI* botAI) { return new NearDarkPortalTrigger(botAI); }
      static Trigger* need_world_buff(PlayerbotAI* botAI) { return new NeedWorldBuffTrigger(botAI); }
 diff --git a/modules/mod-playerbots/src/Bot/Factory/AiFactory.cpp b/modules/mod-playerbots/src/Bot/Factory/AiFactory.cpp
-index 34c8d73..d2fafcb 100644
+index ea9325e..cb2583e 100644
 --- a/modules/mod-playerbots/src/Bot/Factory/AiFactory.cpp
 +++ b/modules/mod-playerbots/src/Bot/Factory/AiFactory.cpp
-@@ -495,6 +495,18 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
+@@ -497,6 +497,18 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
          engine->removeStrategy("threat", false);
          engine->addStrategy("boost", false);
      }
@@ -1078,7 +1078,7 @@ index 34c8d73..d2fafcb 100644
  }
  
  Engine* AiFactory::createCombatEngine(Player* player, PlayerbotAI* const facade, AiObjectContext* aiObjectContext)
-@@ -726,6 +738,12 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
+@@ -728,6 +740,12 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
              nonCombatEngine->removeStrategy("travel", false);
              nonCombatEngine->removeStrategy("rpg", false);
              nonCombatEngine->removeStrategy("grind", false);
@@ -1092,10 +1092,10 @@ index 34c8d73..d2fafcb 100644
      }
  }
 diff --git a/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp b/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp
-index 4edc33c..5975aba 100644
+index fd56e96..74c2497 100644
 --- a/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp
 +++ b/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp
-@@ -448,6 +448,13 @@ void PlayerbotAI::UpdateAIGroupMaster()
+@@ -453,6 +453,13 @@ void PlayerbotAI::UpdateAIGroupMaster()
  
      if (!master || (masterBotAI && !IsSelfBot(master)))
      {
@@ -1109,7 +1109,7 @@ index 4edc33c..5975aba 100644
          Player* newMaster = FindNewMaster();
          if (newMaster)
          {
-@@ -1539,7 +1546,13 @@ void PlayerbotAI::DoNextAction(bool min)
+@@ -1544,7 +1551,13 @@ void PlayerbotAI::DoNextAction(bool min)
  
      if (minimal)
      {
@@ -1125,10 +1125,10 @@ index 4edc33c..5975aba 100644
  
          SetNextCheckDelay(sPlayerbotAIConfig.passiveDelay);
 diff --git a/modules/mod-playerbots/src/Bot/RandomPlayerbotMgr.cpp b/modules/mod-playerbots/src/Bot/RandomPlayerbotMgr.cpp
-index 65b9d78..8e2dc38 100644
+index b4d1a98..56b9882 100644
 --- a/modules/mod-playerbots/src/Bot/RandomPlayerbotMgr.cpp
 +++ b/modules/mod-playerbots/src/Bot/RandomPlayerbotMgr.cpp
-@@ -2622,7 +2622,9 @@ void RandomPlayerbotMgr::OnPlayerLogin(Player* player)
+@@ -2714,7 +2714,9 @@ void RandomPlayerbotMgr::OnPlayerLogin(Player* player)
              PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot);
              if (botAI && member == player && (!botAI->GetMaster() || GET_PLAYERBOT_AI(botAI->GetMaster())))
              {
@@ -1140,7 +1140,7 @@ index 65b9d78..8e2dc38 100644
                      botAI->SetMaster(player);
                      botAI->ResetStrategies();
 diff --git a/src/server/game/Battlefield/Zones/BattlefieldWG.cpp b/src/server/game/Battlefield/Zones/BattlefieldWG.cpp
-index 4ec8f9a3..e6110050 100644
+index 9dbd46d1..b10af53a 100644
 --- a/src/server/game/Battlefield/Zones/BattlefieldWG.cpp
 +++ b/src/server/game/Battlefield/Zones/BattlefieldWG.cpp
 @@ -248,6 +248,11 @@ bool BattlefieldWG::Update(uint32 diff)
@@ -1155,7 +1155,7 @@ index 4ec8f9a3..e6110050 100644
      // Spawn titan relic
      GameObject* go = SpawnGameObject(GO_WINTERGRASP_TITAN_S_RELIC, 5440.37890625f, 2840.493408203125f, 430.2816162109375, 4.45059061050415039f); // VerifiedBuild 51943
      if (go)
-@@ -691,37 +696,27 @@ void BattlefieldWG::OnCreatureCreate(Creature* creature)
+@@ -706,37 +711,27 @@ void BattlefieldWG::OnCreatureCreate(Creature* creature)
      }
  }
  
@@ -1213,7 +1213,7 @@ index 4ec8f9a3..e6110050 100644
  }
  
  void BattlefieldWG::OnGameObjectCreate(GameObject* go)
-@@ -833,7 +828,7 @@ bool BattlefieldWG::FindAndRemoveVehicleFromList(Unit* vehicle)
+@@ -848,7 +843,7 @@ bool BattlefieldWG::FindAndRemoveVehicleFromList(Unit* vehicle)
      {
          if (Vehicles[i].find(vehicle->GetGUID()) != Vehicles[i].end())
          {

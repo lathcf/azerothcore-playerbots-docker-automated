@@ -1,5 +1,5 @@
 diff --git a/modules/mod-playerbots/src/Ai/Raid/RaidStrategyContext.h b/modules/mod-playerbots/src/Ai/Raid/RaidStrategyContext.h
-index 89bdea6..5b4ad32 100644
+index b1e1038..720706c 100644
 --- a/modules/mod-playerbots/src/Ai/Raid/RaidStrategyContext.h
 +++ b/modules/mod-playerbots/src/Ai/Raid/RaidStrategyContext.h
 @@ -22,6 +22,7 @@
@@ -19,7 +19,7 @@ index 89bdea6..5b4ad32 100644
          creators["wotlk-eoe"] = &RaidStrategyContext::wotlk_eoe;
          creators["voa"] = &RaidStrategyContext::voa;
 @@ -67,6 +69,7 @@ private:
-     static Strategy* hyjal(PlayerbotAI* botAI) { return new RaidHyjalSummitStrategy(botAI); }
+     static Strategy* hyjal(PlayerbotAI* botAI) { return new RaidHyjalStrategy(botAI); }
      static Strategy* blacktemple(PlayerbotAI* botAI) { return new RaidBlackTempleStrategy(botAI); }
      static Strategy* zulaman(PlayerbotAI* botAI) { return new RaidZulAmanStrategy(botAI); }
 +    static Strategy* sunwell(PlayerbotAI* botAI) { return new RaidSunwellPlateauStrategy(botAI); }
@@ -9029,7 +9029,7 @@ index 0000000..bc08596
 +    return TwinsShouldDispelPyrogenics(bot, botAI);
 +}
 diff --git a/modules/mod-playerbots/src/Bot/Engine/BuildSharedActionContexts.cpp b/modules/mod-playerbots/src/Bot/Engine/BuildSharedActionContexts.cpp
-index a1cf72a..f7dd3a2 100644
+index ffd9aa8..6cad5d0 100644
 --- a/modules/mod-playerbots/src/Bot/Engine/BuildSharedActionContexts.cpp
 +++ b/modules/mod-playerbots/src/Bot/Engine/BuildSharedActionContexts.cpp
 @@ -22,6 +22,7 @@
@@ -9040,8 +9040,8 @@ index a1cf72a..f7dd3a2 100644
  #include "TKActionContext.h"
  #include "TbcDungeonActionContext.h"
  #include "UldActionContext.h"
-@@ -46,6 +47,7 @@ void AiObjectContext::BuildSharedActionContexts(SharedNamedObjectContextList<Act
-     actionContexts.Add(new RaidHyjalSummitActionContext());
+@@ -47,6 +48,7 @@ void AiObjectContext::BuildSharedActionContexts(
+     actionContexts.Add(new RaidHyjalActionContext());
      actionContexts.Add(new RaidBlackTempleActionContext());
      actionContexts.Add(new RaidZulAmanActionContext());
 +    actionContexts.Add(new RaidSunwellPlateauActionContext());
@@ -9049,7 +9049,7 @@ index a1cf72a..f7dd3a2 100644
      actionContexts.Add(new RaidOsActionContext());
      actionContexts.Add(new RaidEoEActionContext());
 diff --git a/modules/mod-playerbots/src/Bot/Engine/BuildSharedTriggerContexts.cpp b/modules/mod-playerbots/src/Bot/Engine/BuildSharedTriggerContexts.cpp
-index 344e239..1472970 100644
+index 94a983e..20ba4ce 100644
 --- a/modules/mod-playerbots/src/Bot/Engine/BuildSharedTriggerContexts.cpp
 +++ b/modules/mod-playerbots/src/Bot/Engine/BuildSharedTriggerContexts.cpp
 @@ -21,6 +21,7 @@
@@ -9060,8 +9060,8 @@ index 344e239..1472970 100644
  #include "TKTriggerContext.h"
  #include "TbcDungeonTriggerContext.h"
  #include "TriggerContext.h"
-@@ -47,6 +48,7 @@ void AiObjectContext::BuildSharedTriggerContexts(SharedNamedObjectContextList<Tr
-     triggerContexts.Add(new RaidHyjalSummitTriggerContext());
+@@ -48,6 +49,7 @@ void AiObjectContext::BuildSharedTriggerContexts(
+     triggerContexts.Add(new RaidHyjalTriggerContext());
      triggerContexts.Add(new RaidBlackTempleTriggerContext());
      triggerContexts.Add(new RaidZulAmanTriggerContext());
 +    triggerContexts.Add(new RaidSunwellPlateauTriggerContext());
@@ -9069,21 +9069,27 @@ index 344e239..1472970 100644
      triggerContexts.Add(new RaidEoETriggerContext());
      triggerContexts.Add(new RaidVoATriggerContext());
 diff --git a/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp b/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp
-index 6799e88..89a1f81 100644
+index ce9b148..3f7e5e0 100644
 --- a/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp
 +++ b/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp
-@@ -1654,8 +1654,8 @@ void PlayerbotAI::ApplyInstanceStrategies(uint32 mapId, bool tellMaster)
+@@ -1659,11 +1659,11 @@ void PlayerbotAI::ApplyInstanceStrategies(uint32 mapId, bool tellMaster)
      static const std::vector<std::string> allInstanceStrategies =
      {
          "aq20", "blacktemple", "bwl", "gruulslair", "hyjal", "icc", "karazhan", "magtheridon",
--        "moltencore", "naxx", "onyxia", "rs", "ssc", "tbc-ac", "tbc-mech", "tbc-seth", "tbc-ub",
--        "tempestkeep", "ulduar", "voa", "wotlk-an", "wotlk-cos", "wotlk-dtk", "wotlk-eoe",
-+        "moltencore", "naxx", "onyxia", "rs", "ssc", "sunwell", "tbc-ac", "tbc-mech", "tbc-seth",
-+        "tbc-ub", "tempestkeep", "ulduar", "voa", "wotlk-an", "wotlk-cos", "wotlk-dtk", "wotlk-eoe",
-         "wotlk-fos", "wotlk-gd", "wotlk-hol", "wotlk-hos", "wotlk-nex", "wotlk-occ", "wotlk-ok",
-         "wotlk-os", "wotlk-pos", "wotlk-toc", "wotlk-uk", "wotlk-up", "wotlk-vh", "zulaman"
+-        "moltencore", "naxx", "onyxia", "rs", "ssc", "tbc-ac", "tbc-mech", "tbc-mgt", "tbc-ramp",
+-        "tbc-seth", "tbc-ub", "tempestkeep", "ulduar", "voa", "wotlk-an", "wotlk-cos", "wotlk-dtk",
+-        "wotlk-eoe", "wotlk-fos", "wotlk-gd", "wotlk-hol", "wotlk-hos", "wotlk-nex", "wotlk-occ",
+-        "wotlk-ok", "wotlk-os", "wotlk-pos", "wotlk-toc", "wotlk-uk", "wotlk-up", "wotlk-vh",
+-        "zulaman"
++        "moltencore", "naxx", "onyxia", "rs", "ssc", "sunwell", "tbc-ac", "tbc-mech", "tbc-mgt",
++        "tbc-ramp", "tbc-seth", "tbc-ub", "tempestkeep", "ulduar", "voa", "wotlk-an", "wotlk-cos",
++        "wotlk-dtk", "wotlk-eoe", "wotlk-fos", "wotlk-gd", "wotlk-hol", "wotlk-hos", "wotlk-nex",
++        "wotlk-occ", "wotlk-ok", "wotlk-os", "wotlk-pos", "wotlk-toc", "wotlk-uk", "wotlk-up",
++        "wotlk-vh", "zulaman"
      };
-@@ -1720,6 +1720,9 @@ void PlayerbotAI::ApplyInstanceStrategies(uint32 mapId, bool tellMaster)
+ 
+     for (std::string const& strat : allInstanceStrategies)
+@@ -1729,6 +1729,9 @@ void PlayerbotAI::ApplyInstanceStrategies(uint32 mapId, bool tellMaster)
          case 568:
              strategyName = "zulaman";  // Zul'Aman
              break;

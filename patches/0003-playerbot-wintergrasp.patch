@@ -138,7 +138,7 @@ index f840695..339af69 100644
      static Trigger* xpgain(PlayerbotAI* botAI) { return new WorldPacketTrigger(botAI, "xpgain"); }
      static Trigger* petition_offer(PlayerbotAI* botAI) { return new WorldPacketTrigger(botAI, "petition offer"); }
 diff --git a/modules/mod-playerbots/src/Bot/Factory/AiFactory.cpp b/modules/mod-playerbots/src/Bot/Factory/AiFactory.cpp
-index 63e834f..34c8d73 100644
+index bb1fa52..ea9325e 100644
 --- a/modules/mod-playerbots/src/Bot/Factory/AiFactory.cpp
 +++ b/modules/mod-playerbots/src/Bot/Factory/AiFactory.cpp
 @@ -5,6 +5,9 @@
@@ -151,7 +151,7 @@ index 63e834f..34c8d73 100644
  #include "BattlegroundMgr.h"
  #include "DKAiObjectContext.h"
  #include "DruidAiObjectContext.h"
-@@ -709,6 +712,22 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
+@@ -711,6 +714,22 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
              nonCombatEngine->removeStrategy("mount", false);
          }
      }
@@ -175,7 +175,7 @@ index 63e834f..34c8d73 100644
  
  Engine* AiFactory::createNonCombatEngine(Player* player, PlayerbotAI* const facade, AiObjectContext* aiObjectContext)
 diff --git a/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp b/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp
-index 55f7732..4edc33c 100644
+index 7a7ae33..fd56e96 100644
 --- a/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp
 +++ b/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp
 @@ -6,6 +6,8 @@
@@ -196,7 +196,7 @@ index 55f7732..4edc33c 100644
      botOutgoingPacketHandlers.AddHandler(SMSG_LFG_ROLE_CHECK_UPDATE, "lfg role check");
      botOutgoingPacketHandlers.AddHandler(SMSG_LFG_PROPOSAL_UPDATE, "lfg proposal");
      botOutgoingPacketHandlers.AddHandler(SMSG_TEXT_EMOTE, "receive text emote");
-@@ -4614,6 +4618,17 @@ bool PlayerbotAI::AllowActive(ActivityType activityType)
+@@ -4624,6 +4628,17 @@ bool PlayerbotAI::AllowActive(ActivityType activityType)
      if (bot->InBattlegroundQueue())
          return true;
  
@@ -215,21 +215,21 @@ index 55f7732..4edc33c 100644
      if (sPlayerbotAIConfig.BotActiveAloneForceWhenInGuild)
      {
 diff --git a/modules/mod-playerbots/src/Bot/RandomPlayerbotMgr.cpp b/modules/mod-playerbots/src/Bot/RandomPlayerbotMgr.cpp
-index c438eb7..65b9d78 100644
+index 57eb448..b4d1a98 100644
 --- a/modules/mod-playerbots/src/Bot/RandomPlayerbotMgr.cpp
 +++ b/modules/mod-playerbots/src/Bot/RandomPlayerbotMgr.cpp
-@@ -6,6 +6,8 @@
- 
+@@ -7,6 +7,8 @@
  #include "RandomPlayerbotMgr.h"
+ #include "PlayerbotsDatabase.h"
  #include "AiFactory.h"
 +#include "Battlefield.h"
 +#include "BattlefieldMgr.h"
  #include "Battleground.h"
  #include "BattlegroundMgr.h"
  #include "Cell.h"
-@@ -47,6 +49,20 @@
- #include <iomanip>
- #include <random>
+@@ -50,6 +52,20 @@
+ #include <set>
+ #include <utility>
  
 +namespace
 +{
@@ -248,7 +248,7 @@ index c438eb7..65b9d78 100644
  struct GuidClassRaceInfo
  {
      ObjectGuid::LowType guid;
-@@ -1453,6 +1469,9 @@ bool RandomPlayerbotMgr::ProcessBot(Player* bot)
+@@ -1468,6 +1484,9 @@ bool RandomPlayerbotMgr::ProcessBot(Player* bot)
      if (bot->InBattlegroundQueue())
          return false;
  
@@ -258,7 +258,7 @@ index c438eb7..65b9d78 100644
       uint32 botId = bot->GetGUID().GetCounter();
  
      // if death revive
-@@ -1590,6 +1609,10 @@ void RandomPlayerbotMgr::RandomTeleport(Player* bot, std::vector<WorldLocation>&
+@@ -1605,6 +1624,10 @@ void RandomPlayerbotMgr::RandomTeleport(Player* bot, std::vector<WorldLocation>&
      if (bot->InBattleground() || bot->InArena())
          return;
  

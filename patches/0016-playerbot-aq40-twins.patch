@@ -1538,7 +1538,7 @@ index 0000000..5232ada
 +bool Aq40TwinsHealerOffSpotTrigger::IsActive() { return TwinsShouldHoldHealerSpot(bot, botAI); }
 +bool Aq40TwinsPetOnWrongTwinTrigger::IsActive() { return TwinsShouldDirectPet(bot, botAI); }
 diff --git a/modules/mod-playerbots/src/Ai/Raid/RaidStrategyContext.h b/modules/mod-playerbots/src/Ai/Raid/RaidStrategyContext.h
-index 5b4ad32..acebde9 100644
+index 720706c..47104b8 100644
 --- a/modules/mod-playerbots/src/Ai/Raid/RaidStrategyContext.h
 +++ b/modules/mod-playerbots/src/Ai/Raid/RaidStrategyContext.h
 @@ -8,6 +8,7 @@
@@ -1566,7 +1566,7 @@ index 5b4ad32..acebde9 100644
      static Strategy* bwl(PlayerbotAI* botAI) { return new RaidBwlStrategy(botAI); }
      static Strategy* karazhan(PlayerbotAI* botAI) { return new RaidKarazhanStrategy(botAI); }
 diff --git a/modules/mod-playerbots/src/Bot/Engine/BuildSharedActionContexts.cpp b/modules/mod-playerbots/src/Bot/Engine/BuildSharedActionContexts.cpp
-index f7dd3a2..4fbfc4c 100644
+index 6cad5d0..ac4a4ef 100644
 --- a/modules/mod-playerbots/src/Bot/Engine/BuildSharedActionContexts.cpp
 +++ b/modules/mod-playerbots/src/Bot/Engine/BuildSharedActionContexts.cpp
 @@ -7,6 +7,7 @@
@@ -1577,7 +1577,7 @@ index f7dd3a2..4fbfc4c 100644
  #include "BTActionContext.h"
  #include "BWLActionContext.h"
  #include "ChatActionContext.h"
-@@ -37,6 +38,7 @@ void AiObjectContext::BuildSharedActionContexts(SharedNamedObjectContextList<Act
+@@ -38,6 +39,7 @@ void AiObjectContext::BuildSharedActionContexts(
      actionContexts.Add(new ChatActionContext());
      actionContexts.Add(new WorldPacketActionContext());
      actionContexts.Add(new RaidAq20ActionContext());
@@ -1586,7 +1586,7 @@ index f7dd3a2..4fbfc4c 100644
      actionContexts.Add(new RaidBwlActionContext());
      actionContexts.Add(new RaidKarazhanActionContext());
 diff --git a/modules/mod-playerbots/src/Bot/Engine/BuildSharedTriggerContexts.cpp b/modules/mod-playerbots/src/Bot/Engine/BuildSharedTriggerContexts.cpp
-index 1472970..94e0eb9 100644
+index 20ba4ce..fb4ea91 100644
 --- a/modules/mod-playerbots/src/Bot/Engine/BuildSharedTriggerContexts.cpp
 +++ b/modules/mod-playerbots/src/Bot/Engine/BuildSharedTriggerContexts.cpp
 @@ -6,6 +6,7 @@
@@ -1597,7 +1597,7 @@ index 1472970..94e0eb9 100644
  #include "BTTriggerContext.h"
  #include "BWLTriggerContext.h"
  #include "ChatTriggerContext.h"
-@@ -37,6 +38,7 @@ void AiObjectContext::BuildSharedTriggerContexts(SharedNamedObjectContextList<Tr
+@@ -38,6 +39,7 @@ void AiObjectContext::BuildSharedTriggerContexts(
      triggerContexts.Add(new ChatTriggerContext());
      triggerContexts.Add(new WorldPacketTriggerContext());
      triggerContexts.Add(new RaidAq20TriggerContext());
@@ -1606,19 +1606,19 @@ index 1472970..94e0eb9 100644
      triggerContexts.Add(new RaidBwlTriggerContext());
      triggerContexts.Add(new RaidKarazhanTriggerContext());
 diff --git a/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp b/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp
-index 89a1f81..dfe7813 100644
+index 3f7e5e0..308efb7 100644
 --- a/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp
 +++ b/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp
-@@ -1653,7 +1653,7 @@ void PlayerbotAI::ApplyInstanceStrategies(uint32 mapId, bool tellMaster)
+@@ -1658,7 +1658,7 @@ void PlayerbotAI::ApplyInstanceStrategies(uint32 mapId, bool tellMaster)
  {
      static const std::vector<std::string> allInstanceStrategies =
      {
 -        "aq20", "blacktemple", "bwl", "gruulslair", "hyjal", "icc", "karazhan", "magtheridon",
 +        "aq20", "aq40", "blacktemple", "bwl", "gruulslair", "hyjal", "icc", "karazhan", "magtheridon",
-         "moltencore", "naxx", "onyxia", "rs", "ssc", "sunwell", "tbc-ac", "tbc-mech", "tbc-seth",
-         "tbc-ub", "tempestkeep", "ulduar", "voa", "wotlk-an", "wotlk-cos", "wotlk-dtk", "wotlk-eoe",
-         "wotlk-fos", "wotlk-gd", "wotlk-hol", "wotlk-hos", "wotlk-nex", "wotlk-occ", "wotlk-ok",
-@@ -1681,6 +1681,9 @@ void PlayerbotAI::ApplyInstanceStrategies(uint32 mapId, bool tellMaster)
+         "moltencore", "naxx", "onyxia", "rs", "ssc", "sunwell", "tbc-ac", "tbc-mech", "tbc-mgt",
+         "tbc-ramp", "tbc-seth", "tbc-ub", "tempestkeep", "ulduar", "voa", "wotlk-an", "wotlk-cos",
+         "wotlk-dtk", "wotlk-eoe", "wotlk-fos", "wotlk-gd", "wotlk-hol", "wotlk-hos", "wotlk-nex",
+@@ -1687,6 +1687,9 @@ void PlayerbotAI::ApplyInstanceStrategies(uint32 mapId, bool tellMaster)
          case 509:
              strategyName = "aq20";  // Ruins of Ahn'Qiraj
              break;
