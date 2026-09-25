@@ -34,4 +34,4 @@ mod-multibot-bridge 759c100d5e508b9af28531a2642ded70619828ba
 # era talents module (own repo: https://github.com/lathcf/azerothcore-mod-era-talents). The sha is a commit on the PUBLIC
 # GitHub history (an orphan branch; the private Gitea history has different shas) — production clones from
 # GitHub, so a private sha would never fetch. Bump after each public sync, after verifying a build.
-mod-era-talents 3a0d9776c6837d8a5e5038c23c01c4fc388d90f8
+mod-era-talents f34117eb639d475e76f46b1d9a69b4ecd16d6095
