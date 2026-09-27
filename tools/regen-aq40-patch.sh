@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# regen-aq40-patch.sh — re-cut patches/0016-playerbot-aq40-twins.patch from the fork
+# regen-aq40-patch.sh — re-cut patches/0016-playerbot-aq40.patch from the fork
 # working tree at azerothcore-wotlk/modules/mod-playerbots.
 #
-# BASELINE-AWARE for FOUR shared wiring files. Patches are applied UNSTAGED, so a naive
+# BASELINE-AWARE for FOUR shared wiring files (plus the LATER era-talents 02-era-ai.patch on
+# PlayerbotAI.cpp, stripped from the working copy by reverse-apply). Patches are applied UNSTAGED, so a naive
 # `git diff` would embed their hunks into 0016:
 #   * src/Bot/PlayerbotAI.cpp                        also 0003, 0004, 0011, 0014
 #   * src/Ai/Raid/RaidStrategyContext.h              also 0014
@@ -21,7 +22,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 AC="$ROOT/azerothcore-wotlk"
 PB="$AC/modules/mod-playerbots"
-OUT="$ROOT/patches/0016-playerbot-aq40-twins.patch"
+OUT="$ROOT/patches/0016-playerbot-aq40.patch"
 P0003="$ROOT/patches/0003-playerbot-wintergrasp.patch"
 P0004="$ROOT/patches/0004-playerbot-wintergrasp-siege.patch"
 P0011="$ROOT/patches/0011-playerbot-perfmon-hotpath.patch"
@@ -84,6 +85,18 @@ git -C "$PB" add -- \
   src/Bot/Engine/BuildSharedActionContexts.cpp
 
 cp "$TMP/PlayerbotAI.cpp" "$PB/src/Bot/PlayerbotAI.cpp"
+# LATER patches on PlayerbotAI.cpp: mod-era-talents' 02-era-ai.patch is applied AFTER the overlay's
+# patches/*.patch loop, so it is in the working tree but belongs in no baseline — strip it from the
+# working copy by reverse-apply, or 0016 absorbs its hunk (happened on the 2026-09-25 C'Thun re-cut).
+# The EXIT trap restores the real file from $TMP.
+ERA_AI="$AC/modules/mod-era-talents/patches/playerbots/02-era-ai.patch"
+if [[ -f "$ERA_AI" ]]; then
+  if git -C "$AC" apply -R --check --include=modules/mod-playerbots/src/Bot/PlayerbotAI.cpp "$ERA_AI" 2>/dev/null; then
+    git -C "$AC" apply -R --include=modules/mod-playerbots/src/Bot/PlayerbotAI.cpp "$ERA_AI"
+  else
+    echo "WARN: era 02-era-ai.patch does not reverse-apply on PlayerbotAI.cpp — contamination canary decides" >&2
+  fi
+fi
 cp "$TMP/RaidStrategyContext.h" "$PB/src/Ai/Raid/RaidStrategyContext.h"
 cp "$TMP/BuildSharedTriggerContexts.cpp" "$PB/src/Bot/Engine/BuildSharedTriggerContexts.cpp"
 cp "$TMP/BuildSharedActionContexts.cpp" "$PB/src/Bot/Engine/BuildSharedActionContexts.cpp"
@@ -105,7 +118,7 @@ git -C "$PB" diff --src-prefix=a/modules/mod-playerbots/ --dst-prefix=b/modules/
 # fail, which has happened three times in this project.
 SHARED_HUNKS="$(awk '/^diff --git/ { skip = ($0 ~ /src\/Ai\/Raid\/Aq40\//) } !skip' "$OUT")"
 for banned in "SWP" "sunwell" "case 580" "SMSG_BATTLEFIELD_MGR_ENTRY_INVITE" "isBFGroup" \
-              "PerfMonitorOperation"; do
+              "PerfMonitorOperation" "EraTalentBots"; do
   if printf '%s\n' "$SHARED_HUNKS" | grep -E '^[+-]' | grep -v '^[+-][+-][+-]' | grep -q -- "$banned"; then
     echo "ERROR: 0016 shared-file hunks contain '$banned' — another patch's hunks leaked in." >&2
     rm -f "$OUT"

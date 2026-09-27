@@ -1,0 +1,3776 @@
+diff --git a/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40ActionContext.h b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40ActionContext.h
+new file mode 100644
+index 0000000..76df11d
+--- /dev/null
++++ b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40ActionContext.h
+@@ -0,0 +1,59 @@
++/*
++ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
++ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
++ * or (at your option) any later version.
++ */
++
++#ifndef PLAYERBOTS_AQ40ACTIONCONTEXT_H
++#define PLAYERBOTS_AQ40ACTIONCONTEXT_H
++
++#include "Aq40Actions.h"
++#include "NamedObjectContext.h"
++
++class RaidAq40ActionContext : public NamedObjectContext<Action>
++{
++public:
++    RaidAq40ActionContext()
++    {
++        creators["aq40 twins erase trackers"] = &RaidAq40ActionContext::erase_trackers;
++        creators["aq40 twins clear explode"] = &RaidAq40ActionContext::clear_explode;
++        creators["aq40 twins clear blizzard"] = &RaidAq40ActionContext::clear_blizzard;
++        creators["aq40 twins focus target"] = &RaidAq40ActionContext::focus_target;
++        creators["aq40 twins separate twins"] = &RaidAq40ActionContext::separate_twins;
++        creators["aq40 twins position tank"] = &RaidAq40ActionContext::position_tank;
++        creators["aq40 twins hold healer spot"] = &RaidAq40ActionContext::hold_healer_spot;
++        creators["aq40 twins direct pets"] = &RaidAq40ActionContext::direct_pets;
++        creators["aq40 cthun erase trackers"] = &RaidAq40ActionContext::cthun_erase_trackers;
++        creators["aq40 cthun exit stomach"] = &RaidAq40ActionContext::cthun_exit_stomach;
++        creators["aq40 cthun dismount"] = &RaidAq40ActionContext::cthun_dismount;
++        creators["aq40 cthun drop to floor"] = &RaidAq40ActionContext::cthun_drop_to_floor;
++        creators["aq40 cthun stomach close in"] = &RaidAq40ActionContext::cthun_stomach_close_in;
++        creators["aq40 cthun dodge glare"] = &RaidAq40ActionContext::cthun_dodge_glare;
++        creators["aq40 cthun clear beam"] = &RaidAq40ActionContext::cthun_clear_beam;
++        creators["aq40 cthun run to far side"] = &RaidAq40ActionContext::cthun_run_to_far_side;
++        creators["aq40 cthun focus target"] = &RaidAq40ActionContext::cthun_focus_target;
++        creators["aq40 cthun form up"] = &RaidAq40ActionContext::cthun_form_up;
++    }
++
++private:
++    static Action* erase_trackers(PlayerbotAI* b) { return new Aq40TwinsEraseTrackersAction(b); }
++    static Action* clear_explode(PlayerbotAI* b) { return new Aq40TwinsClearExplodeAction(b); }
++    static Action* clear_blizzard(PlayerbotAI* b) { return new Aq40TwinsClearBlizzardAction(b); }
++    static Action* focus_target(PlayerbotAI* b) { return new Aq40TwinsFocusTargetAction(b); }
++    static Action* separate_twins(PlayerbotAI* b) { return new Aq40TwinsSeparateTwinsAction(b); }
++    static Action* position_tank(PlayerbotAI* b) { return new Aq40TwinsPositionTankAction(b); }
++    static Action* hold_healer_spot(PlayerbotAI* b) { return new Aq40TwinsHoldHealerSpotAction(b); }
++    static Action* direct_pets(PlayerbotAI* b) { return new Aq40TwinsDirectPetsAction(b); }
++    static Action* cthun_erase_trackers(PlayerbotAI* b) { return new Aq40CthunEraseTrackersAction(b); }
++    static Action* cthun_exit_stomach(PlayerbotAI* b) { return new Aq40CthunExitStomachAction(b); }
++    static Action* cthun_dismount(PlayerbotAI* b) { return new Aq40CthunDismountAction(b); }
++    static Action* cthun_drop_to_floor(PlayerbotAI* b) { return new Aq40CthunDropToFloorAction(b); }
++    static Action* cthun_stomach_close_in(PlayerbotAI* b) { return new Aq40CthunStomachCloseInAction(b); }
++    static Action* cthun_dodge_glare(PlayerbotAI* b) { return new Aq40CthunDodgeGlareAction(b); }
++    static Action* cthun_clear_beam(PlayerbotAI* b) { return new Aq40CthunClearBeamAction(b); }
++    static Action* cthun_run_to_far_side(PlayerbotAI* b) { return new Aq40CthunRunToFarSideAction(b); }
++    static Action* cthun_focus_target(PlayerbotAI* b) { return new Aq40CthunFocusTargetAction(b); }
++    static Action* cthun_form_up(PlayerbotAI* b) { return new Aq40CthunFormUpAction(b); }
++};
++
++#endif
+diff --git a/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Actions.h b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Actions.h
+new file mode 100644
+index 0000000..f4dcad9
+--- /dev/null
++++ b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Actions.h
+@@ -0,0 +1,154 @@
++/*
++ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
++ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
++ * or (at your option) any later version.
++ */
++
++#ifndef PLAYERBOTS_AQ40ACTIONS_H
++#define PLAYERBOTS_AQ40ACTIONS_H
++
++#include "Action.h"
++#include "AttackAction.h"
++#include "MovementActions.h"
++
++class Aq40TwinsEraseTrackersAction : public Action
++{
++public:
++    Aq40TwinsEraseTrackersAction(PlayerbotAI* botAI)
++        : Action(botAI, "aq40 twins erase trackers") {}
++    bool Execute(Event event) override;
++};
++
++class Aq40TwinsClearExplodeAction : public MovementAction
++{
++public:
++    Aq40TwinsClearExplodeAction(PlayerbotAI* botAI)
++        : MovementAction(botAI, "aq40 twins clear explode") {}
++    bool Execute(Event event) override;
++};
++
++class Aq40TwinsClearBlizzardAction : public MovementAction
++{
++public:
++    Aq40TwinsClearBlizzardAction(PlayerbotAI* botAI)
++        : MovementAction(botAI, "aq40 twins clear blizzard") {}
++    bool Execute(Event event) override;
++};
++
++class Aq40TwinsFocusTargetAction : public AttackAction
++{
++public:
++    Aq40TwinsFocusTargetAction(PlayerbotAI* botAI)
++        : AttackAction(botAI, "aq40 twins focus target") {}
++    bool Execute(Event event) override;
++};
++
++class Aq40TwinsSeparateTwinsAction : public MovementAction
++{
++public:
++    Aq40TwinsSeparateTwinsAction(PlayerbotAI* botAI)
++        : MovementAction(botAI, "aq40 twins separate twins") {}
++    bool Execute(Event event) override;
++};
++
++class Aq40TwinsPositionTankAction : public MovementAction
++{
++public:
++    Aq40TwinsPositionTankAction(PlayerbotAI* botAI)
++        : MovementAction(botAI, "aq40 twins position tank") {}
++    bool Execute(Event event) override;
++};
++
++class Aq40TwinsHoldHealerSpotAction : public MovementAction
++{
++public:
++    Aq40TwinsHoldHealerSpotAction(PlayerbotAI* botAI)
++        : MovementAction(botAI, "aq40 twins hold healer spot") {}
++    bool Execute(Event event) override;
++};
++
++class Aq40TwinsDirectPetsAction : public Action
++{
++public:
++    Aq40TwinsDirectPetsAction(PlayerbotAI* botAI)
++        : Action(botAI, "aq40 twins direct pets") {}
++    bool Execute(Event event) override;
++};
++
++// C'Thun.
++
++class Aq40CthunEraseTrackersAction : public Action
++{
++public:
++    Aq40CthunEraseTrackersAction(PlayerbotAI* botAI) : Action(botAI, "aq40 cthun erase trackers") {}
++    bool Execute(Event event) override;
++};
++
++class Aq40CthunExitStomachAction : public MovementAction
++{
++public:
++    Aq40CthunExitStomachAction(PlayerbotAI* botAI)
++        : MovementAction(botAI, "aq40 cthun exit stomach") {}
++    bool Execute(Event event) override;
++};
++
++class Aq40CthunDismountAction : public Action
++{
++public:
++    Aq40CthunDismountAction(PlayerbotAI* botAI) : Action(botAI, "aq40 cthun dismount") {}
++    bool Execute(Event event) override;
++};
++
++class Aq40CthunDropToFloorAction : public MovementAction
++{
++public:
++    Aq40CthunDropToFloorAction(PlayerbotAI* botAI)
++        : MovementAction(botAI, "aq40 cthun drop to floor") {}
++    bool Execute(Event event) override;
++};
++
++class Aq40CthunStomachCloseInAction : public MovementAction
++{
++public:
++    Aq40CthunStomachCloseInAction(PlayerbotAI* botAI)
++        : MovementAction(botAI, "aq40 cthun stomach close in") {}
++    bool Execute(Event event) override;
++};
++
++class Aq40CthunDodgeGlareAction : public MovementAction
++{
++public:
++    Aq40CthunDodgeGlareAction(PlayerbotAI* botAI) : MovementAction(botAI, "aq40 cthun dodge glare") {}
++    bool Execute(Event event) override;
++};
++
++class Aq40CthunClearBeamAction : public MovementAction
++{
++public:
++    Aq40CthunClearBeamAction(PlayerbotAI* botAI) : MovementAction(botAI, "aq40 cthun clear beam") {}
++    bool Execute(Event event) override;
++};
++
++class Aq40CthunRunToFarSideAction : public MovementAction
++{
++public:
++    Aq40CthunRunToFarSideAction(PlayerbotAI* botAI)
++        : MovementAction(botAI, "aq40 cthun run to far side") {}
++    bool Execute(Event event) override;
++};
++
++class Aq40CthunFocusTargetAction : public AttackAction
++{
++public:
++    Aq40CthunFocusTargetAction(PlayerbotAI* botAI) : AttackAction(botAI, "aq40 cthun focus target") {}
++    bool Execute(Event event) override;
++};
++
++class Aq40CthunFormUpAction : public MovementAction
++{
++public:
++    Aq40CthunFormUpAction(PlayerbotAI* botAI) : MovementAction(botAI, "aq40 cthun form up") {}
++    bool Execute(Event event) override;
++};
++
++#endif
+diff --git a/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Actions_Cthun.cpp b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Actions_Cthun.cpp
+new file mode 100644
+index 0000000..623869d
+--- /dev/null
++++ b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Actions_Cthun.cpp
+@@ -0,0 +1,237 @@
++/*
++ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
++ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
++ * or (at your option) any later version.
++ */
++
++#include "Aq40Actions.h"
++
++#include "Aq40CthunHelpers.h"
++#include "Aq40Helpers.h"
++#include "MotionMaster.h"
++#include "Opcodes.h"
++#include "Playerbots.h"
++#include "SpellAuras.h"
++#include "WorldPacket.h"
++#include "WorldSession.h"
++
++using namespace TempleOfAhnQirajHelpers;
++
++bool Aq40CthunEraseTrackersAction::Execute(Event /*event*/)
++{
++    CthunEraseTrackers(bot);
++    return false;
++}
++
++bool Aq40CthunExitStomachAction::Execute(Event /*event*/)
++{
++    if (!botAI->CanMove())
++        return false;  // grab stun / falling in
++
++    float const dist = bot->GetExactDist2d(CTHUN_STOMACH_EXIT_X, CTHUN_STOMACH_EXIT_Y);
++    if (dist <= CTHUN_EXIT_REACHED)
++    {
++        bot->StopMoving();
++        // Bots have no client, so the area trigger the script waits for is never sent. Send it the
++        // way ReachAreaTriggerAction does; the handler itself checks we are inside the 5y radius.
++        // A selfbot's own client sends it.
++        if (!IsSelfBot(bot))
++        {
++            WorldPacket packet(CMSG_AREATRIGGER);
++            packet << uint32(AT_CTHUN_STOMACH_EXIT);
++            packet.rpos(0);
++            bot->GetSession()->HandleAreaTriggerOpcode(packet);
++        }
++        CthunStartExitHold(bot);
++
++        Aura* acid = bot->GetAura(SPELL_CTHUN_DIGESTIVE_ACID);
++        LOG_DEBUG("playerbots", "[Aq40Cthun] {} stomach exit sent, acid {}", bot->GetName(),
++                  acid ? uint32(acid->GetStackAmount()) : 0u);
++        return true;
++    }
++
++    if (MoveTo(bot->GetMapId(), CTHUN_STOMACH_EXIT_X, CTHUN_STOMACH_EXIT_Y, CTHUN_STOMACH_EXIT_Z,
++               false, false, false, false, MovementPriority::MOVEMENT_FORCED))
++    {
++        LOG_DEBUG("playerbots", "[Aq40Cthun] {} stomach exit walk ({}), dist {:.0f}", bot->GetName(),
++                  CthunExitReason(bot), dist);
++        return true;
++    }
++    // While walking a false is just MoveTo's already-heading-there guard, not a failure.
++    if (!bot->isMoving())
++        LOG_DEBUG("playerbots", "[Aq40Cthun] {} exit move failed z {:.1f} dist {:.1f} canMove {} moving {}",
++                  bot->GetName(), bot->GetPositionZ(), dist, botAI->CanMove() ? 1 : 0,
++                  bot->isMoving() ? 1 : 0);
++
++    // MoveTo also reports false for "already heading there", so only fall back when standing
++    // still: the stomach may be off the navmesh, so walk a straight line with no path generation.
++    if (!bot->isMoving())
++    {
++        bot->GetMotionMaster()->MovePoint(0, CTHUN_STOMACH_EXIT_X, CTHUN_STOMACH_EXIT_Y,
++                                          CTHUN_STOMACH_EXIT_Z, FORCED_MOVEMENT_NONE, 0.0f, 0.0f,
++                                          false);
++        LOG_DEBUG("playerbots", "[Aq40Cthun] {} stomach exit straight-line fallback ({}), dist {:.0f}",
++                  bot->GetName(), CthunExitReason(bot), dist);
++        return true;
++    }
++    return false;
++}
++
++bool Aq40CthunDismountAction::Execute(Event /*event*/)
++{
++    if (!CthunShouldDismount(bot, botAI))
++        return false;
++    // Same path as CheckMountStateAction::Dismount.
++    if (bot->isMoving())
++        bot->StopMoving();
++    WorldPacket emptyPacket;
++    bot->GetSession()->HandleCancelMountAuraOpcode(emptyPacket);
++    LOG_DEBUG("playerbots", "[Aq40Cthun] {} dismount in place", bot->GetName());
++    return true;
++}
++
++bool Aq40CthunDropToFloorAction::Execute(Event /*event*/)
++{
++    // NOT MoveFall: its spline sets MOVEMENTFLAG_FALLING, which a bot never clears (no landing
++    // opcode), leaving isMoving() true forever and every cast-time spell impossible. Teleport onto
++    // the ground instead, then scrub any stale falling flags.
++    float groundZ = 0.0f;
++    CthunAirborne const state = GetCthunAirborneState(bot, botAI, groundZ);
++    if (state == CthunAirborne::None)
++        return false;
++
++    float const z = bot->GetPositionZ();
++    if (state == CthunAirborne::Hovering)
++        bot->NearTeleportTo(bot->GetPositionX(), bot->GetPositionY(), groundZ + 0.5f,
++                            bot->GetOrientation());
++    bot->RemoveUnitMovementFlag(MOVEMENTFLAG_FALLING | MOVEMENTFLAG_FALLING_FAR);
++
++    LOG_DEBUG("playerbots", "[Aq40Cthun] {} {} z {:.1f} ground {:.1f}", bot->GetName(),
++              state == CthunAirborne::Hovering ? "hovering, teleport down" : "stale fall flag, scrub",
++              z, groundZ);
++    return true;
++}
++
++bool Aq40CthunStomachCloseInAction::Execute(Event /*event*/)
++{
++    Position spot;
++    if (!GetCthunStomachApproachSpot(bot, botAI, spot))
++        return false;
++
++    float const dist = bot->GetExactDist2d(spot.GetPositionX(), spot.GetPositionY());
++    bool const moved = MoveTo(bot->GetMapId(), spot.GetPositionX(), spot.GetPositionY(),
++                              spot.GetPositionZ(), false, false, false, false,
++                              MovementPriority::MOVEMENT_FORCED);
++    if (moved)
++    {
++        LOG_DEBUG("playerbots", "[Aq40Cthun] {} stomach close in to {:.1f},{:.1f},{:.1f} dist {:.0f} via MoveTo (ret 1)",
++                  bot->GetName(), spot.GetPositionX(), spot.GetPositionY(), spot.GetPositionZ(), dist);
++        return true;
++    }
++
++    // Same fallback as the exit walk: the stomach may be off the navmesh, so walk a straight line
++    // with no path generation - only when standing still (a false while walking is MoveTo's
++    // already-heading-there guard).
++    if (!bot->isMoving())
++    {
++        bot->GetMotionMaster()->MovePoint(0, spot.GetPositionX(), spot.GetPositionY(),
++                                          spot.GetPositionZ(), FORCED_MOVEMENT_NONE, 0.0f, 0.0f,
++                                          false);
++        LOG_DEBUG("playerbots", "[Aq40Cthun] {} stomach close in to {:.1f},{:.1f},{:.1f} dist {:.0f} via MovePoint (MoveTo ret 0)",
++                  bot->GetName(), spot.GetPositionX(), spot.GetPositionY(), spot.GetPositionZ(), dist);
++        return true;
++    }
++    LOG_DEBUG("playerbots", "[Aq40Cthun] {} stomach close in to {:.1f},{:.1f},{:.1f} dist {:.0f} no move (MoveTo ret 0, moving)",
++              bot->GetName(), spot.GetPositionX(), spot.GetPositionY(), spot.GetPositionZ(), dist);
++    return false;
++}
++
++bool Aq40CthunDodgeGlareAction::Execute(Event /*event*/)
++{
++    if (!botAI->CanMove())
++        return false;
++
++    Position spot;
++    if (!GetCthunGlareDodgeSpot(bot, spot))
++        return false;
++
++    bool const moved =
++        MoveTo(bot->GetMapId(), spot.GetPositionX(), spot.GetPositionY(), spot.GetPositionZ(),
++               false, false, false, false, MovementPriority::MOVEMENT_FORCED);
++    LOG_DEBUG("playerbots", "[Aq40Cthun] {} dodge glare moved {}", bot->GetName(), moved ? 1 : 0);
++    return moved;
++}
++
++bool Aq40CthunClearBeamAction::Execute(Event /*event*/)
++{
++    if (!botAI->CanMove())
++        return false;
++
++    // Try up to four snapped bearings and take the first the pathfinder accepts.
++    for (uint32 attempt = 0; attempt < 4; ++attempt)
++    {
++        Position spot;
++        if (!GetCthunBeamClearSpot(bot, spot, attempt))
++            return false;
++        if (MoveTo(bot->GetMapId(), spot.GetPositionX(), spot.GetPositionY(), spot.GetPositionZ(),
++                   false, false, false, false, MovementPriority::MOVEMENT_FORCED))
++        {
++            if (Player* puller = GetCthunOpeningPullerWithin(bot, CTHUN_PULLER_AVOID_RANGE))
++                LOG_DEBUG("playerbots", "[Aq40Cthun] {} clear puller zone dist {:.0f}", bot->GetName(),
++                          bot->GetExactDist2d(puller));
++            else
++                LOG_DEBUG("playerbots", "[Aq40Cthun] {} clear beam attempt {}", bot->GetName(), attempt);
++            return true;
++        }
++    }
++    return false;
++}
++
++bool Aq40CthunRunToFarSideAction::Execute(Event /*event*/)
++{
++    if (!botAI->CanMove())
++        return false;
++
++    Position spot;
++    if (!GetCthunPullerSpot(bot, spot))
++        return false;
++
++    bool const moved =
++        MoveTo(bot->GetMapId(), spot.GetPositionX(), spot.GetPositionY(), spot.GetPositionZ(),
++               false, false, false, false, MovementPriority::MOVEMENT_FORCED);
++    LOG_DEBUG("playerbots", "[Aq40Cthun] {} puller run to far side moved {}", bot->GetName(),
++              moved ? 1 : 0);
++    return moved;
++}
++
++bool Aq40CthunFocusTargetAction::Execute(Event /*event*/)
++{
++    Unit* target = GetCthunAttackTarget(bot, botAI);
++    return target && Attack(target);
++}
++
++bool Aq40CthunFormUpAction::Execute(Event /*event*/)
++{
++    if (!botAI->CanMove())
++        return false;
++
++    Position spot;
++    if (!GetCthunFormUpSpot(bot, botAI, spot))
++        return false;
++
++    float const dist = bot->GetExactDist2d(spot.GetPositionX(), spot.GetPositionY());
++    bool const moved =
++        MoveTo(bot->GetMapId(), spot.GetPositionX(), spot.GetPositionY(), spot.GetPositionZ(),
++               false, false, false, false, MovementPriority::MOVEMENT_FORCED);
++    if (moved)
++    {
++        LOG_DEBUG("playerbots", "[Aq40Cthun] {} form up dist {:.0f}", bot->GetName(), dist);
++        return true;
++    }
++
++    // A false while walking is MoveTo's already-heading-there guard. Standing still means MoveTo
++    // refused the spot (unreachable?): log it - spots are fixed, so there is nothing to give up to.
++    if (!bot->isMoving())
++        LOG_DEBUG("playerbots", "[Aq40Cthun] {} form up move refused, dist {:.0f}", bot->GetName(), dist);
++    return false;
++}
+diff --git a/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Actions_Twins.cpp b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Actions_Twins.cpp
+new file mode 100644
+index 0000000..21a0b49
+--- /dev/null
++++ b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Actions_Twins.cpp
+@@ -0,0 +1,188 @@
++/*
++ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
++ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
++ * or (at your option) any later version.
++ */
++
++#include "Aq40Actions.h"
++
++#include "Aq40Helpers.h"
++#include "CharmInfo.h"
++#include "Creature.h"
++#include "CreatureAI.h"
++#include "Pet.h"
++#include "Playerbots.h"
++
++using namespace TempleOfAhnQirajHelpers;
++
++bool Aq40TwinsEraseTrackersAction::Execute(Event /*event*/)
++{
++    TwinsEraseTrackers(bot);
++    return false;
++}
++
++bool Aq40TwinsClearExplodeAction::Execute(Event /*event*/)
++{
++    if (!botAI->CanMove())
++        return false;
++
++    // Try up to four snapped bearings and take the first the pathfinder accepts.
++    for (uint32 attempt = 0; attempt < 4; ++attempt)
++    {
++        Position spot;
++        if (!GetTwinsExplodeClearSpot(bot, spot, attempt))
++            return false;
++        if (MoveTo(bot->GetMapId(), spot.GetPositionX(), spot.GetPositionY(), spot.GetPositionZ(),
++                   false, false, false, false, MovementPriority::MOVEMENT_COMBAT))
++        {
++            return true;
++        }
++    }
++    return false;
++}
++
++bool Aq40TwinsClearBlizzardAction::Execute(Event /*event*/)
++{
++    if (!botAI->CanMove())
++        return false;
++
++    for (uint32 attempt = 0; attempt < 4; ++attempt)
++    {
++        Position spot;
++        if (!GetTwinsBlizzardClearSpot(bot, spot, attempt))
++            return false;
++        if (MoveTo(bot->GetMapId(), spot.GetPositionX(), spot.GetPositionY(), spot.GetPositionZ(),
++                   false, false, false, false, MovementPriority::MOVEMENT_COMBAT))
++        {
++            return true;
++        }
++    }
++    return false;
++}
++
++bool Aq40TwinsFocusTargetAction::Execute(Event /*event*/)
++{
++    Unit* target = GetTwinsAttackTarget(bot, botAI);
++    return target && Attack(target);
++}
++
++bool Aq40TwinsSeparateTwinsAction::Execute(Event /*event*/)
++{
++    if (!botAI->CanMove())
++        return false;
++
++    Position spot;
++    if (!GetTwinsSeparationSpot(bot, botAI, spot))
++        return false;
++
++    MoveTo(bot->GetMapId(), spot.GetPositionX(), spot.GetPositionY(), spot.GetPositionZ(), false,
++           false, false, false, MovementPriority::MOVEMENT_COMBAT);
++    return false;
++}
++
++bool Aq40TwinsPositionTankAction::Execute(Event /*event*/)
++{
++    if (!botAI->CanMove())
++        return false;
++
++    Position spot;
++    if (!GetTwinsTankSpot(bot, botAI, spot))
++        return false;
++
++    bool const moved =
++        MoveTo(bot->GetMapId(), spot.GetPositionX(), spot.GetPositionY(), spot.GetPositionZ(),
++               false, false, false, false, MovementPriority::MOVEMENT_COMBAT);
++
++    TwinsSnapshot const snap = GetTwinsSnapshot(bot);
++    Creature* mine = GetTwinsAssignedTwin(bot, botAI);
++    LOG_DEBUG("playerbots",
++              "[Aq40Twins] {} role {} mine {} dist {:.0f} sep {:.0f} moved {}",
++              bot->GetName(), uint32(GetTwinsRole(bot, botAI)),
++              GetTwinsAssignedData(bot, botAI) == AQT_DATA_VEKLOR ? "VL" : "VN",
++              mine ? bot->GetExactDist2d(mine) : -1.0f, snap.separation, moved ? 1 : 0);
++
++    // Returns false on purpose: MoveTo's duplicate guard reports false for a held position, and
++    // the movement multiplier is what keeps generic movement from taking the tick.
++    return false;
++}
++
++bool Aq40TwinsHoldHealerSpotAction::Execute(Event /*event*/)
++{
++    if (!botAI->CanMove())
++        return false;
++
++    Position spot;
++    if (!GetTwinsHealerSpot(bot, botAI, spot))
++        return false;
++
++    MoveTo(bot->GetMapId(), spot.GetPositionX(), spot.GetPositionY(), spot.GetPositionZ(), false,
++           false, false, false, MovementPriority::MOVEMENT_COMBAT);
++    return false;
++}
++
++bool Aq40TwinsDirectPetsAction::Execute(Event /*event*/)
++{
++    std::vector<Creature*> pets;
++    if (Pet* pet = bot->GetPet())
++        pets.push_back(pet);
++    for (Unit* controlled : bot->m_Controlled)
++    {
++        Creature* creature = controlled ? controlled->ToCreature() : nullptr;
++        if (!creature || creature->IsTotem())
++            continue;
++        if (!pets.empty() && creature == pets.front())
++            continue;
++        pets.push_back(creature);
++    }
++    if (pets.empty())
++        return false;
++
++    // Physical-group pets attack Vek'nilash - the only twin they can hurt, and a pet parked at
++    // Vek'lor's seat can steal his +2000 threat gift (SelectNearestTarget counts pets). Magic-group
++    // pets are parked instead: sending a felhunter 95y across is legal but pointless, and it
++    // arrives as one more body in the roll.
++    bool const physical = IsTwinsPhysicalGroup(bot, botAI) ||
++                          GetTwinsRole(bot, botAI) == TwinsRole::WarriorTank;
++
++    if (!physical)
++    {
++        for (Creature* pet : pets)
++        {
++            if (pet->GetReactState() != REACT_PASSIVE)
++                pet->SetReactState(REACT_PASSIVE);
++            if (pet->GetVictim())
++                pet->AttackStop();
++        }
++        return false;
++    }
++
++    Creature* veknilash = GetTwin(bot, AQT_DATA_VEKNILASH);
++    if (!veknilash || !veknilash->IsAlive())
++        return false;
++
++    bool commanded = false;
++    for (Creature* pet : pets)
++    {
++        CharmInfo* charmInfo = pet->GetCharmInfo();
++        if (!charmInfo || !pet->IsAIEnabled)
++            continue;
++        if (pet->GetVictim() == veknilash && charmInfo->IsCommandAttack())
++            continue;  // already correct: do not restart the chase every tick
++
++        if (pet->GetReactState() == REACT_PASSIVE)
++            pet->SetReactState(REACT_DEFENSIVE);
++        if (pet->GetVictim())
++            pet->AttackStop();
++
++        pet->ClearUnitState(UNIT_STATE_FOLLOW);
++        pet->SetTarget(veknilash->GetGUID());
++        charmInfo->SetIsCommandAttack(true);
++        charmInfo->SetIsAtStay(false);
++        charmInfo->SetIsFollowing(false);
++        charmInfo->SetIsCommandFollow(false);
++        charmInfo->SetIsReturning(false);
++        pet->AI()->AttackStart(veknilash);
++        commanded = true;
++    }
++    return commanded;
++}
+diff --git a/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40CthunHelpers.h b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40CthunHelpers.h
+new file mode 100644
+index 0000000..885aac6
+--- /dev/null
++++ b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40CthunHelpers.h
+@@ -0,0 +1,223 @@
++/*
++ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
++ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
++ * or (at your option) any later version.
++ */
++
++#ifndef PLAYERBOTS_AQ40CTHUNHELPERS_H
++#define PLAYERBOTS_AQ40CTHUNHELPERS_H
++
++#include <cmath>
++#include <string>
++
++#include "Common.h"
++#include "Position.h"
++
++class Creature;
++class Player;
++class PlayerbotAI;
++class Unit;
++
++namespace TempleOfAhnQirajHelpers
++{
++
++// InstanceScript data ids from temple_of_ahnqiraj.h (script-local, so hardcoded; printed at strategy
++// load so a drift shows in the log rather than as a silently dead encounter gate). The Eye and the
++// body are both BossAI(creature, DATA_CTHUN): one boss slot, IN_PROGRESS across both phases.
++constexpr uint32 AQT_DATA_CTHUN = 9;
++constexpr uint32 AQT_DATA_EYE_OF_CTHUN = 18;
++
++constexpr uint32 NPC_CTHUN_CLAW_TENTACLE = 15725;
++constexpr uint32 NPC_CTHUN_EYE_TENTACLE = 15726;
++constexpr uint32 NPC_CTHUN_GIANT_CLAW_TENTACLE = 15728;
++constexpr uint32 NPC_CTHUN_GIANT_EYE_TENTACLE = 15334;
++constexpr uint32 NPC_CTHUN_FLESH_TENTACLE = 15802;
++
++// 2s cast, chains up to 60 targets, each jump within 10y of the previous victim (magic damage
++// class, Spell::SearchChainTargets). Nobody within 10y of the target = it hits only the target.
++constexpr uint32 SPELL_CTHUN_GREEN_BEAM = 26134;
++// On the Eye (permanent duration) for the whole Dark Glare phase, wind-up included.
++constexpr uint32 SPELL_CTHUN_FREEZE_ANIM = 16245;
++// -100% damage taken, all schools. Removed while C'Thun is weakened.
++constexpr uint32 SPELL_CTHUN_CARAPACE = 26156;
++// Stomach DoT, +1 stack every 5s, removed on exit.
++constexpr uint32 SPELL_CTHUN_DIGESTIVE_ACID = 26476;
++// Stomach grab: stun + MOUNTED aura for 3.8s before the teleport. Never cancel it.
++constexpr uint32 SPELL_CTHUN_MOUTH_TENTACLE = 26332;
++
++// Client-side area trigger: bots never send it themselves (no client), so the exit action sends
++// CMSG_AREATRIGGER for them. The handler checks the bot is within 5y of this point.
++constexpr uint32 AT_CTHUN_STOMACH_EXIT = 4033;
++constexpr float CTHUN_STOMACH_EXIT_X = -8546.2f;
++constexpr float CTHUN_STOMACH_EXIT_Y = 1987.7f;
++constexpr float CTHUN_STOMACH_EXIT_Z = -96.5f;
++
++// ---- tuning: round numbers with obvious slack, not derived margins ----
++// Stomach exit: stack N costs 149*N per 5s tick. Unhealed, 7 stacks is ~4.2k cumulative; with a
++// healer in the stomach alongside, bots stay to 12. Low health always leaves.
++constexpr uint32 CTHUN_ACID_EXIT_STACKS = 7;
++constexpr uint32 CTHUN_ACID_EXIT_STACKS_HEALED = 12;
++constexpr float CTHUN_STOMACH_EXIT_HEALTH_PCT = 35.0f;
++constexpr float CTHUN_EXIT_REACHED = 3.0f;       // inside the 5y trigger
++constexpr uint32 CTHUN_EXIT_HOLD_MS = 4000;      // script re-checks our position 3s after the trigger
++constexpr float CTHUN_STOMACH_RADIUS = 100.0f;   // "near the stomach", 2D from the exit point
++// Server-side bots get no client gravity: the swallow teleport lands at z ~-70 over a floor near
++// -97; that landing is the only hover we correct (see GetCthunAirborneState).
++// Stomach landing hover: swallowed players arrive at z -70 over a floor near -97.
++constexpr float CTHUN_STOMACH_HOVER_Z = -90.0f;
++constexpr float CTHUN_STOMACH_FLOOR_MIN_Z = -110.0f;
++constexpr float CTHUN_GROUND_SEARCH = 150.0f;
++// Flesh Tentacles sit directly below the body (~198y 3D), so the count search is wide.
++constexpr float CTHUN_FLESH_SEARCH_RANGE = 250.0f;
++// Stomach close-in: pathfinding-based reach fails in the stomach, so bots are walked into range of
++// a Flesh Tentacle (combat reach 15: melee needs ~<17y, casters ~<45y).
++constexpr float CTHUN_STOMACH_MELEE_RANGE = 10.0f;
++constexpr float CTHUN_STOMACH_RANGED_RANGE = 28.0f;
++
++// Green Beam chain jump: chainSource->IsWithinDist(target, 10) ADDS both object sizes (~1.5 each),
++// so the effective jump is ~13y centre-to-centre.
++constexpr float CTHUN_BEAM_CLEAR_RANGE = 14.0f;
++constexpr float CTHUN_BEAM_HOLD_RANGE = 20.0f;   // don't walk to a slot near a beam in flight
++
++constexpr float CTHUN_GLARE_HALF_WIDTH = 5.0f;     // beam half-width, yards
++constexpr float CTHUN_GLARE_PAD = 3.0f;            // extra yards on the edge
++constexpr float CTHUN_GLARE_SWEEP_RATE = float(M_PI) / 35.0f;  // rad/s: 180 deg over 35s
++constexpr float CTHUN_GLARE_MOVE_SECONDS = 4.0f;   // start dodging this long before it can hit
++constexpr float CTHUN_GLARE_SAFE_SECONDS = 9.0f;   // dodge to this far ahead of the beam
++constexpr uint32 CTHUN_GLARE_CAST_PAD_MS = 1000;   // cast-safety veto slack
++constexpr float CTHUN_GLARE_MAX_RANGE = 100.0f;    // only bots in the room
++constexpr uint32 CTHUN_GLARE_SECTORS = 64;
++
++// FIXED spots, spaced BY CONSTRUCTION past the ~13y effective chain jump (IsWithinDist(10) adds both
++// object sizes); no disperse. Ranged (Eye phase): two full interleaved circles around the Eye (~13
++// per ring -> ~15y between neighbours on A, ~15.6y to the nearest B spot, 15y outside the melee
++// ring); B stays inside the ~46.5y Eye casting range.
++constexpr float CTHUN_RANGED_RING_A = 30.5f;
++constexpr float CTHUN_RANGED_RING_B = 43.5f;
++// Melee (tanks included), Eye phase only: 6 spots on a ring in the Eye's melee reach (~17y from its
++// centre, combat reach 15; chord 15.5y) plus the centre, 2 bots per spot so a Green Beam chain can
++// jump once (to the partner) and stop. The partner stands 1y tangentially off the spot. Overflow
++// bots (rank >= 14) take the half-steps between ring spots.
++constexpr float CTHUN_MELEE_RING = 15.5f;
++constexpr uint32 CTHUN_MELEE_RING_SPOTS = 6;
++constexpr uint32 CTHUN_MELEE_PER_SPOT = 2;
++constexpr float CTHUN_MELEE_PAIR_OFFSET = 1.0f;
++// During the opening melee stage at +-90 deg off the puller's lane (which runs along the ring
++// reference through the centre), 35y out, pairs spread 12y apart along that circle.
++constexpr float CTHUN_MELEE_STAGE_RADIUS = 35.0f;
++constexpr float CTHUN_MELEE_STAGE_SPACING = 12.0f;
++constexpr float CTHUN_SLOT_TOLERANCE = 1.5f;
++// The script fires exactly 3 Green Beams at the engager (RepeatCounter < 3 -> casts at 3/6/9s, 2s
++// cast); the first random beam begins 5s after the 3rd cast started. The opening ends when the 3rd
++// has landed.
++constexpr uint32 CTHUN_OPENING_PULLER_BEAMS = 3;
++constexpr float CTHUN_PULLER_RADIUS = 25.0f;     // puller's far-side hold, from the Eye
++// No-go zone around the opening puller for everyone else, for the whole opening.
++// Chain reach is ~13y centre-to-centre; these keep a few yards of slack without making the raid
++// back away and wait at the pull (25y did).
++constexpr float CTHUN_PULLER_AVOID_RANGE = 16.0f;  // inside -> retreat to ~21y
++constexpr float CTHUN_PULLER_HOLD_RANGE = 20.0f;   // inside -> don't advance
++
++constexpr float CTHUN_MELEE_ADD_RANGE = 8.0f;     // non-tank melee only take a claw that is on them
++// Ranged hold a fixed spot and never close range, so they only pick adds they can hit from it.
++constexpr float CTHUN_RANGED_ADD_RANGE = 36.0f;
++constexpr float CTHUN_RANGED_CLAW_RANGE = 25.0f;  // ranged help with claws this close to them
++constexpr float CTHUN_SEARCH_RANGE = 100.0f;     // grid searches, always issued FROM the bot
++constexpr uint32 CTHUN_SNAPSHOT_TTL_MS = 500;
++
++enum class CthunPhase : uint8
++{
++    None = 0,  // not engaged, or the ~3.5s Eye -> body transition
++    Eye,
++    Body
++};
++
++// Per-instance half-second snapshot. Returned BY VALUE: the cache is mutex-guarded and shared
++// across map-update threads.
++struct CthunSnapshot
++{
++    uint32 takenAtMs = 0;
++    bool valid = false;
++    CthunPhase phase = CthunPhase::None;
++    bool weakened = false;  // Body phase with both Flesh Tentacles dead (the script's own rule)
++    uint32 fleshAlive = 0;  // living Flesh Tentacles (stomach)
++    bool glare = false;     // Dark Glare phase (wind-up included)
++    float beamAngle = 0.0f; // Eye's facing while glare
++    float centerX = 0.0f;   // Eye and body are co-located
++    float centerY = 0.0f;
++    float centerZ = 0.0f;
++};
++
++// ---- encounter state ----
++bool IsCthunEncounterActive(Player* bot);
++CthunSnapshot GetCthunSnapshot(Player* bot);
++bool IsInCthunStomach(Player* bot);
++void CthunEraseTrackers(Player* bot);
++
++// ---- stomach ----
++bool CthunShouldExitStomach(Player* bot);  // owed and not already holding after a sent trigger
++// Why the bot owes a stomach exit ("acid N" / "no flesh (weakened)"), or "" when it does not.
++std::string CthunExitReason(Player* bot);
++enum class CthunAirborne : uint8
++{
++    None = 0,
++    Hovering,   // stomach landing hover (z > CTHUN_STOMACH_HOVER_Z): teleport down
++    StaleFall   // on the ground but MOVEMENTFLAG_FALLING* still set: scrub the flags
++};
++// A bot never sends the landing opcode, so a fall's FALLING flag sticks and isMoving() stays true
++// (every cast-time spell then fails). groundZ is filled for logging.
++CthunAirborne GetCthunAirborneState(Player* bot, PlayerbotAI* botAI, float& groundZ);
++// Where to walk to get into range of the stomach target (healers: the nearest Flesh Tentacle);
++// false when already in range, leaving, or unable to move.
++bool GetCthunStomachApproachSpot(Player* bot, PlayerbotAI* botAI, Position& spot);
++bool IsCthunExitHolding(Player* bot);
++void CthunStartExitHold(Player* bot);
++
++// ---- Dark Glare ----
++// Worst-case seconds until the Dark Glare beam can reach the bot (beam sweeping toward it); 999
++// when there is no glare / not applicable.
++float CthunGlareSecondsToHit(Player* bot);
++bool GetCthunGlareDodgeSpot(Player* bot, Position& spot);
++bool CthunShouldDodgeGlare(Player* bot);
++
++// ---- Green Beam ----
++// True while the bot is the unit target of any Green Beam being cast.
++bool IsCthunBeamTarget(Player* bot);
++// What this bot must step away from: a beam target within CTHUN_BEAM_CLEAR_RANGE, or - if the bot
++// IS a beam target - its nearest living room-side raid member within that range. nullptr = clear.
++Unit* GetCthunBeamThreat(Player* bot);
++bool CthunShouldClearBeam(Player* bot);
++bool GetCthunBeamClearSpot(Player* bot, Position& spot, uint32 attempt = 0);
++
++// ---- opening ----
++// The Eye's first four Green Beams all go to the engager. Until the first beam at someone else (or
++// the puller dies / the Eye phase ends), that bot drags them to the side opposite the raid.
++bool IsCthunOpeningPuller(Player* bot);
++// The opening runs (entry exists and not over). Melee wait it out where they are.
++bool IsCthunOpeningActive(Player* bot);
++bool GetCthunPullerSpot(Player* bot, Position& spot);  // false once arrived (hold)
++// The opening puller (never this bot) while the opening runs, if within range (2D); else nullptr.
++Player* GetCthunOpeningPullerWithin(Player* bot, float range);
++
++// ---- fixed spots ----
++// Ranged role for spots: healer or ranged, never a tank.
++bool IsCthunRangedRole(Player* member);
++// Walk back to the bot's FIXED spot whenever off it (melee: the opening staging point first).
++bool CthunShouldFormUp(Player* bot, PlayerbotAI* botAI);
++bool GetCthunFormUpSpot(Player* bot, PlayerbotAI* botAI, Position& spot);
++
++// ---- targeting ----
++Unit* GetCthunAttackTarget(Player* bot, PlayerbotAI* botAI);
++bool IsCthunHoldingFire(Player* bot, PlayerbotAI* botAI);
++bool CthunShouldRetarget(Player* bot, PlayerbotAI* botAI);
++
++// Shared by the triggers and the movement multiplier so they cannot disagree.
++bool CthunHazardMoveOwed(Player* bot);
++// Mounted (e.g. rode in with the master) and nowhere to go right now: dismount so the bot can fight.
++// The Mouth Tentacle grab is also a MOUNTED aura (26332) and is left alone.
++bool CthunShouldDismount(Player* bot, PlayerbotAI* botAI);
++bool CthunShouldSuppressGenericMovement(Player* bot, PlayerbotAI* botAI);
++
++}  // namespace TempleOfAhnQirajHelpers
++
++#endif
+diff --git a/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Helpers.cpp b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Helpers.cpp
+new file mode 100644
+index 0000000..b981544
+--- /dev/null
++++ b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Helpers.cpp
+@@ -0,0 +1,645 @@
++/*
++ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
++ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
++ * or (at your option) any later version.
++ */
++
++#include "Aq40Helpers.h"
++
++#include <cmath>
++#include <list>
++#include <mutex>
++#include <unordered_map>
++#include <vector>
++
++#include "Creature.h"
++#include "DynamicObject.h"
++#include "Group.h"
++#include "InstanceScript.h"
++#include "Map.h"
++#include "ObjectAccessor.h"
++#include "Pet.h"
++#include "Playerbots.h"
++#include "SharedDefines.h"
++#include "Timer.h"
++
++namespace TempleOfAhnQirajHelpers
++{
++
++namespace
++{
++    // Different instances update on parallel map threads: two AQ40 raids would race on an unlocked
++    // container and rehash under each other (the Aug 25-26 prod crashes). One lock, held briefly.
++    std::mutex twinsMutex;
++    std::unordered_map<uint32, TwinsSnapshot> twinsSnapshotByInstance;
++}
++
++bool IsInAq40(Player* bot)
++{
++    return bot && bot->GetMapId() == AQ40_MAP_ID;
++}
++
++Creature* GetTwin(Player* bot, uint32 dataId)
++{
++    if (!IsInAq40(bot))
++        return nullptr;
++
++    InstanceScript* instance = bot->GetInstanceScript();
++    return instance ? instance->GetCreature(dataId) : nullptr;
++}
++
++bool IsTwinsEncounterActive(Player* bot)
++{
++    if (!IsInAq40(bot))
++        return false;
++
++    InstanceScript* instance = bot->GetInstanceScript();
++    return instance && instance->GetBossState(AQT_DATA_TWIN_EMPERORS) == IN_PROGRESS;
++}
++
++TwinsSnapshot GetTwinsSnapshot(Player* bot)
++{
++    if (!IsInAq40(bot))
++        return TwinsSnapshot();
++
++    uint32 const instanceId = bot->GetMap()->GetInstanceId();
++    uint32 const now = getMSTime();
++    {
++        std::lock_guard<std::mutex> lock(twinsMutex);
++        auto it = twinsSnapshotByInstance.find(instanceId);
++        if (it != twinsSnapshotByInstance.end() &&
++            getMSTimeDiff(it->second.takenAtMs, now) < TWINS_SNAPSHOT_TTL_MS)
++        {
++            return it->second;
++        }
++    }
++
++    Creature* veklor = IsTwinsEncounterActive(bot) ? GetTwin(bot, AQT_DATA_VEKLOR) : nullptr;
++    Creature* veknilash = veklor ? GetTwin(bot, AQT_DATA_VEKNILASH) : nullptr;
++    if (!veklor || !veknilash || !veklor->IsAlive() || !veknilash->IsAlive())
++    {
++        std::lock_guard<std::mutex> lock(twinsMutex);
++        twinsSnapshotByInstance.erase(instanceId);
++        return TwinsSnapshot();
++    }
++
++    TwinsSnapshot snap;
++    snap.takenAtMs = now;
++    snap.valid = true;
++    snap.veklorGuid = veklor->GetGUID();
++    snap.veknilashGuid = veknilash->GetGUID();
++    // The only state the strategy needs: how far apart the twins are. The kite keys off it.
++    snap.separation = veklor->GetExactDist2d(veknilash);
++
++    std::lock_guard<std::mutex> lock(twinsMutex);
++    twinsSnapshotByInstance[instanceId] = snap;
++    return snap;
++}
++
++void TwinsEraseTrackers(Player* bot)
++{
++    if (!bot || !bot->GetMap())
++        return;
++
++    std::lock_guard<std::mutex> lock(twinsMutex);
++    twinsSnapshotByInstance.erase(bot->GetMap()->GetInstanceId());
++}
++
++namespace
++{
++    bool TwinsIsHealer(Player* member, PlayerbotAI* /*botAI*/)
++    {
++        // TwinsRankAmong takes bool(*)(Player*, PlayerbotAI*); PlayerbotAI::IsHeal is
++        // bool(*)(Player*, bool), which does NOT convert. Wrappers, not member pointers.
++        return member && PlayerbotAI::IsHeal(member);
++    }
++
++    bool TwinsIsWarlockTankCandidate(Player* member)
++    {
++        if (!member || PlayerbotAI::IsTank(member) || PlayerbotAI::IsHeal(member))
++            return false;
++
++        // Warlock first: Searing Pain carries spell_threat pctMod 2.0 and GetSpellThreatEntry
++        // falls back to GetFirstSpellInChain, so every rank doubles threat. That is what lets a
++        // cloth body hold a boss. Priest and mage are fallbacks with no such multiplier.
++        switch (member->getClass())
++        {
++            case CLASS_WARLOCK:
++            case CLASS_PRIEST:
++            case CLASS_MAGE:
++                return true;
++            default:
++                return false;
++        }
++    }
++
++    uint32 TwinsRankAmong(Player* bot, PlayerbotAI* botAI, bool (*wanted)(Player*, PlayerbotAI*))
++    {
++        Group* group = bot->GetGroup();
++        if (!group)
++            return 0;
++
++        // ONE pass. An O(n squared) role lookup here is ~10^6 member visits per world tick on a
++        // 40-man raid; that has shipped twice in this codebase. Do not nest this.
++        uint32 rank = 0;
++        for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
++        {
++            Player* member = ref->GetSource();
++            if (!member || member == bot || !member->IsAlive() || !GET_PLAYERBOT_AI(member))
++                continue;
++            if (!wanted(member, botAI))
++                continue;
++            if (member->GetGUID() < bot->GetGUID())
++                ++rank;
++        }
++        return rank;
++    }
++
++    // Two of each tank, one pair per seat. Ranks 0 and 1 take seats A and B.
++    uint32 TwinsTankRank(Player* bot, bool warlock)
++    {
++        Group* group = bot->GetGroup();
++        if (!group)
++            return 0;
++
++        uint32 rank = 0;
++        for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
++        {
++            Player* member = ref->GetSource();
++            if (!member || member == bot || !member->IsAlive() || !GET_PLAYERBOT_AI(member))
++                continue;
++            bool const isCandidate =
++                warlock ? TwinsIsWarlockTankCandidate(member) : PlayerbotAI::IsTank(member);
++            if (!isCandidate)
++                continue;
++            if (member->GetGUID() < bot->GetGUID())
++                ++rank;
++        }
++        return rank;
++    }
++}  // namespace
++
++bool IsTwinsPhysicalGroup(Player* member, PlayerbotAI* /*botAI*/)
++{
++    if (!member)
++        return false;
++
++    // By damage SCHOOL. Vek'nilash is immune to FIRE, NATURE, FROST, SHADOW and ARCANE
++    // (creature_immunities SchoolMask 124) and takes physical and Holy; Vek'lor is immune to
++    // physical only (SchoolMask 1). Hunters are physical despite being ranged; retribution
++    // paladins are physical despite Holy also landing on Vek'lor, because their output is weapon
++    // damage.
++    switch (member->getClass())
++    {
++        case CLASS_WARRIOR:
++        case CLASS_ROGUE:
++        case CLASS_HUNTER:
++        case CLASS_PALADIN:
++        case CLASS_DEATH_KNIGHT:
++            return true;
++        case CLASS_DRUID:
++        case CLASS_SHAMAN:
++            return PlayerbotAI::IsMelee(member);
++        default:
++            return false;
++    }
++}
++
++TwinsRole GetTwinsRole(Player* bot, PlayerbotAI* botAI)
++{
++    if (!bot || !botAI || !IsInAq40(bot))
++        return TwinsRole::None;
++
++    if (PlayerbotAI::IsHeal(bot))
++        return TwinsRole::Healer;
++
++    // Only the first two of each kind tank. Spares fall through to DPS rather than fighting the
++    // assigned pair for a position.
++    if (PlayerbotAI::IsTank(bot) && TwinsTankRank(bot, false) < 2)
++        return TwinsRole::WarriorTank;
++    if (TwinsIsWarlockTankCandidate(bot) && TwinsTankRank(bot, true) < 2)
++        return TwinsRole::WarlockTank;
++
++    return TwinsRole::Dps;
++}
++
++uint32 GetTwinsAssignedData(Player* bot, PlayerbotAI* botAI)
++{
++    switch (GetTwinsRole(bot, botAI))
++    {
++        case TwinsRole::WarriorTank:
++            return AQT_DATA_VEKNILASH;
++        case TwinsRole::WarlockTank:
++            return AQT_DATA_VEKLOR;
++        default:
++            return IsTwinsPhysicalGroup(bot, botAI) ? AQT_DATA_VEKNILASH : AQT_DATA_VEKLOR;
++    }
++}
++
++Creature* GetTwinsAssignedTwin(Player* bot, PlayerbotAI* botAI)
++{
++    return GetTwin(bot, GetTwinsAssignedData(bot, botAI));
++}
++
++// ---------------------------------------------------------------------------------------------
++// TANKS - boss-relative, no seats. Warriors own Vek'nilash (close to melee, hold, and the
++// separation action drags him off Vek'lor); warlocks own Vek'lor (hold from range where he stands).
++// Both twins are taunt-immune, so holding is pure threat, and nothing here depends on completing a
++// move inside any particular window.
++//
++// Threat sorts itself out. After a teleport each twin wipes threat and gives +2000 to
++// SelectNearestTarget(); whoever collects it, the tanks re-close and out-threat. Against Vek'lor the
++// warrior's threat is frozen at exactly 2000 (he deals zero damage to a physical-immune boss) and
++// Searing Pain doubles threat, so the warlock passes him in a handful of casts; on Vek'nilash the
++// warrior just out-damages it. That is the handoff the encounter is designed around; it needs no code.
++// ---------------------------------------------------------------------------------------------
++bool GetTwinsTankSpot(Player* bot, PlayerbotAI* botAI, Position& spot)
++{
++    if (!IsTwinsEncounterActive(bot))
++        return false;
++
++    TwinsSnapshot const snap = GetTwinsSnapshot(bot);
++    if (!snap.valid)
++        return false;
++
++    TwinsRole const role = GetTwinsRole(bot, botAI);
++    if (role != TwinsRole::WarriorTank && role != TwinsRole::WarlockTank)
++        return false;
++
++    Creature* veklor = GetTwin(bot, AQT_DATA_VEKLOR);
++    Creature* veknilash = GetTwin(bot, AQT_DATA_VEKNILASH);
++    if (!veklor || !veklor->IsAlive() || !veknilash || !veknilash->IsAlive())
++        return false;
++
++    // NO SEATS. Twin Teleport swaps the two bodies, but Vek'lor settles wherever he lands and holds
++    // (his 2.5s task stops him whenever a victim is within 45y), so the whole job is boss-relative:
++    // warlocks hold Vek'lor from range where he stands, warriors hold Vek'nilash and drag him off
++    // Vek'lor. The fixed-seat version oscillated the instant the twins got close - each tank's
++    // "which seat is my twin on" flickered tick to tick and no warrior ever settled into melee, so
++    // none held threat, so the kite never fired and the pair collapsed together.
++
++    // Warlock tank: Vek'lor is a caster held on Searing Pain from range, and he does not move.
++    // Native ranged movement parks the warlock in range on him; nothing to force here.
++    if (role == TwinsRole::WarlockTank)
++        return false;
++
++    // Warrior tank owns Vek'nilash. The KITE - dragging him away from Vek'lor - is the separation
++    // action (higher relevance; only his victim can lead him). Here we only keep the warrior in
++    // melee so it builds and holds threat: a warrior out of melee deals no damage, holds none, and
++    // Vek'nilash is taunt-immune. Close along the current bearing, then hand off to native tanking.
++    if (bot->GetExactDist2d(veknilash) <= TWINS_TANK_ENGAGE_RANGE + TWINS_STATION_TOLERANCE)
++        return false;
++
++    float const dx = bot->GetPositionX() - veknilash->GetPositionX();
++    float const dy = bot->GetPositionY() - veknilash->GetPositionY();
++    float const len = std::max(0.1f, std::hypot(dx, dy));
++    float x = veknilash->GetPositionX() + dx / len * TWINS_TANK_ENGAGE_RANGE;
++    float y = veknilash->GetPositionY() + dy / len * TWINS_TANK_ENGAGE_RANGE;
++    float z = bot->GetPositionZ();
++    bot->UpdateAllowedPositionZ(x, y, z);
++    spot.Relocate(x, y, z);
++    return true;
++}
++
++bool TwinsShouldMoveTank(Player* bot, PlayerbotAI* botAI)
++{
++    Position spot;
++    return GetTwinsTankSpot(bot, botAI, spot);
++}
++
++// ---------------------------------------------------------------------------------------------
++// HEALERS
++// ---------------------------------------------------------------------------------------------
++bool GetTwinsHealerSpot(Player* bot, PlayerbotAI* botAI, Position& spot)
++{
++    if (!IsTwinsEncounterActive(bot))
++        return false;
++
++    if (GetTwinsRole(bot, botAI) != TwinsRole::Healer)
++        return false;
++
++    // NO fixed zone. Split healers evenly between the twins by rank and ring each one around its
++    // assigned LIVE twin, FOLLOWING it as it moves - Vek'nilash is kited around, Vek'lor settles
++    // wherever he lands. Radius is outside Vek'nilash's melee and Vek'lor's ~11y Arcane Burst, and
++    // inside HealDistance (38.5y) of the tanks on that twin. This is the fix for healers charging off
++    // to the old fixed seat up the ramp when no boss was there.
++    uint32 const rank = TwinsRankAmong(bot, botAI, &TwinsIsHealer);
++    uint32 const bossData = (rank % 2 == 0) ? AQT_DATA_VEKNILASH : AQT_DATA_VEKLOR;
++    Creature* boss = GetTwin(bot, bossData);
++    if (!boss || !boss->IsAlive())
++        return false;
++
++    uint32 const slot = (rank / 2) % TWINS_HEALER_SLOTS;
++    float const bearing = float(slot) * 2.0f * float(M_PI) / float(TWINS_HEALER_SLOTS);
++    float x = boss->GetPositionX() + std::cos(bearing) * TWINS_HEALER_RADIUS;
++    float y = boss->GetPositionY() + std::sin(bearing) * TWINS_HEALER_RADIUS;
++    float z = boss->GetPositionZ();
++    bot->UpdateAllowedPositionZ(x, y, z);
++
++    if (bot->GetExactDist2d(x, y) <= TWINS_STATION_TOLERANCE)
++        return false;
++
++    spot.Relocate(x, y, z);
++    return true;
++}
++
++bool TwinsShouldHoldHealerSpot(Player* bot, PlayerbotAI* botAI)
++{
++    Position spot;
++    return GetTwinsHealerSpot(bot, botAI, spot);
++}
++
++// ---------------------------------------------------------------------------------------------
++// TARGETING
++// ---------------------------------------------------------------------------------------------
++Creature* FindTwinsMutatedBug(Player* bot)
++{
++    if (!IsTwinsEncounterActive(bot))
++        return nullptr;
++
++    // Searched FROM THE BOT: Cell::Visit clamps every radius to ~533y, so a search issued from a
++    // seat 95y away can silently return null.
++    std::list<Creature*> bugs;
++    std::vector<uint32> const entries = {NPC_QIRAJI_SCARAB, NPC_QIRAJI_SCORPION};
++    bot->GetCreatureListWithEntryInGrid(bugs, entries, TWINS_SEARCH_RANGE);
++
++    Creature* best = nullptr;
++    float bestDist = 0.0f;
++    for (Creature* bug : bugs)
++    {
++        if (!bug || !bug->IsAlive() || !bug->HasAura(SPELL_MUTATE_BUG))
++            continue;
++        float const d = bot->GetExactDist2d(bug);
++        if (!best || d < bestDist)
++        {
++            best = bug;
++            bestDist = d;
++        }
++    }
++    return best;
++}
++
++Unit* GetTwinsAttackTarget(Player* bot, PlayerbotAI* botAI)
++{
++    if (!IsTwinsEncounterActive(bot))
++        return nullptr;
++
++    TwinsRole const role = GetTwinsRole(bot, botAI);
++    if (role == TwinsRole::None || role == TwinsRole::Healer)
++        return nullptr;  // no opinion
++
++    // Mutated bugs first: +300% health and +1800% physical damage for 240s two-shots cloth.
++    if (Creature* bug = FindTwinsMutatedBug(bot))
++        return bug;
++
++    Creature* mine = GetTwinsAssignedTwin(bot, botAI);
++    if (!mine || !mine->IsAlive() || !bot->IsValidAttackTarget(mine))
++        return nullptr;
++
++    // No seats: every tank simply owns its twin and follows it - warriors chase Vek'nilash (and drag
++    // him off Vek'lor), warlocks stay on Vek'lor where he stands. Both warriors on Vek'nilash and
++    // both warlocks on Vek'lor is fine; more threat holds the boss faster, and there is no far seat
++    // to leave empty.
++    return mine;
++}
++
++bool IsTwinsHoldingFire(Player* bot, PlayerbotAI* botAI)
++{
++    if (!IsTwinsEncounterActive(bot))
++        return false;
++
++    TwinsRole const role = GetTwinsRole(bot, botAI);
++    if (role == TwinsRole::None || role == TwinsRole::Healer)
++        return false;
++
++    return GetTwinsAttackTarget(bot, botAI) == nullptr;
++}
++
++bool TwinsShouldRetarget(Player* bot, PlayerbotAI* botAI)
++{
++    Unit* want = GetTwinsAttackTarget(bot, botAI);
++    if (!want)
++    {
++        if (IsTwinsHoldingFire(bot, botAI))
++        {
++            LOG_DEBUG("playerbots", "[Aq40Twins] {} retarget HOLD sep {:.0f}", bot->GetName(),
++                      GetTwinsSnapshot(bot).separation);
++        }
++        return false;
++    }
++    return bot->GetVictim() != want;
++}
++
++// ---------------------------------------------------------------------------------------------
++// HAZARDS
++// ---------------------------------------------------------------------------------------------
++bool BuildTwinsEscapeSpot(Player* bot, float cx, float cy, float clearance, uint32 attempt,
++                          Position& spot)
++{
++    // The bearing snaps to fixed sectors so the destination is STABLE across ticks. A spot derived
++    // from the bot's own live position creeps a couple of yards per tick, and MoveTo's
++    // duplicate-destination guard then refuses every order, so the bot never leaves.
++    float const sector = 2.0f * float(M_PI) / float(TWINS_ESCAPE_SECTORS);
++    float away = std::atan2(bot->GetPositionY() - cy, bot->GetPositionX() - cx);
++    if (away < 0.0f)
++        away += 2.0f * float(M_PI);
++
++    int32 const stepped = int32(away / sector) + int32(attempt) * 4;
++    float const bearing = float(stepped % int32(TWINS_ESCAPE_SECTORS)) * sector;
++
++    float const radius = clearance + TWINS_STATION_TOLERANCE;
++    float x = cx + std::cos(bearing) * radius;
++    float y = cy + std::sin(bearing) * radius;
++    float z = bot->GetPositionZ();
++    bot->UpdateAllowedPositionZ(x, y, z);
++
++    if (bot->GetExactDist2d(x, y) <= TWINS_STATION_TOLERANCE)
++        return false;  // already clear: park rather than shuffle
++
++    spot.Relocate(x, y, z);
++    return true;
++}
++
++Creature* FindTwinsExplodingBug(Player* bot)
++{
++    if (!IsTwinsEncounterActive(bot))
++        return nullptr;
++
++    std::list<Creature*> bugs;
++    std::vector<uint32> const entries = {NPC_QIRAJI_SCARAB, NPC_QIRAJI_SCORPION};
++    bot->GetCreatureListWithEntryInGrid(bugs, entries, TWINS_SEARCH_RANGE);
++
++    Creature* nearest = nullptr;
++    float nearestDist = 0.0f;
++    for (Creature* bug : bugs)
++    {
++        if (!bug || !bug->IsAlive() || !bug->HasAura(SPELL_EXPLODE_BUG))
++            continue;
++        float const d = bot->GetExactDist2d(bug);
++        if (!nearest || d < nearestDist)
++        {
++            nearest = bug;
++            nearestDist = d;
++        }
++    }
++    return nearest;
++}
++
++bool TwinsShouldClearExplode(Player* bot, PlayerbotAI* /*botAI*/)
++{
++    Creature* bug = FindTwinsExplodingBug(bot);
++    // 804 is a 3s fuse, then 26059 for ~3000 fire in 15y. The bug is hostile and moving, which is
++    // why the destination is stabilised by the sector snap rather than by freezing the centre.
++    return bug && bot->GetExactDist2d(bug) < TWINS_EXPLODE_RADIUS + TWINS_STATION_TOLERANCE;
++}
++
++bool GetTwinsExplodeClearSpot(Player* bot, Position& spot, uint32 attempt)
++{
++    Creature* bug = FindTwinsExplodingBug(bot);
++    if (!bug)
++        return false;
++
++    return BuildTwinsEscapeSpot(bot, bug->GetPositionX(), bug->GetPositionY(),
++                                TWINS_EXPLODE_RADIUS, attempt, spot);
++}
++
++bool GetTwinsBlizzardCenter(Player* bot, Position& center)
++{
++    Creature* veklor = GetTwin(bot, AQT_DATA_VEKLOR);
++    if (!veklor)
++        return false;
++
++    // 26607's effect 0 is a PERSISTENT_AREA_AURA, so the live patch is a DynamicObject owned by
++    // its caster. It lands on a random raid member, NOT on Vek'lor, so the dynobject's own
++    // position is the only source of truth.
++    DynamicObject* patch = veklor->GetDynObject(SPELL_BLIZZARD);
++    if (!patch)
++        return false;
++
++    center.Relocate(patch->GetPositionX(), patch->GetPositionY(), patch->GetPositionZ());
++    return true;
++}
++
++bool TwinsShouldClearBlizzard(Player* bot, PlayerbotAI* /*botAI*/)
++{
++    if (!IsTwinsEncounterActive(bot))
++        return false;
++
++    Position center;
++    if (!GetTwinsBlizzardCenter(bot, center))
++        return false;
++
++    return bot->GetExactDist2d(center.GetPositionX(), center.GetPositionY()) <
++           TWINS_BLIZZARD_RADIUS + TWINS_STATION_TOLERANCE;
++}
++
++bool GetTwinsBlizzardClearSpot(Player* bot, Position& spot, uint32 attempt)
++{
++    Position center;
++    if (!GetTwinsBlizzardCenter(bot, center))
++        return false;
++
++    // Clearance is the patch radius, so the escape can never land back inside the same patch.
++    return BuildTwinsEscapeSpot(bot, center.GetPositionX(), center.GetPositionY(),
++                                TWINS_BLIZZARD_RADIUS, attempt, spot);
++}
++
++// ---------------------------------------------------------------------------------------------
++// KITE. The whole separation mechanic: the warriors drag Vek'nilash straight away from Vek'lor to
++// keep the twins past the 69y Heal Brother gate. Vek'nilash is the only thing that needs moving -
++// Vek'lor settles wherever he lands and holds - and BOTH warriors do it, not just the one he is
++// chasing, so he keeps moving off Vek'lor regardless of which warrior holds aggro.
++// ---------------------------------------------------------------------------------------------
++bool TwinsShouldFixSeparation(Player* bot, PlayerbotAI* botAI)
++{
++    if (!IsTwinsEncounterActive(bot))
++        return false;
++
++    TwinsSnapshot const snap = GetTwinsSnapshot(bot);
++    if (!snap.valid || snap.separation >= TWINS_SEPARATION_GUARD)
++        return false;
++
++    Creature* veknilash = GetTwin(bot, AQT_DATA_VEKNILASH);
++    if (!veknilash || !veknilash->IsAlive())
++        return false;
++
++    // Whoever Vek'nilash is actually chasing MUST kite him - only his victim can lead him, and if
++    // that bot (the main tank, the OFF tank, or a DPS that pulled a threat bounce) just stands there,
++    // he sits right on top of Vek'lor. That is the "one tank kited, the other didn't" we saw: the
++    // off tank held aggro but never moved him. On top of that, ANY warrior tank already in melee
++    // kites too, so the two designated tanks drag him out together instead of it falling to one.
++    bool const iAmVictim = veknilash->GetVictim() == bot;
++    bool const iAmEngagedWarrior =
++        GetTwinsRole(bot, botAI) == TwinsRole::WarriorTank &&
++        bot->GetExactDist2d(veknilash) <= TWINS_TANK_ENGAGE_RANGE + TWINS_STATION_TOLERANCE;
++    if (!iAmVictim && !iAmEngagedWarrior)
++        return false;
++
++    // Hazards outrank this, and their own predicates do not stand down for it.
++    return !TwinsShouldClearExplode(bot, botAI) && !TwinsShouldClearBlizzard(bot, botAI);
++}
++
++bool GetTwinsSeparationSpot(Player* bot, PlayerbotAI* /*botAI*/, Position& spot)
++{
++    TwinsSnapshot const snap = GetTwinsSnapshot(bot);
++    if (!snap.valid)
++        return false;
++
++    Creature* veklor = GetTwin(bot, AQT_DATA_VEKLOR);
++    Creature* veknilash = GetTwin(bot, AQT_DATA_VEKNILASH);
++    if (!veklor || !veknilash)
++        return false;
++
++    // Kite straight away from Vek'lor, along the Vek'lor -> Vek'nilash line, out past Vek'nilash to
++    // ~95y+ from Vek'lor. Both warriors aim at the SAME relative point - not a fixed zone - so
++    // whoever holds aggro drags Vek'nilash the same way and the other follows. Snap the bearing so
++    // the destination is stable and MoveTo's duplicate-destination guard does not refuse it.
++    float const sector = 2.0f * float(M_PI) / float(TWINS_ESCAPE_SECTORS);
++    float bearing = std::atan2(veknilash->GetPositionY() - veklor->GetPositionY(),
++                               veknilash->GetPositionX() - veklor->GetPositionX());
++    if (bearing < 0.0f)
++        bearing += 2.0f * float(M_PI);
++    bearing = float(int32(bearing / sector)) * sector;
++
++    float const radius = TWINS_SEAT_SEPARATION + TWINS_TANK_ENGAGE_RANGE;  // ~100y: Vek'nilash drags to ~95
++    float x = veklor->GetPositionX() + std::cos(bearing) * radius;
++    float y = veklor->GetPositionY() + std::sin(bearing) * radius;
++    float z = bot->GetPositionZ();
++    bot->UpdateAllowedPositionZ(x, y, z);
++
++    LOG_DEBUG("playerbots", "[Aq40Twins] {} kite sep {:.0f} < {:.0f}, driving Veknilash out",
++              bot->GetName(), snap.separation, TWINS_SEPARATION_GUARD);
++    spot.Relocate(x, y, z);
++    return true;
++}
++
++// ---------------------------------------------------------------------------------------------
++// PETS
++// ---------------------------------------------------------------------------------------------
++bool TwinsShouldDirectPet(Player* bot, PlayerbotAI* /*botAI*/)
++{
++    if (!IsTwinsEncounterActive(bot))
++        return false;
++
++    return bot->GetPet() || !bot->m_Controlled.empty();
++}
++
++bool TwinsShouldSuppressGenericMovement(Player* bot, PlayerbotAI* botAI)
++{
++    if (!IsTwinsEncounterActive(bot))
++        return false;
++
++    // ONE predicate, shared with the movement multiplier, so the veto and the moves cannot
++    // disagree about whether a move is owed. Note what is NOT here: DPS. Their assigned twin is
++    // their target and native movement walks them to it, across the room if need be - so generic
++    // movement is exactly what we want for them and must never be vetoed.
++    if (TwinsShouldClearExplode(bot, botAI) || TwinsShouldClearBlizzard(bot, botAI))
++        return true;
++
++    if (TwinsShouldFixSeparation(bot, botAI))
++        return true;
++
++    return TwinsShouldMoveTank(bot, botAI) || TwinsShouldHoldHealerSpot(bot, botAI);
++}
++
++}  // namespace TempleOfAhnQirajHelpers
+diff --git a/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Helpers.h b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Helpers.h
+new file mode 100644
+index 0000000..c1e92b3
+--- /dev/null
++++ b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Helpers.h
+@@ -0,0 +1,167 @@
++/*
++ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
++ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
++ * or (at your option) any later version.
++ */
++
++#ifndef PLAYERBOTS_AQ40HELPERS_H
++#define PLAYERBOTS_AQ40HELPERS_H
++
++
++#include "Common.h"
++#include "ObjectGuid.h"
++#include "Position.h"
++
++class Creature;
++class Player;
++class PlayerbotAI;
++class Unit;
++
++namespace TempleOfAhnQirajHelpers
++{
++
++constexpr uint32 AQ40_MAP_ID = 531;
++
++// InstanceScript data ids from src/server/scripts/Kalimdor/TempleOfAhnQiraj/temple_of_ahnqiraj.h.
++// Hardcoded because a module cannot include a script-local header; the startup log line prints
++// them so a drift shows up in game rather than as a silently dead encounter gate.
++constexpr uint32 AQT_DATA_TWIN_EMPERORS = 7;
++constexpr uint32 AQT_DATA_VEKLOR = 15;
++constexpr uint32 AQT_DATA_VEKNILASH = 16;
++
++constexpr uint32 NPC_VEKNILASH = 15275;
++constexpr uint32 NPC_VEKLOR = 15276;
++constexpr uint32 NPC_QIRAJI_SCARAB = 15316;
++constexpr uint32 NPC_QIRAJI_SCORPION = 15317;
++
++constexpr uint32 SPELL_MUTATE_BUG = 802;   // +300% health, +1800% physical damage, 240s
++constexpr uint32 SPELL_EXPLODE_BUG = 804;  // 3s fuse, then ~3000 fire in 15y
++constexpr uint32 SPELL_BLIZZARD = 26607;   // 10y patch, ~1500 per 2s, -30% speed
++
++// ---------------------------------------------------------------------------------------------
++// POSITIONS. There are NO fixed seats. Twin Teleport swaps the two bodies around the room, so every
++// position the strategy cares about is relative to a LIVE twin: warriors kite Vek'nilash off
++// Vek'lor, warlocks/casters hold on Vek'lor where he settles, healers ring whichever twin they are
++// assigned. The only hard number is the gap - Heal Brother fires whenever the twins are within 69y
++// (the script's IsWithinDist(twin, 60) plus both 4.5 combat reaches) and restores 30,000 every
++// 3.6s, which no bot raid can out-damage.
++// ---------------------------------------------------------------------------------------------
++
++// The separation the warrior kites Vek'nilash out to. 95y against a 69y gate: round, generous slack.
++constexpr float TWINS_SEAT_SEPARATION = 95.0f;
++// The warrior tank continuously kites Vek'nilash to keep the twins apart. Whenever they close to
++// within this, the warrior holding Vek'nilash walks him straight away from Vek'lor, out to
++// TWINS_SEAT_SEPARATION. Well above Heal Brother's 69y gate, so ordinary drift never lets it fire;
++// the exact spot Vek'nilash ends up does not matter, only that the gap stays open.
++constexpr float TWINS_SEPARATION_GUARD = 90.0f;
++
++// How close a tank stands to the twin it holds. Inside melee range on Vek'nilash (~7.33y), which
++// matters: a tank held outside melee range deals no damage, so it holds no threat, and both twins
++// are taunt-immune.
++constexpr float TWINS_TANK_ENGAGE_RANGE = 5.0f;
++
++// Healers ring their assigned LIVE twin at this radius and follow it - no fixed zone. Outside
++// Vek'nilash's melee and Vek'lor's ~11y Arcane Burst, inside HealDistance (38.5y) of the tanks on
++// that twin. Spread by slot so they do not stack.
++constexpr float TWINS_HEALER_RADIUS = 18.0f;
++constexpr uint32 TWINS_HEALER_SLOTS = 6;
++
++constexpr float TWINS_EXPLODE_RADIUS = 15.0f;
++constexpr float TWINS_BLIZZARD_RADIUS = 10.0f;
++
++// "Close enough, stop shuffling."
++constexpr float TWINS_STATION_TOLERANCE = 4.0f;
++// Grid searches for bugs and hazards, always issued FROM THE BOT - Cell::Visit clamps every radius
++// to ~533y, so a search from far away silently returns null.
++constexpr float TWINS_SEARCH_RANGE = 60.0f;
++// Escape bearings snap to this many fixed sectors, so a flee destination is stable across ticks. A
++// spot derived from the bot's live position creeps, and MoveTo's duplicate guard then refuses every
++// order.
++constexpr uint32 TWINS_ESCAPE_SECTORS = 16;
++
++constexpr uint32 TWINS_SNAPSHOT_TTL_MS = 500;
++
++// ---------------------------------------------------------------------------------------------
++
++enum class TwinsRole : uint8
++{
++    None = 0,
++    WarriorTank,  // owns Vek'nilash: hold in melee, kite him off Vek'lor
++    WarlockTank,  // owns Vek'lor: hold from range where he stands
++    Healer,
++    Dps
++};
++
++// Per-instance, half-second snapshot. Nothing here is latched and nothing is timed: the only thing
++// the strategy asks of it is how far apart the twins are (the kite's trigger).
++struct TwinsSnapshot
++{
++    uint32 takenAtMs = 0;
++    bool valid = false;
++    ObjectGuid veklorGuid;
++    ObjectGuid veknilashGuid;
++    float separation = 0.0f;
++};
++
++// ---- encounter state ----
++bool IsInAq40(Player* bot);
++// GetBossState(AQT_DATA_TWIN_EMPERORS) == IN_PROGRESS. Free, exact, spans the whole encounter.
++bool IsTwinsEncounterActive(Player* bot);
++// InstanceScript::GetCreature - no grid search, which matters at a 95y spread.
++Creature* GetTwin(Player* bot, uint32 dataId);
++// Returned BY VALUE: the cache is mutex-guarded and shared across map-update threads.
++TwinsSnapshot GetTwinsSnapshot(Player* bot);
++void TwinsEraseTrackers(Player* bot);
++
++// ---- assignment ----
++// Deterministic, derived independently by every bot from group state, no shared mutable state:
++// lowest GUID among alive playerbots of each kind. Humans excluded - they would be "picked" and
++// never comply.
++TwinsRole GetTwinsRole(Player* bot, PlayerbotAI* botAI);
++// AQT_DATA_VEKLOR or AQT_DATA_VEKNILASH - which twin this bot can actually hurt, by damage school.
++// Never changes for the whole fight.
++uint32 GetTwinsAssignedData(Player* bot, PlayerbotAI* botAI);
++Creature* GetTwinsAssignedTwin(Player* bot, PlayerbotAI* botAI);
++bool IsTwinsPhysicalGroup(Player* member, PlayerbotAI* botAI);
++
++// ---- targeting ----
++Creature* FindTwinsMutatedBug(Player* bot);
++Unit* GetTwinsAttackTarget(Player* bot, PlayerbotAI* botAI);
++// A WITHHOLDING decision needs its own predicate. A nullptr from GetTwinsAttackTarget reads as "no
++// opinion" to the target-hold multiplier, which then hands the immune twin straight back via
++// dps assist.
++bool IsTwinsHoldingFire(Player* bot, PlayerbotAI* botAI);
++bool TwinsShouldRetarget(Player* bot, PlayerbotAI* botAI);
++
++// ---- tanks: the entire swap ----
++// Toward the twin I hold if it is on my seat, away from the other twin if that is what is there.
++bool GetTwinsTankSpot(Player* bot, PlayerbotAI* botAI, Position& spot);
++bool TwinsShouldMoveTank(Player* bot, PlayerbotAI* botAI);
++
++// ---- healers ----
++bool GetTwinsHealerSpot(Player* bot, PlayerbotAI* botAI, Position& spot);
++bool TwinsShouldHoldHealerSpot(Player* bot, PlayerbotAI* botAI);
++
++// ---- hazards ----
++Creature* FindTwinsExplodingBug(Player* bot);
++bool TwinsShouldClearExplode(Player* bot, PlayerbotAI* botAI);
++bool GetTwinsExplodeClearSpot(Player* bot, Position& spot, uint32 attempt = 0);
++bool GetTwinsBlizzardCenter(Player* bot, Position& center);
++bool TwinsShouldClearBlizzard(Player* bot, PlayerbotAI* botAI);
++bool GetTwinsBlizzardClearSpot(Player* bot, Position& spot, uint32 attempt = 0);
++bool BuildTwinsEscapeSpot(Player* bot, float cx, float cy, float clearance, uint32 attempt,
++                          Position& spot);
++
++// ---- separation guard ----
++bool TwinsShouldFixSeparation(Player* bot, PlayerbotAI* botAI);
++bool GetTwinsSeparationSpot(Player* bot, PlayerbotAI* botAI, Position& spot);
++
++// ---- pets ----
++bool TwinsShouldDirectPet(Player* bot, PlayerbotAI* botAI);
++
++// Shared by the triggers and the movement multiplier so the veto and the moves cannot disagree.
++bool TwinsShouldSuppressGenericMovement(Player* bot, PlayerbotAI* botAI);
++
++}  // namespace TempleOfAhnQirajHelpers
++
++#endif
+diff --git a/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Helpers_Cthun.cpp b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Helpers_Cthun.cpp
+new file mode 100644
+index 0000000..7f24f51
+--- /dev/null
++++ b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Helpers_Cthun.cpp
+@@ -0,0 +1,1204 @@
++/*
++ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
++ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
++ * or (at your option) any later version.
++ */
++
++#include "Aq40CthunHelpers.h"
++
++#include <algorithm>
++#include <list>
++#include <mutex>
++#include <unordered_map>
++#include <vector>
++
++#include "Aq40Helpers.h"
++#include "Creature.h"
++#include "Group.h"
++#include "InstanceScript.h"
++#include "Map.h"
++#include "MoveSpline.h"
++#include "ObjectAccessor.h"
++#include "Playerbots.h"
++#include "Spell.h"
++#include "SpellAuras.h"
++#include "SpellInfo.h"
++#include "Timer.h"
++
++namespace TempleOfAhnQirajHelpers
++{
++
++namespace
++{
++    struct CthunOpening
++    {
++        ObjectGuid puller;
++        bool over = false;
++        uint32 pullerBeams = 0;               // Green Beams the Eye has started at the puller
++        bool eyeWasCastingAtPuller = false;   // edge detector for the count
++    };
++
++    struct CthunBotState
++    {
++        uint32 exitHoldStartMs = 0;  // 0 = not holding
++        uint32 lastStomachDiagMs = 0;  // stomach diagnostic throttle
++    };
++
++    // Different instances update on parallel map threads: two AQ40 raids would race on an unlocked
++    // container and rehash under each other (the Aug 25-26 prod crashes). One lock, held briefly.
++    std::mutex cthunMutex;
++    std::unordered_map<uint32, CthunSnapshot> cthunSnapshotByInstance;
++    std::unordered_map<ObjectGuid, CthunBotState> cthunBotState;
++    // Latched once per encounter: bearing from the Eye to the raid's centroid when first needed.
++    std::unordered_map<uint32, float> cthunRingRefByInstance;
++    std::unordered_map<uint32, CthunOpening> cthunOpeningByInstance;
++    // Spot ranks, latched per instance and role the first time any bot of that role needs one (see
++    // GetCthunLatchedRank). A live bearing rank re-derived every tick would reshuffle bots standing
++    // on full rings of fixed spots.
++    std::unordered_map<uint32, std::unordered_map<ObjectGuid, uint32>> cthunMeleeRankByInstance;
++    std::unordered_map<uint32, std::unordered_map<ObjectGuid, uint32>> cthunRangedRankByInstance;
++
++    CthunBotState GetBotState(Player* bot)
++    {
++        std::lock_guard<std::mutex> lock(cthunMutex);
++        auto it = cthunBotState.find(bot->GetGUID());
++        return it != cthunBotState.end() ? it->second : CthunBotState();
++    }
++
++    // Nearest living attackable add of the given entries within maxDist (2D) of the bot, on the
++    // stomach side (z < 0) or the room side (z > 0). Keeps the bot's CURRENT victim if it already
++    // qualifies (range included): a per-tick nearest pick flickers, and every retarget's Attack()
++    // cancels movement.
++    Creature* PickCthunAdd(Player* bot, std::vector<uint32> const& entries, bool stomachSide,
++                           float maxDist = CTHUN_SEARCH_RANGE)
++    {
++        if (Unit* victim = bot->GetVictim())
++        {
++            if (Creature* current = victim->ToCreature())
++            {
++                if (current->IsAlive() && bot->IsValidAttackTarget(current) &&
++                    (current->GetPositionZ() < 0.0f) == stomachSide &&
++                    bot->GetExactDist2d(current) <= maxDist &&
++                    std::find(entries.begin(), entries.end(), current->GetEntry()) != entries.end())
++                {
++                    return current;
++                }
++            }
++        }
++
++        std::list<Creature*> found;
++        bot->GetCreatureListWithEntryInGrid(found, entries, maxDist);
++
++        Creature* best = nullptr;
++        float bestDist = 0.0f;
++        for (Creature* c : found)
++        {
++            if (!c || !c->IsAlive() || !bot->IsValidAttackTarget(c))
++                continue;
++            if ((c->GetPositionZ() < 0.0f) != stomachSide)
++                continue;
++            float const d = bot->GetExactDist2d(c);
++            if (d > maxDist)
++                continue;
++            if (!best || d < bestDist)
++            {
++                best = c;
++                bestDist = d;
++            }
++        }
++        return best;
++    }
++
++    // Nearest living (z < 0) Flesh Tentacle to the bot, searched from the C'Thun BODY. requireValid
++    // additionally filters on bot->IsValidAttackTarget (healers don't need it). Counts are for logs.
++    Creature* SearchCthunFleshTentacle(Player* bot, bool requireValid, uint32& found, uint32& alive,
++                                       uint32& valid)
++    {
++        found = alive = valid = 0;
++        Creature* body = GetTwin(bot, AQT_DATA_CTHUN);
++        std::list<Creature*> list;
++        if (body)
++            body->GetCreatureListWithEntryInGrid(list, NPC_CTHUN_FLESH_TENTACLE, CTHUN_FLESH_SEARCH_RANGE);
++        found = uint32(list.size());
++
++        Creature* best = nullptr;
++        float bestDist = 0.0f;
++        for (Creature* c : list)
++        {
++            if (!c || !c->IsAlive() || c->GetPositionZ() >= 0.0f)
++                continue;
++            ++alive;
++            bool const isValid = bot->IsValidAttackTarget(c);
++            if (isValid)
++                ++valid;
++            if (requireValid && !isValid)
++                continue;
++            float const d = bot->GetExactDist(c);
++            if (!best || d < bestDist)
++            {
++                best = c;
++                bestDist = d;
++            }
++        }
++        return best;
++    }
++
++    // Stomach target. Searched from the C'Thun BODY, the way the snapshot counts them: from the
++    // stomach floor the tentacles can sit beyond a bot-anchored search. Keeps the current victim if
++    // it is a living Flesh Tentacle; else the nearest to the bot among living, valid, z < 0 ones.
++    Creature* PickCthunFleshTentacle(Player* bot)
++    {
++        if (Unit* victim = bot->GetVictim())
++            if (Creature* current = victim->ToCreature())
++                if (current->GetEntry() == NPC_CTHUN_FLESH_TENTACLE && current->IsAlive() &&
++                    bot->IsValidAttackTarget(current))
++                    return current;
++
++        uint32 found = 0;
++        uint32 alive = 0;
++        uint32 valid = 0;
++        Creature* best = SearchCthunFleshTentacle(bot, true, found, alive, valid);
++        if (!best)
++            LOG_DEBUG("playerbots", "[Aq40Cthun] {} stomach no target: found {} alive {} valid {} botZ {:.1f}",
++                      bot->GetName(), found, alive, valid, bot->GetPositionZ());
++        return best;
++    }
++
++    bool CthunExitOwed(Player* bot)
++    {
++        return !CthunExitReason(bot).empty();
++    }
++
++    float CthunBearing(float cx, float cy, WorldObject const* obj)
++    {
++        return std::atan2(obj->GetPositionY() - cy, obj->GetPositionX() - cx);
++    }
++
++    // Per-instance ring reference angle, latched on first need: bearing from the Eye to the centroid
++    // of the group's living room-side members at that moment (one pass). Erased with the snapshot.
++    float GetCthunRingRef(Player* bot, CthunSnapshot const& snap)
++    {
++        uint32 const instanceId = bot->GetMap()->GetInstanceId();
++        {
++            std::lock_guard<std::mutex> lock(cthunMutex);
++            auto it = cthunRingRefByInstance.find(instanceId);
++            if (it != cthunRingRefByInstance.end())
++                return it->second;
++        }
++
++        float sumX = 0.0f;
++        float sumY = 0.0f;
++        uint32 n = 0;
++        if (Group* group = bot->GetGroup())
++        {
++            for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
++            {
++                Player* member = ref->GetSource();
++                if (!member || !member->IsAlive() || member->GetMap() != bot->GetMap() ||
++                    member->GetPositionZ() <= 0.0f)
++                    continue;
++                sumX += member->GetPositionX();
++                sumY += member->GetPositionY();
++                ++n;
++            }
++        }
++        float const refAngle = n ? std::atan2(sumY / n - snap.centerY, sumX / n - snap.centerX)
++                                 : CthunBearing(snap.centerX, snap.centerY, bot);
++
++        std::lock_guard<std::mutex> lock(cthunMutex);
++        // First writer wins, so two bots computing it on the same tick agree.
++        return cthunRingRefByInstance.try_emplace(instanceId, refAngle).first->second;
++    }
++
++    // Rank over the FULL 360 deg by bearing from the cut opposite the pack (ringRef + pi), GUID
++    // tie-break - computed ONCE per instance and role for every living bot of that role in one pass
++    // and latched, so spots stay fixed (deaths don't reshuffle). A bot missing from the latched
++    // table (late arrival) takes the next free rank. count = the table's size.
++    uint32 GetCthunLatchedRank(Player* bot, bool ranged, float ringRef, CthunSnapshot const& snap,
++                               uint32& count)
++    {
++        auto& byInstance = ranged ? cthunRangedRankByInstance : cthunMeleeRankByInstance;
++        uint32 const instanceId = bot->GetMap()->GetInstanceId();
++        bool built = false;
++        {
++            std::lock_guard<std::mutex> lock(cthunMutex);
++            auto it = byInstance.find(instanceId);
++            if (it != byInstance.end())
++            {
++                built = true;
++                auto r = it->second.find(bot->GetGUID());
++                if (r != it->second.end())
++                {
++                    count = uint32(it->second.size());
++                    return r->second;
++                }
++            }
++        }
++
++        std::vector<std::pair<float, ObjectGuid>> order;
++        if (!built)
++        {
++            auto relOf = [&](Player* p)
++            {
++                return Position::NormalizeOrientation(CthunBearing(snap.centerX, snap.centerY, p) -
++                                                      ringRef + float(M_PI));
++            };
++            order.emplace_back(relOf(bot), bot->GetGUID());
++            if (Group* group = bot->GetGroup())
++            {
++                for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
++                {
++                    Player* member = ref->GetSource();
++                    if (!member || member == bot || !GET_PLAYERBOT_AI(member) || !member->IsAlive() ||
++                        member->GetMap() != bot->GetMap() || IsCthunRangedRole(member) != ranged)
++                        continue;
++                    order.emplace_back(relOf(member), member->GetGUID());
++                }
++            }
++            std::sort(order.begin(), order.end());
++        }
++
++        std::lock_guard<std::mutex> lock(cthunMutex);
++        auto& table = byInstance[instanceId];
++        if (table.empty())  // first writer builds the whole table
++            for (uint32 i = 0; i < order.size(); ++i)
++                table.try_emplace(order[i].second, i);
++        uint32 const rank = table.try_emplace(bot->GetGUID(), uint32(table.size())).first->second;
++        count = uint32(table.size());
++        return rank;
++    }
++
++    // The bot's FIXED spot (spacing >= 12y by construction). Ranged: two interleaved full circles.
++    // Melee (Eye phase): 6 paired ring spots + the centre - or, while the opening runs, a staging
++    // point off the puller's lane.
++    Position ComputeCthunSlot(Player* bot, CthunSnapshot const& snap)
++    {
++        bool const ranged = IsCthunRangedRole(bot);
++        float const ringRef = GetCthunRingRef(bot, snap);
++        uint32 count = 1;
++        uint32 const rank = GetCthunLatchedRank(bot, ranged, ringRef, snap, count);
++        float x = snap.centerX;
++        float y = snap.centerY;
++
++        if (ranged)
++        {
++            uint32 const ring = rank % 2;  // A for even ranks
++            uint32 const slot = rank / 2;
++            uint32 const nRing = std::max<uint32>(1, ring == 0 ? (count + 1) / 2 : count / 2);
++            float angle = ringRef + 2.0f * float(M_PI) * (float(slot) + 0.5f) / float(nRing);
++            if (ring == 1)
++                angle += float(M_PI) / float(nRing);  // interleave with ring A
++            float const radius = ring == 0 ? CTHUN_RANGED_RING_A : CTHUN_RANGED_RING_B;
++            x += std::cos(angle) * radius;
++            y += std::sin(angle) * radius;
++        }
++        else if (IsCthunOpeningActive(bot))
++        {
++            // Staging off the puller's lane: even ranks on one side, odd on the other.
++            float const side = rank % 2 == 0 ? 1.0f : -1.0f;
++            float const angle = ringRef + side * (float(M_PI) / 2.0f + float(rank / 2) *
++                                                                     CTHUN_MELEE_STAGE_SPACING /
++                                                                     CTHUN_MELEE_STAGE_RADIUS);
++            x += std::cos(angle) * CTHUN_MELEE_STAGE_RADIUS;
++            y += std::sin(angle) * CTHUN_MELEE_STAGE_RADIUS;
++        }
++        else
++        {
++            uint32 const paired = CTHUN_MELEE_RING_SPOTS * CTHUN_MELEE_PER_SPOT;  // 12 on the ring
++            float const step = 2.0f * float(M_PI) / float(CTHUN_MELEE_RING_SPOTS);
++            float tangent = ringRef + float(M_PI) / 2.0f;
++            bool partner = false;
++
++            if (rank < paired)
++            {
++                float const angle = ringRef + step * float(rank / CTHUN_MELEE_PER_SPOT);
++                x += std::cos(angle) * CTHUN_MELEE_RING;
++                y += std::sin(angle) * CTHUN_MELEE_RING;
++                tangent = angle + float(M_PI) / 2.0f;
++                partner = rank % CTHUN_MELEE_PER_SPOT != 0;
++            }
++            else if (rank < paired + CTHUN_MELEE_PER_SPOT)
++                partner = rank % CTHUN_MELEE_PER_SPOT != 0;  // the centre spot
++            else
++            {
++                float const angle = ringRef + step * (float(rank - paired - CTHUN_MELEE_PER_SPOT) + 0.5f);
++                x += std::cos(angle) * CTHUN_MELEE_RING;
++                y += std::sin(angle) * CTHUN_MELEE_RING;
++            }
++
++            if (partner)
++            {
++                x += std::cos(tangent) * CTHUN_MELEE_PAIR_OFFSET;
++                y += std::sin(tangent) * CTHUN_MELEE_PAIR_OFFSET;
++            }
++        }
++
++        float z = bot->GetPositionZ();
++        bot->UpdateAllowedPositionZ(x, y, z);
++        return Position(x, y, z);
++    }
++
++    // Nearest living raid member (humans included) in the room within maxDist.
++    Player* FindCthunNeighbor(Player* bot, float maxDist)
++    {
++        Group* group = bot->GetGroup();
++        if (!group)
++            return nullptr;
++
++        Player* best = nullptr;
++        float bestDist = maxDist;
++        for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
++        {
++            Player* member = ref->GetSource();
++            if (!member || member == bot || !member->IsAlive() || member->GetMap() != bot->GetMap())
++                continue;
++            if (member->GetPositionZ() < 0.0f)
++                continue;  // in the stomach
++            float const d = bot->GetExactDist2d(member);
++            if (d < bestDist)
++            {
++                best = member;
++                bestDist = d;
++            }
++        }
++        return best;
++    }
++
++    // Unit targets of every Green Beam currently being cast (the Eye in P1, Giant Eye Tentacles in
++    // P2). Empty in the stomach or with no valid snapshot. One grid scan.
++    std::vector<Unit*> CollectCthunBeamTargets(Player* bot)
++    {
++        std::vector<Unit*> targets;
++        if (IsInCthunStomach(bot))
++            return targets;
++
++        CthunSnapshot const snap = GetCthunSnapshot(bot);
++        if (!snap.valid)
++            return targets;
++
++        std::list<Creature*> casters;
++        bot->GetCreatureListWithEntryInGrid(casters, NPC_CTHUN_GIANT_EYE_TENTACLE, CTHUN_SEARCH_RANGE);
++        if (snap.phase == CthunPhase::Eye)
++            if (Creature* eye = GetTwin(bot, AQT_DATA_EYE_OF_CTHUN))
++                casters.push_back(eye);
++
++        for (Creature* caster : casters)
++        {
++            if (!caster || !caster->IsAlive())
++                continue;
++            Spell* spell = caster->GetCurrentSpell(CURRENT_GENERIC_SPELL);
++            if (!spell || !spell->m_spellInfo || spell->m_spellInfo->Id != SPELL_CTHUN_GREEN_BEAM)
++                continue;
++            if (Unit* target = spell->m_targets.GetUnitTarget())
++                targets.push_back(target);
++        }
++        return targets;
++    }
++
++    // State-driven, no timers. The opening starts when the Eye first has a player victim (the
++    // engager, boss_cthun's _beamTarget) and ends once the puller's 4th Green Beam has landed (the
++    // script fires exactly 4 at the engager). Fallbacks: the Eye phase ending, the puller dying, or
++    // a Green Beam at anyone else. World reads happen outside the lock; the lock only guards the map.
++    void UpdateCthunOpening(Player* bot, CthunSnapshot const& snap)
++    {
++        uint32 const instanceId = bot->GetMap()->GetInstanceId();
++
++        bool exists = false;
++        CthunOpening opening;
++        {
++            std::lock_guard<std::mutex> lock(cthunMutex);
++            auto it = cthunOpeningByInstance.find(instanceId);
++            if (it != cthunOpeningByInstance.end())
++            {
++                exists = true;
++                opening = it->second;
++            }
++        }
++
++        Creature* eye = snap.phase == CthunPhase::Eye ? GetTwin(bot, AQT_DATA_EYE_OF_CTHUN) : nullptr;
++
++        if (!exists)
++        {
++            if (!eye)
++                return;
++            Unit* victim = eye->GetVictim();
++            Player* puller = victim ? victim->ToPlayer() : nullptr;
++            if (!puller)
++                return;
++
++            std::lock_guard<std::mutex> lock(cthunMutex);
++            CthunOpening fresh;
++            fresh.puller = puller->GetGUID();
++            cthunOpeningByInstance.try_emplace(instanceId, fresh);  // first writer wins
++            return;
++        }
++
++        if (opening.over)
++            return;
++
++        char const* reason = nullptr;
++        bool castingAtPuller = false;
++        if (!eye)
++            reason = "eye phase ended";
++        else
++        {
++            Player* puller = ObjectAccessor::GetPlayer(bot->GetMap(), opening.puller);
++            if (!puller || !puller->IsAlive())
++                reason = "puller dead";
++            else
++            {
++                Spell* spell = eye->GetCurrentSpell(CURRENT_GENERIC_SPELL);
++                if (spell && spell->m_spellInfo && spell->m_spellInfo->Id == SPELL_CTHUN_GREEN_BEAM)
++                {
++                    Unit* target = spell->m_targets.GetUnitTarget();
++                    if (target && target->GetGUID() == opening.puller)
++                        castingAtPuller = true;
++                    else if (target)
++                        reason = "beam at another";
++                }
++            }
++        }
++
++        uint32 countedBeam = 0;
++        bool endedNow = false;
++        {
++            std::lock_guard<std::mutex> lock(cthunMutex);
++            auto it = cthunOpeningByInstance.find(instanceId);
++            if (it == cthunOpeningByInstance.end() || it->second.over)
++                return;
++            CthunOpening& state = it->second;
++            if (castingAtPuller && !state.eyeWasCastingAtPuller)
++                countedBeam = ++state.pullerBeams;
++            state.eyeWasCastingAtPuller = castingAtPuller;
++            if (!reason && state.pullerBeams >= CTHUN_OPENING_PULLER_BEAMS && !castingAtPuller)
++                reason = "4th puller beam landed";
++            if (reason)
++            {
++                state.over = true;
++                endedNow = true;
++            }
++        }
++
++        if (countedBeam)
++            LOG_DEBUG("playerbots", "[Aq40Cthun] opening puller beam {}", countedBeam);
++        if (endedNow)
++            LOG_DEBUG("playerbots", "[Aq40Cthun] opening over ({})", reason);
++    }
++
++    // The opening puller as seen by another bot: entry exists, not over, alive on this map, and not
++    // the bot itself. Same gating and state update as IsCthunOpeningPuller.
++    Player* GetCthunOpeningPuller(Player* bot)
++    {
++        if (!IsCthunEncounterActive(bot) || IsInCthunStomach(bot))
++            return nullptr;
++
++        CthunSnapshot const snap = GetCthunSnapshot(bot);
++        if (!snap.valid)
++            return nullptr;
++
++        UpdateCthunOpening(bot, snap);
++
++        ObjectGuid pullerGuid;
++        {
++            std::lock_guard<std::mutex> lock(cthunMutex);
++            auto it = cthunOpeningByInstance.find(bot->GetMap()->GetInstanceId());
++            if (it == cthunOpeningByInstance.end() || it->second.over)
++                return nullptr;
++            pullerGuid = it->second.puller;
++        }
++
++        if (pullerGuid == bot->GetGUID())
++            return nullptr;
++        Player* puller = ObjectAccessor::GetPlayer(bot->GetMap(), pullerGuid);
++        return puller && puller->IsAlive() ? puller : nullptr;
++    }
++}  // namespace
++
++// ---------------------------------------------------------------------------------------------
++// ENCOUNTER STATE
++// ---------------------------------------------------------------------------------------------
++bool IsCthunEncounterActive(Player* bot)
++{
++    if (!IsInAq40(bot))
++        return false;
++
++    InstanceScript* instance = bot->GetInstanceScript();
++    return instance && instance->GetBossState(AQT_DATA_CTHUN) == IN_PROGRESS;
++}
++
++CthunSnapshot GetCthunSnapshot(Player* bot)
++{
++    if (!IsCthunEncounterActive(bot))
++        return CthunSnapshot();
++
++    uint32 const instanceId = bot->GetMap()->GetInstanceId();
++    uint32 const now = getMSTime();
++    {
++        std::lock_guard<std::mutex> lock(cthunMutex);
++        auto it = cthunSnapshotByInstance.find(instanceId);
++        if (it != cthunSnapshotByInstance.end() &&
++            getMSTimeDiff(it->second.takenAtMs, now) < CTHUN_SNAPSHOT_TTL_MS)
++        {
++            return it->second;
++        }
++    }
++
++    // GetTwin is just InstanceScript::GetCreature (no grid search) despite its name.
++    Creature* body = GetTwin(bot, AQT_DATA_CTHUN);
++    Creature* eye = GetTwin(bot, AQT_DATA_EYE_OF_CTHUN);
++    if (!body)
++        return CthunSnapshot();
++
++    CthunSnapshot snap;
++    snap.takenAtMs = now;
++    snap.valid = true;
++    snap.centerX = body->GetPositionX();
++    snap.centerY = body->GetPositionY();
++    snap.centerZ = body->GetPositionZ();
++
++    // The Eye FAKE-dies (health 0 + NOT_SELECTABLE, still "alive"), so test selectability.
++    bool const eyeUp = eye && eye->IsAlive() && eye->GetHealth() > 0 &&
++                       !eye->HasUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
++    bool const bodyUp = body->IsAlive() && !body->HasUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
++    if (eyeUp)
++        snap.phase = CthunPhase::Eye;
++    else if (bodyUp)
++        snap.phase = CthunPhase::Body;
++
++    // Weakened BY TENTACLE COUNT, exactly the script's rule (both Flesh Tentacles dead -> weakened;
++    // new ones spawn when it ends). Carapace is read for the diagnostic line only.
++    std::list<Creature*> flesh;
++    body->GetCreatureListWithEntryInGrid(flesh, NPC_CTHUN_FLESH_TENTACLE, CTHUN_FLESH_SEARCH_RANGE);
++    for (Creature* c : flesh)
++        if (c && c->IsAlive())
++            ++snap.fleshAlive;
++
++    snap.weakened = snap.phase == CthunPhase::Body && snap.fleshAlive == 0;
++    snap.glare = snap.phase == CthunPhase::Eye && eye->HasAura(SPELL_CTHUN_FREEZE_ANIM);
++    if (snap.glare)
++        snap.beamAngle = eye->GetOrientation();
++    bool const carapace = body->HasAura(SPELL_CTHUN_CARAPACE);
++
++    bool changed = true;
++    {
++        std::lock_guard<std::mutex> lock(cthunMutex);
++        auto it = cthunSnapshotByInstance.find(instanceId);
++        if (it != cthunSnapshotByInstance.end())
++        {
++            CthunSnapshot const& prev = it->second;
++            changed = prev.phase != snap.phase || prev.weakened != snap.weakened ||
++                      prev.fleshAlive != snap.fleshAlive || prev.glare != snap.glare;
++        }
++        cthunSnapshotByInstance[instanceId] = snap;
++    }
++
++    if (changed)
++        LOG_DEBUG("playerbots", "[Aq40Cthun] state phase={} weakened={} flesh={} glare={} carapace={}",
++                  uint32(snap.phase), snap.weakened ? 1 : 0, snap.fleshAlive, snap.glare ? 1 : 0,
++                  carapace ? 1 : 0);
++
++    // Hazard interrupts. A casting bot evaluates no trigger until its cast ends (WaitForSpellCast
++    // sets the AI delay to the cast time), so the bot that refreshes the snapshot interrupts any
++    // endangered caster for it. The fresh snapshot is already cached, so the nested snapshot reads
++    // below hit the cache (no recursion). No lock is held during the sweep.
++    if (snap.phase != CthunPhase::None)
++    {
++        if (Group* group = bot->GetGroup())
++        {
++            for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
++            {
++                Player* member = ref->GetSource();
++                if (!member || member->GetMap() != bot->GetMap() || !member->IsAlive())
++                    continue;
++                PlayerbotAI* memberAI = GET_PLAYERBOT_AI(member);
++                if (!memberAI || IsSelfBot(member) || !member->IsNonMeleeSpellCast(false))
++                    continue;
++
++                bool const beam = CthunShouldClearBeam(member);
++                if (!beam && CthunGlareSecondsToHit(member) >= CTHUN_GLARE_MOVE_SECONDS)
++                    continue;
++
++                memberAI->RequestSpellInterrupt();
++                LOG_DEBUG("playerbots", "[Aq40Cthun] {} interrupt cast ({})", member->GetName(),
++                          beam ? "beam" : "glare");
++            }
++        }
++    }
++
++    return snap;
++}
++
++bool IsInCthunStomach(Player* bot)
++{
++    if (!IsInAq40(bot))
++        return false;
++    if (bot->HasAura(SPELL_CTHUN_DIGESTIVE_ACID))
++        return true;
++    // The script's own "not in stomach" test is z > 0. The Twins room is also below 0, ~900y away,
++    // hence the proximity term.
++    return bot->GetPositionZ() < 0.0f &&
++           bot->GetExactDist2d(CTHUN_STOMACH_EXIT_X, CTHUN_STOMACH_EXIT_Y) < CTHUN_STOMACH_RADIUS;
++}
++
++void CthunEraseTrackers(Player* bot)
++{
++    if (!bot || !bot->GetMap())
++        return;
++
++    std::lock_guard<std::mutex> lock(cthunMutex);
++    cthunBotState.erase(bot->GetGUID());
++    cthunSnapshotByInstance.erase(bot->GetMap()->GetInstanceId());
++    cthunRingRefByInstance.erase(bot->GetMap()->GetInstanceId());
++    cthunOpeningByInstance.erase(bot->GetMap()->GetInstanceId());
++    cthunMeleeRankByInstance.erase(bot->GetMap()->GetInstanceId());
++    cthunRangedRankByInstance.erase(bot->GetMap()->GetInstanceId());
++}
++
++// ---------------------------------------------------------------------------------------------
++// STOMACH
++// ---------------------------------------------------------------------------------------------
++bool IsCthunExitHolding(Player* bot)
++{
++    uint32 const start = GetBotState(bot).exitHoldStartMs;
++    return start != 0 && getMSTimeDiff(start, getMSTime()) < CTHUN_EXIT_HOLD_MS;
++}
++
++void CthunStartExitHold(Player* bot)
++{
++    std::lock_guard<std::mutex> lock(cthunMutex);
++    cthunBotState[bot->GetGUID()].exitHoldStartMs = std::max<uint32>(1, getMSTime());
++}
++
++std::string CthunExitReason(Player* bot)
++{
++    if (bot->GetHealthPct() < CTHUN_STOMACH_EXIT_HEALTH_PCT)
++        return "low health";
++
++    if (Aura* acid = bot->GetAura(SPELL_CTHUN_DIGESTIVE_ACID))
++    {
++        // A healer in here with us (or, for a healer, anyone to heal) buys a longer stay.
++        bool healed = false;
++        if (Group* group = bot->GetGroup())
++        {
++            bool const selfHealer = PlayerbotAI::IsHeal(bot);
++            for (GroupReference* ref = group->GetFirstMember(); ref && !healed; ref = ref->next())
++            {
++                Player* member = ref->GetSource();
++                if (!member || member == bot || !member->IsAlive() || member->GetMap() != bot->GetMap() ||
++                    !IsInCthunStomach(member))
++                    continue;
++                healed = selfHealer || PlayerbotAI::IsHeal(member);
++            }
++        }
++        uint32 const limit = healed ? CTHUN_ACID_EXIT_STACKS_HEALED : CTHUN_ACID_EXIT_STACKS;
++        if (acid->GetStackAmount() >= limit)
++            return "acid " + std::to_string(uint32(acid->GetStackAmount()));
++    }
++
++    // Only a valid Body-phase snapshot may declare the tentacle term (weakened == no flesh alive,
++    // and the damage window is outside).
++    CthunSnapshot const snap = GetCthunSnapshot(bot);
++    if (snap.valid && snap.phase == CthunPhase::Body && snap.fleshAlive == 0)
++        return "no flesh (weakened)";
++
++    return std::string();
++}
++
++namespace
++{
++    // Once a second per bot while in the stomach: why can't it act? (cast/move state dump)
++    void CthunStomachDiag(Player* bot, PlayerbotAI* botAI)
++    {
++        uint32 const now = getMSTime();
++        {
++            std::lock_guard<std::mutex> lock(cthunMutex);
++            CthunBotState& state = cthunBotState[bot->GetGUID()];
++            if (state.lastStomachDiagMs && getMSTimeDiff(state.lastStomachDiagMs, now) < 1000)
++                return;
++            state.lastStomachDiagMs = std::max<uint32>(1, now);
++        }
++
++        Unit* target = GetCthunAttackTarget(bot, botAI);
++        Creature* targetCreature = target ? target->ToCreature() : nullptr;
++        Unit* victim = bot->GetVictim();
++        Creature* victimCreature = victim ? victim->ToCreature() : nullptr;
++        Aura* acid = bot->GetAura(SPELL_CTHUN_DIGESTIVE_ACID);
++        LOG_DEBUG("playerbots",
++                  "[Aq40Cthun] {} stomach diag pos {:.1f},{:.1f},{:.1f} tgt {} dist {:.1f} moving {} "
++                  "flags 0x{:X} lostCtl {} stunned {} rooted {} mounted {} canMove {} victim {} acid {}",
++                  bot->GetName(), bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(),
++                  targetCreature ? targetCreature->GetEntry() : 0u, target ? bot->GetExactDist(target) : 0.0f,
++                  bot->isMoving() ? 1 : 0, uint32(bot->GetUnitMovementFlags()),
++                  bot->HasUnitState(UNIT_STATE_LOST_CONTROL) ? 1 : 0,
++                  bot->HasUnitState(UNIT_STATE_STUNNED) ? 1 : 0, bot->IsRooted() ? 1 : 0,
++                  bot->IsMounted() ? 1 : 0, botAI->CanMove() ? 1 : 0,
++                  victimCreature ? victimCreature->GetEntry() : 0u,
++                  acid ? uint32(acid->GetStackAmount()) : 0u);
++    }
++}  // namespace
++
++CthunAirborne GetCthunAirborneState(Player* bot, PlayerbotAI* botAI, float& groundZ)
++{
++    groundZ = INVALID_HEIGHT;
++    if (bot->GetMapId() != AQ40_MAP_ID || (!IsCthunEncounterActive(bot) && !IsInCthunStomach(bot)))
++        return CthunAirborne::None;
++    // Runs every tick for every bot (the airborne trigger), so the stomach diagnostic rides here:
++    // it must fire even when the close-in trigger is inactive.
++    if (IsInCthunStomach(bot))
++        CthunStomachDiag(bot, botAI);
++    if (!botAI->CanMove() || !bot->movespline->Finalized() || bot->IsBeingTeleported())
++        return CthunAirborne::None;
++
++    // Hover teleport ONLY for the stomach landing (script drops swallowed players at z -70 over a
++    // floor near -97). In the main room GetHeight finds a surface ~5y BELOW the real floor (108.9
++    // read as 103.3), and a generic "z - ground > 3" rule teleported bots under the floor over and
++    // over - they vanished and reappeared.
++    if (IsInCthunStomach(bot) && bot->GetPositionZ() > CTHUN_STOMACH_HOVER_Z)
++    {
++        groundZ = bot->GetMap()->GetHeight(bot->GetPhaseMask(), bot->GetPositionX(), bot->GetPositionY(),
++                                           bot->GetPositionZ(), true, CTHUN_GROUND_SEARCH);
++        // Only trust a height that lands on the stomach floor; else use the known floor level.
++        if (groundZ < CTHUN_STOMACH_FLOOR_MIN_Z || groundZ > CTHUN_STOMACH_HOVER_Z)
++            groundZ = CTHUN_STOMACH_EXIT_Z;
++        return CthunAirborne::Hovering;
++    }
++    if (bot->HasUnitMovementFlag(MOVEMENTFLAG_FALLING | MOVEMENTFLAG_FALLING_FAR))
++        return CthunAirborne::StaleFall;
++    return CthunAirborne::None;
++}
++
++bool GetCthunStomachApproachSpot(Player* bot, PlayerbotAI* botAI, Position& spot)
++{
++    if (!IsInCthunStomach(bot) || IsCthunExitHolding(bot) || CthunExitOwed(bot) || !botAI->CanMove())
++        return false;
++
++    Creature* tentacle = nullptr;
++    if (Unit* target = GetCthunAttackTarget(bot, botAI))
++        if (Creature* c = target->ToCreature(); c && c->GetEntry() == NPC_CTHUN_FLESH_TENTACLE)
++            tentacle = c;
++    if (!tentacle && PlayerbotAI::IsHeal(bot))
++    {
++        uint32 found = 0;
++        uint32 alive = 0;
++        uint32 valid = 0;
++        tentacle = SearchCthunFleshTentacle(bot, false, found, alive, valid);
++    }
++    if (!tentacle)
++        return false;
++
++    float const want = IsCthunRangedRole(bot) ? CTHUN_STOMACH_RANGED_RANGE : CTHUN_STOMACH_MELEE_RANGE;
++    float const dx = bot->GetPositionX() - tentacle->GetPositionX();
++    float const dy = bot->GetPositionY() - tentacle->GetPositionY();
++    float const dist = std::sqrt(dx * dx + dy * dy);
++    if (dist <= want)
++        return false;
++
++    float const k = (want - 2.0f) / dist;
++    float x = tentacle->GetPositionX() + dx * k;
++    float y = tentacle->GetPositionY() + dy * k;
++    float z = tentacle->GetPositionZ();
++    bot->UpdateAllowedPositionZ(x, y, z);
++    spot.Relocate(x, y, z);
++    return true;
++}
++
++bool CthunShouldExitStomach(Player* bot)
++{
++    if (!IsCthunEncounterActive(bot) || !IsInCthunStomach(bot))
++        return false;
++    if (IsCthunExitHolding(bot))
++        return false;  // trigger sent; stand still while the script checks us
++    return CthunExitOwed(bot);
++}
++
++// ---------------------------------------------------------------------------------------------
++// DARK GLARE - a 5y-half-width ray from the Eye's facing, unlimited range, sweeping 180 deg over
++// 35s in a random direction. TIME-TO-HIT model: with no direction tracking, assume the worst (the
++// beam is sweeping toward the bot) and turn the bot's angular distance from the beam edge (half-
++// width + pad, as an angle at its radius) into seconds. Bots move ~4s before the beam could reach
++// them, rotating away from it on the side they are already on by ~9s of sweep from their OWN
++// bearing (spacing kept). The wind-up (facing set, not yet firing) is covered because the freeze
++// aura is already on.
++// ---------------------------------------------------------------------------------------------
++float CthunGlareSecondsToHit(Player* bot)
++{
++    if (IsInCthunStomach(bot))
++        return 999.0f;
++
++    CthunSnapshot const snap = GetCthunSnapshot(bot);
++    if (!snap.valid || !snap.glare)
++        return 999.0f;
++
++    float const r = bot->GetExactDist2d(snap.centerX, snap.centerY);
++    if (r > CTHUN_GLARE_MAX_RANGE)
++        return 999.0f;  // not in the room
++
++    float const edge =
++        std::asin(std::min(1.0f, (CTHUN_GLARE_HALF_WIDTH + CTHUN_GLARE_PAD) / std::max(r, 0.1f)));
++    float const botAngle =
++        std::atan2(bot->GetPositionY() - snap.centerY, bot->GetPositionX() - snap.centerX);
++    float const rel = Position::NormalizeOrientation(botAngle - snap.beamAngle);
++    float const dev = rel <= float(M_PI) ? rel : 2.0f * float(M_PI) - rel;  // [0, pi]
++    return std::max(0.0f, dev - edge) / CTHUN_GLARE_SWEEP_RATE;
++}
++
++bool GetCthunGlareDodgeSpot(Player* bot, Position& spot)
++{
++    if (CthunGlareSecondsToHit(bot) >= CTHUN_GLARE_MOVE_SECONDS)
++        return false;
++
++    CthunSnapshot const snap = GetCthunSnapshot(bot);  // cached: valid + glare checked above
++    float const r = bot->GetExactDist2d(snap.centerX, snap.centerY);
++    float const botAngle =
++        std::atan2(bot->GetPositionY() - snap.centerY, bot->GetPositionX() - snap.centerX);
++    // [0, 2pi): below pi = counter-clockwise of the beam.
++    float const rel = Position::NormalizeOrientation(botAngle - snap.beamAngle);
++    float const side = rel <= float(M_PI) ? 1.0f : -1.0f;
++
++    float const radius = std::max(r, 15.0f);
++    float const edgeAtRadius =
++        std::asin(std::min(1.0f, (CTHUN_GLARE_HALF_WIDTH + CTHUN_GLARE_PAD) / radius));
++    float const sector = 2.0f * float(M_PI) / float(CTHUN_GLARE_SECTORS);
++    // Rotate from the bot's OWN bearing, not to a common absolute angle: everyone in danger turns
++    // the same way by about the same amount, so relative spacing (the melee pairs) is kept - a
++    // shared target stacked the whole ring into one point for the next beam to chain. Snapped so
++    // the destination is stable tick to tick (MoveTo refuses a creeping spot).
++    float const step = edgeAtRadius + CTHUN_GLARE_SAFE_SECONDS * CTHUN_GLARE_SWEEP_RATE;
++    float const want = std::round((botAngle + side * step) / sector) * sector;
++
++    float x = snap.centerX + std::cos(want) * radius;
++    float y = snap.centerY + std::sin(want) * radius;
++    float z = bot->GetPositionZ();
++    bot->UpdateAllowedPositionZ(x, y, z);
++    spot.Relocate(x, y, z);
++    return true;
++}
++
++bool CthunShouldDodgeGlare(Player* bot)
++{
++    Position spot;
++    return GetCthunGlareDodgeSpot(bot, spot);
++}
++
++// ---------------------------------------------------------------------------------------------
++// GREEN BEAM - clear the chain at its source: while the Eye (P1) or any Giant Eye Tentacle (P2)
++// is casting it, every RANGED bot within 12y of the target steps away, AND a ranged target steps
++// away from its own neighbours (it may have walked back into the pack, or been knocked into it by a
++// tentacle). Melee ignore beams: they stand in fixed pairs ~12y apart, so a chain on a pair jumps
++// once to the partner and stops.
++// This is also the entire opening solution (first beam lands >= 5s after engage).
++// ---------------------------------------------------------------------------------------------
++bool IsCthunBeamTarget(Player* bot)
++{
++    for (Unit* target : CollectCthunBeamTargets(bot))
++        if (target == bot)
++            return true;
++    return false;
++}
++
++Unit* GetCthunBeamThreat(Player* bot)
++{
++    // Opening no-go zone first: the puller draws the first beams, and in the gaps between casts
++    // slot walks / melee reach would otherwise close back in on it.
++    if (Player* puller = GetCthunOpeningPullerWithin(bot, CTHUN_PULLER_AVOID_RANGE))
++        return puller;
++
++    // Melee never react to Green Beam, as target or neighbour: they stand in fixed pairs ~12y apart
++    // (ranged row 1 >= 12y out), so a chain on a pair jumps once to the partner and stops.
++    if (!IsCthunRangedRole(bot))
++        return nullptr;
++
++    std::vector<Unit*> const targets = CollectCthunBeamTargets(bot);
++    if (targets.empty())
++        return nullptr;
++
++    if (std::find(targets.begin(), targets.end(), static_cast<Unit*>(bot)) != targets.end())
++        return FindCthunNeighbor(bot, CTHUN_BEAM_CLEAR_RANGE);  // the victim clears its neighbours
++
++    Unit* nearest = nullptr;
++    float nearestDist = CTHUN_BEAM_CLEAR_RANGE;
++    for (Unit* target : targets)
++    {
++        float const d = bot->GetExactDist2d(target);
++        if (d < nearestDist)
++        {
++            nearest = target;
++            nearestDist = d;
++        }
++    }
++    return nearest;
++}
++
++bool CthunShouldClearBeam(Player* bot)
++{
++    return GetCthunBeamThreat(bot) != nullptr;
++}
++
++bool GetCthunBeamClearSpot(Player* bot, Position& spot, uint32 attempt)
++{
++    Unit* threat = GetCthunBeamThreat(bot);
++    if (!threat)
++        return false;
++
++    // Twins' sector-snapped escape builder is generic: clearance + 4y, attempt rotates 90 deg. The
++    // puller zone flees to ~30y - outside the hold range, so issuing it also replaces any long
++    // in-flight form-up path (walkers trail the puller at 25-30y); a beam chain to ~16y.
++    float const clearance = threat == GetCthunOpeningPullerWithin(bot, CTHUN_PULLER_AVOID_RANGE)
++                                ? CTHUN_PULLER_AVOID_RANGE + 1.0f
++                                : CTHUN_BEAM_CLEAR_RANGE;
++    return BuildTwinsEscapeSpot(bot, threat->GetPositionX(), threat->GetPositionY(), clearance,
++                                attempt, spot);
++}
++
++// ---------------------------------------------------------------------------------------------
++// OPENING - the Eye's first four Green Beams all go to the puller. It runs to the side of the room
++// opposite the raid (ring reference + pi) so the beams land far from the pack while it spreads.
++// ---------------------------------------------------------------------------------------------
++bool IsCthunOpeningPuller(Player* bot)
++{
++    if (!IsCthunEncounterActive(bot) || IsInCthunStomach(bot))
++        return false;
++
++    CthunSnapshot const snap = GetCthunSnapshot(bot);
++    if (!snap.valid)
++        return false;
++
++    UpdateCthunOpening(bot, snap);
++
++    std::lock_guard<std::mutex> lock(cthunMutex);
++    auto it = cthunOpeningByInstance.find(bot->GetMap()->GetInstanceId());
++    return it != cthunOpeningByInstance.end() && !it->second.over && it->second.puller == bot->GetGUID();
++}
++
++bool IsCthunOpeningActive(Player* bot)
++{
++    if (!IsCthunEncounterActive(bot))
++        return false;
++
++    CthunSnapshot const snap = GetCthunSnapshot(bot);
++    if (!snap.valid)
++        return false;
++
++    UpdateCthunOpening(bot, snap);
++
++    std::lock_guard<std::mutex> lock(cthunMutex);
++    auto it = cthunOpeningByInstance.find(bot->GetMap()->GetInstanceId());
++    return it != cthunOpeningByInstance.end() && !it->second.over;
++}
++
++Player* GetCthunOpeningPullerWithin(Player* bot, float range)
++{
++    Player* puller = GetCthunOpeningPuller(bot);
++    return puller && bot->GetExactDist2d(puller) < range ? puller : nullptr;
++}
++
++bool GetCthunPullerSpot(Player* bot, Position& spot)
++{
++    if (!IsCthunOpeningPuller(bot))
++        return false;
++
++    CthunSnapshot const snap = GetCthunSnapshot(bot);
++    // The ring reference is the bearing to the raid's centroid, so +pi is the far side.
++    float const angle = GetCthunRingRef(bot, snap) + float(M_PI);
++    float x = snap.centerX + std::cos(angle) * CTHUN_PULLER_RADIUS;
++    float y = snap.centerY + std::sin(angle) * CTHUN_PULLER_RADIUS;
++    float z = bot->GetPositionZ();
++    bot->UpdateAllowedPositionZ(x, y, z);
++
++    if (bot->GetExactDist2d(x, y) <= CTHUN_SLOT_TOLERANCE)
++        return false;  // arrived: hold
++
++    spot.Relocate(x, y, z);
++    return true;
++}
++
++// ---------------------------------------------------------------------------------------------
++// FIXED SPOTS for everyone, spaced past the ~13y effective chain jump by construction; no disperse.
++// Every bot returns to its OWN spot whenever off it - Eye phase only; in the Body phase native reach
++// puts melee on the body and walks ranged into range. Ranged stand on two interleaved circles and
++// cast from there - all inside Eye casting range. Melee (tanks included) have paired
++// spots in the Eye's reach (6 on a 15.5y ring + the centre, 2 per spot) and ignore Green Beam: a
++// chain on a pair jumps once to the partner and stops. While the opening runs (until the puller's
++// 4th beam has landed) melee stage 35y out at +-90 deg off the puller's lane instead.
++// ---------------------------------------------------------------------------------------------
++bool IsCthunRangedRole(Player* member)
++{
++    return !PlayerbotAI::IsTank(member) && (PlayerbotAI::IsHeal(member) || PlayerbotAI::IsRanged(member));
++}
++
++bool CthunShouldFormUp(Player* bot, PlayerbotAI* /*botAI*/)
++{
++    if (!IsCthunEncounterActive(bot) || IsInCthunStomach(bot))
++        return false;
++
++    CthunSnapshot const snap = GetCthunSnapshot(bot);
++    if (!snap.valid || snap.phase == CthunPhase::None || snap.glare)
++        return false;  // the glare dodge owns movement; everyone walks back after it
++
++    // Spots are an Eye-phase thing: in the Body phase native reach puts melee on the body and walks
++    // ranged into range of the tentacles.
++    if (snap.phase != CthunPhase::Eye)
++        return false;
++    bool const ranged = IsCthunRangedRole(bot);
++
++    Position const spot = ComputeCthunSlot(bot, snap);
++    if (bot->GetExactDist2d(spot.GetPositionX(), spot.GetPositionY()) <= CTHUN_SLOT_TOLERANCE)
++        return false;
++
++    if (CthunHazardMoveOwed(bot) || IsCthunOpeningPuller(bot) ||
++        GetCthunOpeningPullerWithin(bot, CTHUN_PULLER_HOLD_RANGE))
++        return false;
++
++    // Ranged: don't walk near a beam in flight - or while being its target. Melee ignore beams.
++    if (ranged)
++        for (Unit* target : CollectCthunBeamTargets(bot))
++            if (target == bot || bot->GetExactDist2d(target) < CTHUN_BEAM_HOLD_RANGE)
++                return false;
++
++    return true;
++}
++
++bool GetCthunFormUpSpot(Player* bot, PlayerbotAI* botAI, Position& spot)
++{
++    if (!CthunShouldFormUp(bot, botAI))
++        return false;
++    spot = ComputeCthunSlot(bot, GetCthunSnapshot(bot));
++    return true;
++}
++
++// ---------------------------------------------------------------------------------------------
++// TARGETING
++// ---------------------------------------------------------------------------------------------
++Unit* GetCthunAttackTarget(Player* bot, PlayerbotAI* /*botAI*/)
++{
++    if (!IsCthunEncounterActive(bot) || PlayerbotAI::IsHeal(bot))
++        return nullptr;  // healers: no opinion
++
++    if (IsInCthunStomach(bot))
++    {
++        if (IsCthunExitHolding(bot) || CthunExitOwed(bot))
++            return nullptr;  // leaving: see IsCthunHoldingFire
++        return PickCthunFleshTentacle(bot);
++    }
++
++    CthunSnapshot const snap = GetCthunSnapshot(bot);
++    if (!snap.valid)
++        return nullptr;
++
++    Creature* body = GetTwin(bot, AQT_DATA_CTHUN);
++    if (snap.weakened && body && body->IsAlive() && bot->IsValidAttackTarget(body))
++        return body;
++
++    bool const tank = PlayerbotAI::IsTank(bot);
++    bool const ranged = !tank && PlayerbotAI::IsRanged(bot);
++
++    if (snap.phase == CthunPhase::Eye)
++    {
++        if (tank)
++        {
++            if (Creature* add = PickCthunAdd(bot, {NPC_CTHUN_CLAW_TENTACLE}, false))
++                return add;
++        }
++        else if (ranged)
++        {
++            if (Creature* add = PickCthunAdd(bot, {NPC_CTHUN_EYE_TENTACLE}, false, CTHUN_RANGED_ADD_RANGE))
++                return add;
++            if (Creature* add =
++                    PickCthunAdd(bot, {NPC_CTHUN_CLAW_TENTACLE}, false, CTHUN_RANGED_CLAW_RANGE))
++                return add;
++        }
++        else
++        {
++            // Only a claw that spawned on me: no cross-room claw chasing.
++            if (Creature* add =
++                    PickCthunAdd(bot, {NPC_CTHUN_CLAW_TENTACLE}, false, CTHUN_MELEE_ADD_RANGE))
++                return add;
++        }
++
++        Creature* eye = GetTwin(bot, AQT_DATA_EYE_OF_CTHUN);
++        if (eye && eye->IsAlive() && bot->IsValidAttackTarget(eye))
++            return eye;
++        return nullptr;
++    }
++
++    if (snap.phase == CthunPhase::Body)
++    {
++        // The Giant Eye Tentacle first for every non-tank damage dealer (melee included). P2 has no
++        // ranged spots, so the picks use the full search range; native reach walks them in.
++        if (!tank)
++            if (Creature* add = PickCthunAdd(bot, {NPC_CTHUN_GIANT_EYE_TENTACLE}, false))
++                return add;
++
++        if (ranged)
++        {
++            if (Creature* add = PickCthunAdd(bot, {NPC_CTHUN_EYE_TENTACLE}, false))
++                return add;
++        }
++        else
++        {
++            // A Giant Claw submerges when nobody is in its melee range; holding it is the tank's job.
++            if (Creature* add = PickCthunAdd(bot, {NPC_CTHUN_GIANT_CLAW_TENTACLE}, false))
++                return add;
++            if (Creature* add = PickCthunAdd(bot, {NPC_CTHUN_CLAW_TENTACLE}, false,
++                                             tank ? CTHUN_SEARCH_RANGE : CTHUN_MELEE_ADD_RANGE))
++                return add;
++            if (tank)
++                return nullptr;  // no opinion: stock tank logic
++        }
++
++        // Under Carapace this is harmless and keeps rage up.
++        if (body && body->IsAlive() && bot->IsValidAttackTarget(body))
++            return body;
++    }
++
++    return nullptr;  // Eye -> body transition: no opinion
++}
++
++bool IsCthunHoldingFire(Player* bot, PlayerbotAI* /*botAI*/)
++{
++    // A WITHHOLDING decision needs its own predicate: a nullptr target reads as "no opinion" to the
++    // target-hold multiplier, which would then let dps assist walk the bot back to a tentacle.
++    if (!IsCthunEncounterActive(bot) || !IsInCthunStomach(bot))
++        return false;
++    return IsCthunExitHolding(bot) || CthunExitOwed(bot);
++}
++
++bool CthunShouldRetarget(Player* bot, PlayerbotAI* botAI)
++{
++    Unit* want = GetCthunAttackTarget(bot, botAI);
++    return want && bot->GetVictim() != want;
++}
++
++bool CthunHazardMoveOwed(Player* bot)
++{
++    return CthunShouldExitStomach(bot) || IsCthunExitHolding(bot) || CthunShouldDodgeGlare(bot) ||
++           CthunShouldClearBeam(bot);
++}
++
++bool CthunShouldDismount(Player* bot, PlayerbotAI* botAI)
++{
++    if (!bot->IsMounted() || !IsCthunEncounterActive(bot) || bot->HasAura(SPELL_CTHUN_MOUTH_TENTACLE))
++        return false;
++    // Riding in is fine (faster): stay mounted while a move is owed, dismount once in place.
++    Position spot;
++    if (CthunShouldFormUp(bot, botAI) || GetCthunPullerSpot(bot, spot) || CthunHazardMoveOwed(bot))
++        return false;
++    return true;
++}
++
++bool CthunShouldSuppressGenericMovement(Player* bot, PlayerbotAI* botAI)
++{
++    if (!IsCthunEncounterActive(bot))
++        return false;
++    // The puller too, so reach/formation/follow can't drag it back while it holds the far side;
++    // anyone near the opening puller, so reach/formation/follow can't close on it; and everyone on
++    // or walking to a FIXED spot in the Eye phase (spots are in reach/casting range and the Eye
++    // doesn't move) - so nothing chases off it. The Body phase has no spots: native reach works.
++    bool const onFixedSpot =
++        !IsInCthunStomach(bot) && GetCthunSnapshot(bot).phase == CthunPhase::Eye;
++    return CthunHazardMoveOwed(bot) || IsCthunOpeningPuller(bot) ||
++           GetCthunOpeningPullerWithin(bot, CTHUN_PULLER_HOLD_RANGE) != nullptr || onFixedSpot ||
++           CthunShouldFormUp(bot, botAI);
++}
++
++}  // namespace TempleOfAhnQirajHelpers
+diff --git a/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Multipliers.cpp b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Multipliers.cpp
+new file mode 100644
+index 0000000..82ba54b
+--- /dev/null
++++ b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Multipliers.cpp
+@@ -0,0 +1,82 @@
++/*
++ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
++ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
++ * or (at your option) any later version.
++ */
++
++#include "Aq40Multipliers.h"
++
++#include "Aq40Helpers.h"
++#include "AttackAction.h"
++#include "ChooseTargetActions.h"
++#include "FollowActions.h"
++#include "MovementActions.h"
++#include "Playerbots.h"
++#include "ReachTargetActions.h"
++
++using namespace TempleOfAhnQirajHelpers;
++
++float TwinEmperorsMovementMultiplier::GetValue(Action* action)
++{
++    if (!action || bot->GetMapId() != AQ40_MAP_ID)
++        return 1.0f;
++
++    // NAME EXEMPTIONS FIRST. Every one of these IS a MovementAction, so without this the veto
++    // would silence the very moves it exists to protect.
++    std::string const& name = action->getName();
++    if (name == "aq40 twins clear explode" || name == "aq40 twins clear blizzard" ||
++        name == "aq40 twins position tank" || name == "aq40 twins hold healer spot" ||
++        name == "aq40 twins separate twins")
++    {
++        return 1.0f;
++    }
++
++    if (!bot->IsInCombat())
++        return 1.0f;
++
++    // TYPE TEST BEFORE THE PREDICATE: these three kinds are the only actions this can veto, so
++    // everything else returns early without evaluating a chain that reaches grid searches.
++    //
++    // NEVER blanket-veto MovementAction - AttackAction and MeleeAction both derive from it, so
++    // that would silence auto-attack for the whole fight.
++    bool const isFormationMover = dynamic_cast<CombatFormationMoveAction*>(action) ||
++                                  dynamic_cast<RearFlankAction*>(action);
++    bool const isReach = dynamic_cast<ReachTargetAction*>(action) != nullptr;
++    bool const isFollow = dynamic_cast<FollowAction*>(action) != nullptr;
++    if (!isFormationMover && !isReach && !isFollow)
++        return 1.0f;
++
++    return TwinsShouldSuppressGenericMovement(bot, botAI) ? 0.0f : 1.0f;
++}
++
++float TwinEmperorsTargetHoldMultiplier::GetValue(Action* action)
++{
++    if (!action || bot->GetMapId() != AQ40_MAP_ID)
++        return 1.0f;
++
++    // Type test first: it is the only cheap test here, and this runs for every queued action of
++    // every bot on every tick. Matched by EXACT class, never by AttackAction - MeleeAction derives
++    // from it and so does this fight's own focus action.
++    bool const isTargetChooser = dynamic_cast<DpsAssistAction*>(action) ||
++                                 dynamic_cast<DpsAoeAction*>(action) ||
++                                 dynamic_cast<TankAssistAction*>(action) ||
++                                 dynamic_cast<AggressiveTargetAction*>(action) ||
++                                 dynamic_cast<AttackAnythingAction*>(action) ||
++                                 dynamic_cast<AttackLeastHpTargetAction*>(action) ||
++                                 dynamic_cast<AttackRtiTargetAction*>(action);
++    if (!isTargetChooser)
++        return 1.0f;
++
++    if (!IsTwinsEncounterActive(bot))
++        return 1.0f;
++
++    // TWO separate reasons to veto, and collapsing them is the bug this shape avoids:
++    //   * we have an opinion (a mutated bug, or my assigned twin) - hold it;
++    //   * we are deliberately WITHHOLDING because our school cannot land - hold that too.
++    // `return GetTwinsAttackTarget(...) ? 0.0f : 1.0f` would read the second case as "no opinion"
++    // and hand the immune twin straight back through the bot's own attackers list.
++    if (GetTwinsAttackTarget(bot, botAI))
++        return 0.0f;
++
++    return IsTwinsHoldingFire(bot, botAI) ? 0.0f : 1.0f;
++}
+diff --git a/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Multipliers.h b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Multipliers.h
+new file mode 100644
+index 0000000..f3c9d92
+--- /dev/null
++++ b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Multipliers.h
+@@ -0,0 +1,63 @@
++/*
++ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
++ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
++ * or (at your option) any later version.
++ */
++
++#ifndef PLAYERBOTS_AQ40MULTIPLIERS_H
++#define PLAYERBOTS_AQ40MULTIPLIERS_H
++
++#include "Multiplier.h"
++
++// Named TwinEmperors*, not Twins*: SWP already defines TwinsMovementMultiplier for the Eredar
++// Twins and both live in the same binary.
++
++class TwinEmperorsMovementMultiplier : public Multiplier
++{
++public:
++    TwinEmperorsMovementMultiplier(PlayerbotAI* ai)
++        : Multiplier(ai, "twin emperors movement multiplier") {}
++    float GetValue(Action* action) override;
++};
++
++// A strategy that dictates a target MUST veto the engine's own target choosers; high relevance
++// alone does not hold. DpsAssistStrategy binds "not dps target active" -> "dps assist" at 50.0f,
++// AttackAction::Attack returns FALSE the moment the bot is already on the target it asked for, and
++// the engine then falls through to the next queued action - which puts the raid's target back.
++// Here that would mean a caster hammering a physical-immune Vek'nilash for the whole fight.
++class TwinEmperorsTargetHoldMultiplier : public Multiplier
++{
++public:
++    TwinEmperorsTargetHoldMultiplier(PlayerbotAI* ai)
++        : Multiplier(ai, "twin emperors target hold multiplier") {}
++    float GetValue(Action* action) override;
++};
++
++// C'Thun. Same two shapes as the Twin Emperors pair above.
++
++class Aq40CthunMovementMultiplier : public Multiplier
++{
++public:
++    Aq40CthunMovementMultiplier(PlayerbotAI* ai) : Multiplier(ai, "aq40 cthun movement multiplier") {}
++    float GetValue(Action* action) override;
++};
++
++class Aq40CthunTargetHoldMultiplier : public Multiplier
++{
++public:
++    Aq40CthunTargetHoldMultiplier(PlayerbotAI* ai)
++        : Multiplier(ai, "aq40 cthun target hold multiplier") {}
++    float GetValue(Action* action) override;
++};
++
++// No cast may START that would still be running when a Green Beam lands on us or Dark Glare can
++// reach us: a casting bot evaluates no trigger until the cast ends.
++class Aq40CthunCastSafetyMultiplier : public Multiplier
++{
++public:
++    Aq40CthunCastSafetyMultiplier(PlayerbotAI* ai)
++        : Multiplier(ai, "aq40 cthun cast safety multiplier") {}
++    float GetValue(Action* action) override;
++};
++
++#endif
+diff --git a/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Multipliers_Cthun.cpp b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Multipliers_Cthun.cpp
+new file mode 100644
+index 0000000..5aa0787
+--- /dev/null
++++ b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Multipliers_Cthun.cpp
+@@ -0,0 +1,127 @@
++/*
++ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
++ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
++ * or (at your option) any later version.
++ */
++
++#include "Aq40Multipliers.h"
++
++#include "Aq40CthunHelpers.h"
++#include "Aq40Helpers.h"
++#include "AttackAction.h"
++#include "CheckMountStateAction.h"
++#include "ChooseTargetActions.h"
++#include "FollowActions.h"
++#include "GenericSpellActions.h"
++#include "MovementActions.h"
++#include "Playerbots.h"
++#include "ReachTargetActions.h"
++#include "SpellInfo.h"
++#include "SpellMgr.h"
++
++using namespace TempleOfAhnQirajHelpers;
++
++float Aq40CthunMovementMultiplier::GetValue(Action* action)
++{
++    if (!action || bot->GetMapId() != AQ40_MAP_ID)
++        return 1.0f;
++
++    // Name exemptions first: each of these IS a MovementAction.
++    std::string const& name = action->getName();
++    if (name == "aq40 cthun exit stomach" || name == "aq40 cthun dodge glare" ||
++        name == "aq40 cthun clear beam" || name == "aq40 cthun form up" ||
++        name == "aq40 cthun run to far side" || name == "aq40 cthun drop to floor" ||
++        name == "aq40 cthun stomach close in")
++    {
++        return 1.0f;
++    }
++
++    // Bots copy a mounted master's mount state; during the fight that would remount them right after
++    // the dismount rule drops them. Riding IN is unaffected (they mounted before the pull).
++    if (dynamic_cast<CheckMountStateAction*>(action) && IsCthunEncounterActive(bot))
++        return 0.0f;
++
++    // The Eye/body have no useful back: "set behind" only walks melee around it out of range.
++    if (dynamic_cast<SetBehindTargetAction*>(action) && IsCthunEncounterActive(bot))
++        return 0.0f;
++
++    if (!bot->IsInCombat())
++        return 1.0f;
++
++    // Type test before the predicate. NEVER blanket-veto MovementAction: AttackAction and
++    // MeleeAction derive from it, and that would silence auto-attack.
++    bool const isFormationMover = dynamic_cast<CombatFormationMoveAction*>(action) ||
++                                  dynamic_cast<RearFlankAction*>(action);
++    bool const isReach = dynamic_cast<ReachTargetAction*>(action) != nullptr;
++    bool const isFollow = dynamic_cast<FollowAction*>(action) != nullptr;
++    if (!isFormationMover && !isReach && !isFollow)
++        return 1.0f;
++
++    // In the stomach, pathfinding-based reach can only fail (and waste the tick); the close-in
++    // action walks the bot into range instead.
++    if (isReach && IsInCthunStomach(bot))
++        return 0.0f;
++
++    return CthunShouldSuppressGenericMovement(bot, botAI) ? 0.0f : 1.0f;
++}
++
++float Aq40CthunTargetHoldMultiplier::GetValue(Action* action)
++{
++    if (!action || bot->GetMapId() != AQ40_MAP_ID)
++        return 1.0f;
++
++    // Exact classes, never AttackAction (MeleeAction and our focus action derive from it).
++    bool const isTargetChooser = dynamic_cast<DpsAssistAction*>(action) ||
++                                 dynamic_cast<DpsAoeAction*>(action) ||
++                                 dynamic_cast<TankAssistAction*>(action) ||
++                                 dynamic_cast<AggressiveTargetAction*>(action) ||
++                                 dynamic_cast<AttackAnythingAction*>(action) ||
++                                 dynamic_cast<AttackLeastHpTargetAction*>(action) ||
++                                 dynamic_cast<AttackRtiTargetAction*>(action);
++    if (!isTargetChooser)
++        return 1.0f;
++
++    if (!IsCthunEncounterActive(bot))
++        return 1.0f;
++
++    // Two separate reasons to veto: we have an opinion, or we are deliberately withholding.
++    if (GetCthunAttackTarget(bot, botAI))
++        return 0.0f;
++    return IsCthunHoldingFire(bot, botAI) ? 0.0f : 1.0f;
++}
++
++float Aq40CthunCastSafetyMultiplier::GetValue(Action* action)
++{
++    if (!action || bot->GetMapId() != AQ40_MAP_ID)
++        return 1.0f;
++
++    CastSpellAction* spellAction = dynamic_cast<CastSpellAction*>(action);
++    if (!spellAction || !IsCthunEncounterActive(bot))
++        return 1.0f;
++
++    // Cast time exactly as NaxxMultipliers' Heigan dance does it.
++    uint32 spellId = AI_VALUE2(uint32, "spell id", spellAction->getSpell());
++    SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
++    if (!spellInfo)
++        return 1.0f;
++
++    uint32 castTime = spellInfo->CalcCastTime(bot);
++    if (spellInfo->IsChanneled())
++    {
++        int32 duration = spellInfo->GetDuration();
++        if (duration > 0)
++            castTime += uint32(duration);
++    }
++    if (castTime == 0)
++        return 1.0f;
++
++    if (CthunShouldClearBeam(bot))
++        return 0.0f;
++    // A cast stops the walk (walk, stop, cast, walk), so non-healers hold cast-time spells while
++    // forming up. Healers keep casting so the puller survives the opening beams.
++    if (!PlayerbotAI::IsHeal(bot) && CthunShouldFormUp(bot, botAI))
++        return 0.0f;
++    if (CthunGlareSecondsToHit(bot) * 1000.0f < float(castTime + CTHUN_GLARE_CAST_PAD_MS))
++        return 0.0f;
++    return 1.0f;
++}
+diff --git a/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Strategy.cpp b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Strategy.cpp
+new file mode 100644
+index 0000000..780ad94
+--- /dev/null
++++ b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Strategy.cpp
+@@ -0,0 +1,129 @@
++/*
++ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
++ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
++ * or (at your option) any later version.
++ */
++
++#include "Aq40Strategy.h"
++
++#include "Aq40Helpers.h"
++#include "Aq40CthunHelpers.h"
++#include "Aq40Multipliers.h"
++#include "Playerbots.h"
++
++// Relevances are set against how OFTEN each competitor fires, not just how urgent it is: an
++// always-active action starves anything ranked under it. ACTION_RAID is 60, ACTION_EMERGENCY 90.
++void RaidAq40Strategy::InitTriggers(std::vector<TriggerNode*>& triggers)
++{
++    // Housekeeping, and harmless: only fires out of combat with the encounter not running.
++    triggers.push_back(new TriggerNode("aq40 twins not in combat", {
++        NextAction("aq40 twins erase trackers", ACTION_EMERGENCY + 11) }));
++
++    // ~3000 fire in 15y on a 3s fuse - the only mechanic here with a hard clock.
++    triggers.push_back(new TriggerNode("aq40 twins in explode radius", {
++        NextAction("aq40 twins clear explode", ACTION_EMERGENCY + 4) }));
++
++    // ~1500 per 2s in 10y plus a -30% slow.
++    triggers.push_back(new TriggerNode("aq40 twins in blizzard", {
++        NextAction("aq40 twins clear blizzard", ACTION_EMERGENCY + 3) }));
++
++    // Above generic target selection so bots actually switch to a Mutated Bug (+300% health,
++    // +1800% physical damage, 240s), below the movement emergencies because dying while dutifully
++    // retargeting is a poor trade.
++    triggers.push_back(new TriggerNode("aq40 twins wrong target", {
++        NextAction("aq40 twins focus target", ACTION_EMERGENCY + 1) }));
++
++    // Heal Brother is the one thing that makes the encounter unwinnable rather than merely hard,
++    // so it outranks ordinary positioning - but its own predicate stands down while the bot owes
++    // a hazard move, so the two can never trade the same tank back and forth.
++    triggers.push_back(new TriggerNode("aq40 twins too close", {
++        NextAction("aq40 twins separate twins", ACTION_RAID + 4) }));
++
++    // The tank swap: toward the twin I hold, away from the one I do not.
++    triggers.push_back(new TriggerNode("aq40 twins tank out of position", {
++        NextAction("aq40 twins position tank", ACTION_RAID + 3) }));
++
++    triggers.push_back(new TriggerNode("aq40 twins healer off spot", {
++        NextAction("aq40 twins hold healer spot", ACTION_RAID + 2) }));
++
++    // Lowest of the family, so it cannot starve anything.
++    triggers.push_back(new TriggerNode("aq40 twins pet on wrong twin", {
++        NextAction("aq40 twins direct pets", ACTION_RAID + 1) }));
++
++    // NOTE what is absent: anything that moves DPS. Their assigned twin is their target and native
++    // combat movement walks them to it, across the room after a teleport if that is where it went.
++    // Authoring stations for them was the previous revision's central mistake.
++
++    // ---- C'Thun ----
++    // The two encounters never run at once, so relevance values overlapping the Twins ones are fine.
++
++    triggers.push_back(new TriggerNode("aq40 cthun not in combat", {
++        NextAction("aq40 cthun erase trackers", ACTION_EMERGENCY + 11) }));
++
++    // Bots cannot fire the client-side exit trigger; this walks them there and sends it.
++    triggers.push_back(new TriggerNode("aq40 cthun in stomach", {
++        NextAction("aq40 cthun exit stomach", ACTION_EMERGENCY + 6) }));
++
++    // Bots get no client gravity: the swallow and the stomach exit leave them hovering, and a fall's
++    // FALLING flag never clears (every cast-time spell fails). Teleport down / scrub the flag.
++    // Bots ride in with a mounted master; once in place they must dismount to fight.
++    triggers.push_back(new TriggerNode("aq40 cthun mounted in place", {
++        NextAction("aq40 cthun dismount", ACTION_EMERGENCY + 8) }));
++
++    triggers.push_back(new TriggerNode("aq40 cthun stomach airborne", {
++        NextAction("aq40 cthun drop to floor", ACTION_EMERGENCY + 7) }));
++
++    // ~50k per tick, 5y either side of the Eye's facing, unlimited range.
++    triggers.push_back(new TriggerNode("aq40 cthun in glare path", {
++        NextAction("aq40 cthun dodge glare", ACTION_EMERGENCY + 5) }));
++
++    // Break the Green Beam chain at its source during the 2s cast.
++    triggers.push_back(new TriggerNode("aq40 cthun near beam target", {
++        NextAction("aq40 cthun clear beam", ACTION_EMERGENCY + 4) }));
++
++    // The Eye's first four beams all go to the puller; it drags them to the far side so the raid
++    // can spread.
++    triggers.push_back(new TriggerNode("aq40 cthun opening puller", {
++        NextAction("aq40 cthun run to far side", ACTION_EMERGENCY + 3) }));
++
++    // Stomach: walk into range of the Flesh Tentacle (pathfinding reach fails in there). Below
++    // "focus target" so the target is chosen first.
++    triggers.push_back(new TriggerNode("aq40 cthun stomach far from tentacle", {
++        NextAction("aq40 cthun stomach close in", ACTION_EMERGENCY) }));
++
++    // Below the hazard moves: dying while dutifully retargeting is a poor trade.
++    triggers.push_back(new TriggerNode("aq40 cthun wrong target", {
++        NextAction("aq40 cthun focus target", ACTION_EMERGENCY + 1) }));
++
++    // FIXED spots, spaced >= 12y by construction: everyone returns to their own spot whenever off it
++    // (melee stage off the puller's lane until its 4th beam has landed). No disperse.
++    triggers.push_back(new TriggerNode("aq40 cthun not formed", {
++        NextAction("aq40 cthun form up", ACTION_RAID + 3) }));
++
++    LOG_DEBUG("playerbots", "[Aq40Cthun] strategy loaded: cthun={} eye={} exitAT={} acidExit={}",
++              TempleOfAhnQirajHelpers::AQT_DATA_CTHUN,
++              TempleOfAhnQirajHelpers::AQT_DATA_EYE_OF_CTHUN,
++              TempleOfAhnQirajHelpers::AT_CTHUN_STOMACH_EXIT,
++              TempleOfAhnQirajHelpers::CTHUN_ACID_EXIT_STACKS);
++
++    LOG_DEBUG("playerbots",
++              "[Aq40Twins] strategy loaded: twins={} veklor={} veknilash={} kiteTo={:.0f} "
++              "engage={:.0f} guard={:.0f}",
++              TempleOfAhnQirajHelpers::AQT_DATA_TWIN_EMPERORS,
++              TempleOfAhnQirajHelpers::AQT_DATA_VEKLOR,
++              TempleOfAhnQirajHelpers::AQT_DATA_VEKNILASH,
++              TempleOfAhnQirajHelpers::TWINS_SEAT_SEPARATION,
++              TempleOfAhnQirajHelpers::TWINS_TANK_ENGAGE_RANGE,
++              TempleOfAhnQirajHelpers::TWINS_SEPARATION_GUARD);
++}
++
++void RaidAq40Strategy::InitMultipliers(std::vector<Multiplier*>& multipliers)
++{
++    // BOTH ship in the first cut. Shipping the target-hold veto later cost the previous attempt
++    // four revisions.
++    multipliers.push_back(new TwinEmperorsMovementMultiplier(botAI));
++    multipliers.push_back(new TwinEmperorsTargetHoldMultiplier(botAI));
++    multipliers.push_back(new Aq40CthunMovementMultiplier(botAI));
++    multipliers.push_back(new Aq40CthunTargetHoldMultiplier(botAI));
++    multipliers.push_back(new Aq40CthunCastSafetyMultiplier(botAI));
++}
+diff --git a/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Strategy.h b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Strategy.h
+new file mode 100644
+index 0000000..259c868
+--- /dev/null
++++ b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Strategy.h
+@@ -0,0 +1,21 @@
++/*
++ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
++ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
++ * or (at your option) any later version.
++ */
++
++#ifndef PLAYERBOTS_AQ40STRATEGY_H
++#define PLAYERBOTS_AQ40STRATEGY_H
++
++#include "Strategy.h"
++
++class RaidAq40Strategy : public Strategy
++{
++public:
++    RaidAq40Strategy(PlayerbotAI* botAI) : Strategy(botAI) {}
++    std::string const getName() override { return "aq40"; }
++    void InitTriggers(std::vector<TriggerNode*>& triggers) override;
++    void InitMultipliers(std::vector<Multiplier*>& multipliers) override;
++};
++
++#endif
+diff --git a/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40TriggerContext.h b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40TriggerContext.h
+new file mode 100644
+index 0000000..ed61b12
+--- /dev/null
++++ b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40TriggerContext.h
+@@ -0,0 +1,59 @@
++/*
++ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
++ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
++ * or (at your option) any later version.
++ */
++
++#ifndef PLAYERBOTS_AQ40TRIGGERCONTEXT_H
++#define PLAYERBOTS_AQ40TRIGGERCONTEXT_H
++
++#include "Aq40Triggers.h"
++#include "NamedObjectContext.h"
++
++class RaidAq40TriggerContext : public NamedObjectContext<Trigger>
++{
++public:
++    RaidAq40TriggerContext()
++    {
++        creators["aq40 twins not in combat"] = &RaidAq40TriggerContext::not_in_combat;
++        creators["aq40 twins in explode radius"] = &RaidAq40TriggerContext::in_explode_radius;
++        creators["aq40 twins in blizzard"] = &RaidAq40TriggerContext::in_blizzard;
++        creators["aq40 twins wrong target"] = &RaidAq40TriggerContext::wrong_target;
++        creators["aq40 twins too close"] = &RaidAq40TriggerContext::too_close;
++        creators["aq40 twins tank out of position"] = &RaidAq40TriggerContext::tank_out_of_position;
++        creators["aq40 twins healer off spot"] = &RaidAq40TriggerContext::healer_off_spot;
++        creators["aq40 twins pet on wrong twin"] = &RaidAq40TriggerContext::pet_on_wrong_twin;
++        creators["aq40 cthun not in combat"] = &RaidAq40TriggerContext::cthun_not_in_combat;
++        creators["aq40 cthun in stomach"] = &RaidAq40TriggerContext::cthun_in_stomach;
++        creators["aq40 cthun mounted in place"] = &RaidAq40TriggerContext::cthun_mounted_in_place;
++        creators["aq40 cthun stomach airborne"] = &RaidAq40TriggerContext::cthun_stomach_airborne;
++        creators["aq40 cthun stomach far from tentacle"] = &RaidAq40TriggerContext::cthun_stomach_far;
++        creators["aq40 cthun in glare path"] = &RaidAq40TriggerContext::cthun_in_glare_path;
++        creators["aq40 cthun near beam target"] = &RaidAq40TriggerContext::cthun_near_beam_target;
++        creators["aq40 cthun opening puller"] = &RaidAq40TriggerContext::cthun_opening_puller;
++        creators["aq40 cthun wrong target"] = &RaidAq40TriggerContext::cthun_wrong_target;
++        creators["aq40 cthun not formed"] = &RaidAq40TriggerContext::cthun_not_formed;
++    }
++
++private:
++    static Trigger* not_in_combat(PlayerbotAI* b) { return new Aq40TwinsNotInCombatTrigger(b); }
++    static Trigger* in_explode_radius(PlayerbotAI* b) { return new Aq40TwinsInExplodeRadiusTrigger(b); }
++    static Trigger* in_blizzard(PlayerbotAI* b) { return new Aq40TwinsInBlizzardTrigger(b); }
++    static Trigger* wrong_target(PlayerbotAI* b) { return new Aq40TwinsWrongTargetTrigger(b); }
++    static Trigger* too_close(PlayerbotAI* b) { return new Aq40TwinsTooCloseTrigger(b); }
++    static Trigger* tank_out_of_position(PlayerbotAI* b) { return new Aq40TwinsTankOutOfPositionTrigger(b); }
++    static Trigger* healer_off_spot(PlayerbotAI* b) { return new Aq40TwinsHealerOffSpotTrigger(b); }
++    static Trigger* pet_on_wrong_twin(PlayerbotAI* b) { return new Aq40TwinsPetOnWrongTwinTrigger(b); }
++    static Trigger* cthun_not_in_combat(PlayerbotAI* b) { return new Aq40CthunNotInCombatTrigger(b); }
++    static Trigger* cthun_in_stomach(PlayerbotAI* b) { return new Aq40CthunInStomachTrigger(b); }
++    static Trigger* cthun_mounted_in_place(PlayerbotAI* b) { return new Aq40CthunMountedInPlaceTrigger(b); }
++    static Trigger* cthun_stomach_airborne(PlayerbotAI* b) { return new Aq40CthunStomachAirborneTrigger(b); }
++    static Trigger* cthun_stomach_far(PlayerbotAI* b) { return new Aq40CthunStomachFarFromTentacleTrigger(b); }
++    static Trigger* cthun_in_glare_path(PlayerbotAI* b) { return new Aq40CthunInGlarePathTrigger(b); }
++    static Trigger* cthun_near_beam_target(PlayerbotAI* b) { return new Aq40CthunNearBeamTargetTrigger(b); }
++    static Trigger* cthun_opening_puller(PlayerbotAI* b) { return new Aq40CthunOpeningPullerTrigger(b); }
++    static Trigger* cthun_wrong_target(PlayerbotAI* b) { return new Aq40CthunWrongTargetTrigger(b); }
++    static Trigger* cthun_not_formed(PlayerbotAI* b) { return new Aq40CthunNotFormedTrigger(b); }
++};
++
++#endif
+diff --git a/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Triggers.h b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Triggers.h
+new file mode 100644
+index 0000000..bf96924
+--- /dev/null
++++ b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Triggers.h
+@@ -0,0 +1,156 @@
++/*
++ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
++ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
++ * or (at your option) any later version.
++ */
++
++#ifndef PLAYERBOTS_AQ40TRIGGERS_H
++#define PLAYERBOTS_AQ40TRIGGERS_H
++
++#include "Trigger.h"
++
++// EVERY NAME IS PREFIXED "aq40 twins". SWP registers ten "twins ..." names for the Eredar Twins,
++// and NamedObjectContext creators are keyed by string in a shared registry - a duplicate silently
++// shadows and the trigger never fires.
++
++class Aq40TwinsNotInCombatTrigger : public Trigger
++{
++public:
++    Aq40TwinsNotInCombatTrigger(PlayerbotAI* botAI)
++        : Trigger(botAI, "aq40 twins not in combat") {}
++    bool IsActive() override;
++};
++
++class Aq40TwinsInExplodeRadiusTrigger : public Trigger
++{
++public:
++    Aq40TwinsInExplodeRadiusTrigger(PlayerbotAI* botAI)
++        : Trigger(botAI, "aq40 twins in explode radius") {}
++    bool IsActive() override;
++};
++
++class Aq40TwinsInBlizzardTrigger : public Trigger
++{
++public:
++    Aq40TwinsInBlizzardTrigger(PlayerbotAI* botAI)
++        : Trigger(botAI, "aq40 twins in blizzard") {}
++    bool IsActive() override;
++};
++
++class Aq40TwinsWrongTargetTrigger : public Trigger
++{
++public:
++    Aq40TwinsWrongTargetTrigger(PlayerbotAI* botAI)
++        : Trigger(botAI, "aq40 twins wrong target") {}
++    bool IsActive() override;
++};
++
++class Aq40TwinsTooCloseTrigger : public Trigger
++{
++public:
++    Aq40TwinsTooCloseTrigger(PlayerbotAI* botAI)
++        : Trigger(botAI, "aq40 twins too close") {}
++    bool IsActive() override;
++};
++
++class Aq40TwinsTankOutOfPositionTrigger : public Trigger
++{
++public:
++    Aq40TwinsTankOutOfPositionTrigger(PlayerbotAI* botAI)
++        : Trigger(botAI, "aq40 twins tank out of position") {}
++    bool IsActive() override;
++};
++
++class Aq40TwinsHealerOffSpotTrigger : public Trigger
++{
++public:
++    Aq40TwinsHealerOffSpotTrigger(PlayerbotAI* botAI)
++        : Trigger(botAI, "aq40 twins healer off spot") {}
++    bool IsActive() override;
++};
++
++class Aq40TwinsPetOnWrongTwinTrigger : public Trigger
++{
++public:
++    Aq40TwinsPetOnWrongTwinTrigger(PlayerbotAI* botAI)
++        : Trigger(botAI, "aq40 twins pet on wrong twin") {}
++    bool IsActive() override;
++};
++
++// C'Thun. Every name is prefixed "aq40 cthun" for the same shared-registry reason as above.
++
++class Aq40CthunNotInCombatTrigger : public Trigger
++{
++public:
++    Aq40CthunNotInCombatTrigger(PlayerbotAI* botAI) : Trigger(botAI, "aq40 cthun not in combat") {}
++    bool IsActive() override;
++};
++
++class Aq40CthunInStomachTrigger : public Trigger
++{
++public:
++    Aq40CthunInStomachTrigger(PlayerbotAI* botAI) : Trigger(botAI, "aq40 cthun in stomach") {}
++    bool IsActive() override;
++};
++
++class Aq40CthunMountedInPlaceTrigger : public Trigger
++{
++public:
++    Aq40CthunMountedInPlaceTrigger(PlayerbotAI* botAI) : Trigger(botAI, "aq40 cthun mounted in place") {}
++    bool IsActive() override;
++};
++
++class Aq40CthunStomachAirborneTrigger : public Trigger
++{
++public:
++    Aq40CthunStomachAirborneTrigger(PlayerbotAI* botAI)
++        : Trigger(botAI, "aq40 cthun stomach airborne") {}
++    bool IsActive() override;
++};
++
++class Aq40CthunStomachFarFromTentacleTrigger : public Trigger
++{
++public:
++    Aq40CthunStomachFarFromTentacleTrigger(PlayerbotAI* botAI)
++        : Trigger(botAI, "aq40 cthun stomach far from tentacle") {}
++    bool IsActive() override;
++};
++
++class Aq40CthunInGlarePathTrigger : public Trigger
++{
++public:
++    Aq40CthunInGlarePathTrigger(PlayerbotAI* botAI) : Trigger(botAI, "aq40 cthun in glare path") {}
++    bool IsActive() override;
++};
++
++class Aq40CthunNearBeamTargetTrigger : public Trigger
++{
++public:
++    Aq40CthunNearBeamTargetTrigger(PlayerbotAI* botAI)
++        : Trigger(botAI, "aq40 cthun near beam target") {}
++    bool IsActive() override;
++};
++
++class Aq40CthunOpeningPullerTrigger : public Trigger
++{
++public:
++    Aq40CthunOpeningPullerTrigger(PlayerbotAI* botAI)
++        : Trigger(botAI, "aq40 cthun opening puller") {}
++    bool IsActive() override;
++};
++
++class Aq40CthunWrongTargetTrigger : public Trigger
++{
++public:
++    Aq40CthunWrongTargetTrigger(PlayerbotAI* botAI) : Trigger(botAI, "aq40 cthun wrong target") {}
++    bool IsActive() override;
++};
++
++class Aq40CthunNotFormedTrigger : public Trigger
++{
++public:
++    Aq40CthunNotFormedTrigger(PlayerbotAI* botAI) : Trigger(botAI, "aq40 cthun not formed") {}
++    bool IsActive() override;
++};
++
++#endif
+diff --git a/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Triggers_Cthun.cpp b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Triggers_Cthun.cpp
+new file mode 100644
+index 0000000..9d08139
+--- /dev/null
++++ b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Triggers_Cthun.cpp
+@@ -0,0 +1,44 @@
++/*
++ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
++ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
++ * or (at your option) any later version.
++ */
++
++#include "Aq40Triggers.h"
++
++#include "Aq40CthunHelpers.h"
++#include "Aq40Helpers.h"
++#include "Playerbots.h"
++
++using namespace TempleOfAhnQirajHelpers;
++
++bool Aq40CthunNotInCombatTrigger::IsActive()
++{
++    return IsInAq40(bot) && !bot->IsInCombat() && !IsCthunEncounterActive(bot);
++}
++
++bool Aq40CthunInStomachTrigger::IsActive() { return CthunShouldExitStomach(bot); }
++bool Aq40CthunMountedInPlaceTrigger::IsActive() { return CthunShouldDismount(bot, botAI); }
++
++bool Aq40CthunStomachAirborneTrigger::IsActive()
++{
++    float groundZ = 0.0f;
++    return GetCthunAirborneState(bot, botAI, groundZ) != CthunAirborne::None;
++}
++bool Aq40CthunStomachFarFromTentacleTrigger::IsActive()
++{
++    Position s;
++    return GetCthunStomachApproachSpot(bot, botAI, s);
++}
++
++bool Aq40CthunInGlarePathTrigger::IsActive() { return CthunShouldDodgeGlare(bot); }
++bool Aq40CthunNearBeamTargetTrigger::IsActive() { return CthunShouldClearBeam(bot); }
++bool Aq40CthunOpeningPullerTrigger::IsActive()
++{
++    Position s;
++    return GetCthunPullerSpot(bot, s);
++}
++
++bool Aq40CthunWrongTargetTrigger::IsActive() { return CthunShouldRetarget(bot, botAI); }
++
++bool Aq40CthunNotFormedTrigger::IsActive() { return CthunShouldFormUp(bot, botAI); }
+diff --git a/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Triggers_Twins.cpp b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Triggers_Twins.cpp
+new file mode 100644
+index 0000000..5232ada
+--- /dev/null
++++ b/modules/mod-playerbots/src/Ai/Raid/Aq40/Aq40Triggers_Twins.cpp
+@@ -0,0 +1,25 @@
++/*
++ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
++ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
++ * or (at your option) any later version.
++ */
++
++#include "Aq40Triggers.h"
++
++#include "Aq40Helpers.h"
++#include "Playerbots.h"
++
++using namespace TempleOfAhnQirajHelpers;
++
++bool Aq40TwinsNotInCombatTrigger::IsActive()
++{
++    return IsInAq40(bot) && !bot->IsInCombat() && !IsTwinsEncounterActive(bot);
++}
++
++bool Aq40TwinsInExplodeRadiusTrigger::IsActive() { return TwinsShouldClearExplode(bot, botAI); }
++bool Aq40TwinsInBlizzardTrigger::IsActive() { return TwinsShouldClearBlizzard(bot, botAI); }
++bool Aq40TwinsWrongTargetTrigger::IsActive() { return TwinsShouldRetarget(bot, botAI); }
++bool Aq40TwinsTooCloseTrigger::IsActive() { return TwinsShouldFixSeparation(bot, botAI); }
++bool Aq40TwinsTankOutOfPositionTrigger::IsActive() { return TwinsShouldMoveTank(bot, botAI); }
++bool Aq40TwinsHealerOffSpotTrigger::IsActive() { return TwinsShouldHoldHealerSpot(bot, botAI); }
++bool Aq40TwinsPetOnWrongTwinTrigger::IsActive() { return TwinsShouldDirectPet(bot, botAI); }
+diff --git a/modules/mod-playerbots/src/Ai/Raid/RaidStrategyContext.h b/modules/mod-playerbots/src/Ai/Raid/RaidStrategyContext.h
+index 720706c..47104b8 100644
+--- a/modules/mod-playerbots/src/Ai/Raid/RaidStrategyContext.h
++++ b/modules/mod-playerbots/src/Ai/Raid/RaidStrategyContext.h
+@@ -8,6 +8,7 @@
+ #define PLAYERBOTS_RAIDSTRATEGYCONTEXT_H
+ 
+ #include "Aq20Strategy.h"
++#include "Aq40Strategy.h"
+ #include "BTStrategy.h"
+ #include "BWLStrategy.h"
+ #include "EoEStrategy.h"
+@@ -35,6 +36,7 @@ public:
+     RaidStrategyContext() : NamedObjectContext<Strategy>(false, true)
+     {
+         creators["aq20"] = &RaidStrategyContext::aq20;
++        creators["aq40"] = &RaidStrategyContext::aq40;
+         creators["moltencore"] = &RaidStrategyContext::moltencore;
+         creators["bwl"] = &RaidStrategyContext::bwl;
+         creators["karazhan"] = &RaidStrategyContext::karazhan;
+@@ -58,6 +60,7 @@ public:
+ 
+ private:
+     static Strategy* aq20(PlayerbotAI* botAI) { return new RaidAq20Strategy(botAI); }
++    static Strategy* aq40(PlayerbotAI* botAI) { return new RaidAq40Strategy(botAI); }
+     static Strategy* moltencore(PlayerbotAI* botAI) { return new RaidMcStrategy(botAI); }
+     static Strategy* bwl(PlayerbotAI* botAI) { return new RaidBwlStrategy(botAI); }
+     static Strategy* karazhan(PlayerbotAI* botAI) { return new RaidKarazhanStrategy(botAI); }
+diff --git a/modules/mod-playerbots/src/Bot/Engine/BuildSharedActionContexts.cpp b/modules/mod-playerbots/src/Bot/Engine/BuildSharedActionContexts.cpp
+index 6cad5d0..ac4a4ef 100644
+--- a/modules/mod-playerbots/src/Bot/Engine/BuildSharedActionContexts.cpp
++++ b/modules/mod-playerbots/src/Bot/Engine/BuildSharedActionContexts.cpp
+@@ -7,6 +7,7 @@
+ #include "ActionContext.h"
+ #include "AiObjectContext.h"
+ #include "Aq20ActionContext.h"
++#include "Aq40ActionContext.h"
+ #include "BTActionContext.h"
+ #include "BWLActionContext.h"
+ #include "ChatActionContext.h"
+@@ -38,6 +39,7 @@ void AiObjectContext::BuildSharedActionContexts(
+     actionContexts.Add(new ChatActionContext());
+     actionContexts.Add(new WorldPacketActionContext());
+     actionContexts.Add(new RaidAq20ActionContext());
++    actionContexts.Add(new RaidAq40ActionContext());
+     actionContexts.Add(new RaidMcActionContext());
+     actionContexts.Add(new RaidBwlActionContext());
+     actionContexts.Add(new RaidKarazhanActionContext());
+diff --git a/modules/mod-playerbots/src/Bot/Engine/BuildSharedTriggerContexts.cpp b/modules/mod-playerbots/src/Bot/Engine/BuildSharedTriggerContexts.cpp
+index 20ba4ce..fb4ea91 100644
+--- a/modules/mod-playerbots/src/Bot/Engine/BuildSharedTriggerContexts.cpp
++++ b/modules/mod-playerbots/src/Bot/Engine/BuildSharedTriggerContexts.cpp
+@@ -6,6 +6,7 @@
+ 
+ #include "AiObjectContext.h"
+ #include "Aq20TriggerContext.h"
++#include "Aq40TriggerContext.h"
+ #include "BTTriggerContext.h"
+ #include "BWLTriggerContext.h"
+ #include "ChatTriggerContext.h"
+@@ -38,6 +39,7 @@ void AiObjectContext::BuildSharedTriggerContexts(
+     triggerContexts.Add(new ChatTriggerContext());
+     triggerContexts.Add(new WorldPacketTriggerContext());
+     triggerContexts.Add(new RaidAq20TriggerContext());
++    triggerContexts.Add(new RaidAq40TriggerContext());
+     triggerContexts.Add(new RaidMcTriggerContext());
+     triggerContexts.Add(new RaidBwlTriggerContext());
+     triggerContexts.Add(new RaidKarazhanTriggerContext());
+diff --git a/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp b/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp
+index 3f7e5e0..308efb7 100644
+--- a/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp
++++ b/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp
+@@ -1658,7 +1658,7 @@ void PlayerbotAI::ApplyInstanceStrategies(uint32 mapId, bool tellMaster)
+ {
+     static const std::vector<std::string> allInstanceStrategies =
+     {
+-        "aq20", "blacktemple", "bwl", "gruulslair", "hyjal", "icc", "karazhan", "magtheridon",
++        "aq20", "aq40", "blacktemple", "bwl", "gruulslair", "hyjal", "icc", "karazhan", "magtheridon",
+         "moltencore", "naxx", "onyxia", "rs", "ssc", "sunwell", "tbc-ac", "tbc-mech", "tbc-mgt",
+         "tbc-ramp", "tbc-seth", "tbc-ub", "tempestkeep", "ulduar", "voa", "wotlk-an", "wotlk-cos",
+         "wotlk-dtk", "wotlk-eoe", "wotlk-fos", "wotlk-gd", "wotlk-hol", "wotlk-hos", "wotlk-nex",
+@@ -1687,6 +1687,9 @@ void PlayerbotAI::ApplyInstanceStrategies(uint32 mapId, bool tellMaster)
+         case 509:
+             strategyName = "aq20";  // Ruins of Ahn'Qiraj
+             break;
++        case 531:
++            strategyName = "aq40";  // Temple of Ahn'Qiraj
++            break;
+         case 532:
+             strategyName = "karazhan";  // Karazhan
+             break;

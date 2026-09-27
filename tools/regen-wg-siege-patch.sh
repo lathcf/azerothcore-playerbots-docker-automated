@@ -99,7 +99,7 @@ P0003="$ROOT/patches/0003-playerbot-wintergrasp.patch"
 # PlayerbotAI.cpp hunks from the diff's worktree copy, leaving pristine+0003+0004 — see step 5b.
 # Keep this list current: every patch after 0004 that edits PlayerbotAI.cpp MUST be listed, or the
 # regen silently re-absorbs its hunks into 0004 (the contamination trap that shipped a broken 0004).
-P_LATER_PBAI=("$ROOT/patches/0016-playerbot-aq40-twins.patch" \
+P_LATER_PBAI=("$ROOT/patches/0016-playerbot-aq40.patch" \
               "$ROOT/patches/0014-playerbot-sunwell.patch" \
               "$ROOT/patches/0011-playerbot-perfmon-hotpath.patch")  # REVERSE order (last patch first)
 # Per-patch PlayerbotAI.cpp presence markers, index-aligned with P_LATER_PBAI (see step 5b).
