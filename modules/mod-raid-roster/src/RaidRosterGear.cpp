@@ -110,6 +110,34 @@ struct SetInfo
     std::vector<uint32> pieces;  // uncommon+ body-armor entries of this ItemSet
 };
 
+// The classic T0/T0.5 dungeon sets carry no class data anywhere in item_template (every
+// piece AllowableClass -1) and their ItemSet.dbc bonus spells' SpellFamilyName is not a
+// reliable class signal (checked: e.g. The Elements/Beaststalker bonus spells report the
+// paladin family), so ownership here is authored by stable DBC set id.
+struct LegacySetClass { uint32 setId; uint8 cls; };
+constexpr LegacySetClass kLegacyDungeonSetClass[] = {
+    // Tier 0 (Dungeon Set 1)
+    { 181, CLASS_MAGE },    // Magister's Regalia
+    { 182, CLASS_PRIEST },  // Vestments of the Devout
+    { 183, CLASS_WARLOCK }, // Dreadmist Raiment
+    { 184, CLASS_ROGUE },   // Shadowcraft Armor
+    { 185, CLASS_DRUID },   // Wildheart Raiment
+    { 186, CLASS_HUNTER },  // Beaststalker Armor
+    { 187, CLASS_SHAMAN },  // The Elements
+    { 188, CLASS_PALADIN }, // Lightforge Armor
+    { 189, CLASS_WARRIOR }, // Battlegear of Valor
+    // Tier 0.5 (Dungeon Set 2)
+    { 511, CLASS_WARRIOR }, // Battlegear of Heroism
+    { 512, CLASS_ROGUE },   // Darkmantle Armor
+    { 513, CLASS_DRUID },   // Feralheart Raiment
+    { 514, CLASS_PRIEST },  // Vestments of the Virtuous
+    { 515, CLASS_HUNTER },  // Beastmaster Armor
+    { 516, CLASS_PALADIN }, // Soulforge Armor
+    { 517, CLASS_MAGE },    // Sorcerer's Regalia
+    { 518, CLASS_WARLOCK }, // Deathmist Raiment
+    { 519, CLASS_SHAMAN },  // The Five Thunders
+};
+
 // Bot-independent gear index, built once on first sync (world thread only, like every
 // caller in this module — no locking).
 //   byInvType: invType -> (ItemLevel, entry) sorted by ItemLevel, for ilvl-window range
@@ -127,11 +155,18 @@ struct SetInfo
 //     gets for free by querying the cache per level (PlayerbotFactory.cpp).
 //   sets: ItemSet id -> body-armor pieces, from item_template directly (set items are
 //     all real droppable items); PvP sets excluded by name at build time.
+//   setClass: ItemSet id -> owning class mask (absent = class-agnostic). A set's owning
+//     classes = OR of CLASSMASK_ALL_PLAYABLE-masked AllowableClass over EVERY item_template
+//     row of that ItemSet (any slot, any quality — T3's rings are what carry the class)
+//     whose mask is a real restriction (not -1 / not covering all playable classes); sets
+//     with no restricted row fall back to kLegacyDungeonSetClass; still nothing = class-
+//     agnostic (crafted/world-drop sets).
 struct GearIndex
 {
     std::unordered_map<uint32, std::vector<std::pair<uint16, uint32>>> byInvType;
     std::unordered_map<uint32, uint8> reqLevel;
     std::unordered_map<uint32, SetInfo> sets;
+    std::unordered_map<uint32, uint32> setClass;  // ItemSet id -> owning class mask (absent = class-agnostic)
 };
 
 GearIndex const& GetIndex()
@@ -203,8 +238,24 @@ GearIndex const& GetIndex()
             idx.sets[proto.ItemSet].pieces.push_back(entryId);
         }
 
-        LOG_INFO("playerbots", "[RaidRoster] Gear index built: {} inventory types, {} candidate sets.",
-                 uint32(idx.byInvType.size()), uint32(idx.sets.size()));
+        // Per-set owning class mask (see GearIndex::setClass). A SEPARATE scan over every
+        // ItemSet != 0 row — not just the filtered body-armor pieces above — because the
+        // class-carrying pieces (T3 rings) are jewelry, not body armor.
+        for (auto const& [entryId, proto] : *sObjectMgr->GetItemTemplateStore())
+        {
+            if (!proto.ItemSet)
+                continue;
+            uint32 const mask = uint32(proto.AllowableClass) & uint32(CLASSMASK_ALL_PLAYABLE);
+            if (mask == uint32(CLASSMASK_ALL_PLAYABLE) || mask == 0)
+                continue;  // no real restriction on this row
+            idx.setClass[proto.ItemSet] |= mask;
+        }
+        for (LegacySetClass const& legacy : kLegacyDungeonSetClass)
+            if (!idx.setClass.count(legacy.setId))
+                idx.setClass[legacy.setId] = 1u << (legacy.cls - 1);
+
+        LOG_INFO("playerbots", "[RaidRoster] Gear index built: {} inventory types, {} candidate sets, {} class-owned sets.",
+                 uint32(idx.byInvType.size()), uint32(idx.sets.size()), uint32(idx.setClass.size()));
         return idx;
     }();
     return index;
@@ -218,6 +269,17 @@ bool MeetsLevelRequirement(GearIndex const& idx, uint32 entry, uint8 level)
 {
     auto it = idx.reqLevel.find(entry);
     return it == idx.reqLevel.end() || it->second <= level;
+}
+
+// False when `proto` belongs to an item set owned by other classes. item_template's per-piece
+// AllowableClass is NOT enough: T3 body pieces and every T0/T0.5 piece read as all-class, which
+// put paladins in the warrior set and shamans in the hunter set (see GearIndex::setClass).
+bool SetAllowsClass(GearIndex const& idx, ItemTemplate const* proto, uint32 classMask)
+{
+    if (!proto->ItemSet)
+        return true;
+    auto it = idx.setClass.find(proto->ItemSet);
+    return it == idx.setClass.end() || (it->second & classMask) != 0;
 }
 
 // Probe + equip one item entry via the core's own leak-free pair (same idiom as
@@ -264,6 +326,8 @@ std::vector<std::pair<float, uint32>> RankedCandidates(
             ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itr->second);
             if (!proto || !(proto->AllowableClass & classMask))
                 continue;
+            if (!SetAllowsClass(idx, proto, classMask))
+                continue;
             if (!MeetsLevelRequirement(idx, itr->second, bot->GetLevel()))
                 continue;
             if (bot->CanUseItem(proto) != EQUIP_ERR_OK)  // level/skill/faction gate
@@ -295,9 +359,10 @@ struct ChosenSet
     std::unordered_set<int32> coveredSlots;   // equipment slots those pieces fill
 };
 
-// Pick the tier set for this bot: pieces filtered to class-legal, best-subclass,
-// CanUseItem-legal; set qualifies if it covers >= MIN_SET_SLOTS body slots and its MEDIAN
-// piece ilvl sits in [target - OFF_WINDOW, target + SET_TOLERANCE]. The window keys on the
+// Pick the tier set for this bot: set must be owned by the bot's class (GearIndex::setClass),
+// pieces filtered to class-legal, best-subclass, CanUseItem-legal; set qualifies if it covers
+// >= MIN_SET_SLOTS body slots and its MEDIAN piece ilvl sits in
+// [target - OFF_WINDOW, target + SET_TOLERANCE]. The window keys on the
 // median, not the max, because a real tier set spans ilvls: a TBC T6 set runs 146 on its
 // five tier tokens up to 154 on its belt/boots/bracers, so a max-ilvl gate excluded the
 // whole epic set for a 147 (T6-geared) master by one point — and left a lower green/blue
@@ -320,6 +385,10 @@ bool PickSet(Player* bot, StatsWeightCalculator& calc, int32 target, ChosenSet& 
     std::vector<ChosenSet> qualifying;
     for (auto const& [setId, info] : idx.sets)
     {
+        auto owner = idx.setClass.find(setId);
+        if (owner != idx.setClass.end() && !(owner->second & classMask))
+            continue;  // another class's tier set (see GearIndex::setClass)
+
         ChosenSet cand;
         cand.setId = setId;
         for (uint32 entry : info.pieces)

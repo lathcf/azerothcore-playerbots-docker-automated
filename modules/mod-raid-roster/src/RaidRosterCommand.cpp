@@ -376,8 +376,9 @@ bool RaidRosterCommand::HandleLogin(ChatHandler* handler, Optional<uint32> sizeA
 }
 
 // Force one bot to the master's level and the given talent spec (0-based tab), re-derive
-// role strategies, then deterministically re-gear it for that spec (set-aware, enchanted,
-// gemmed) via RaidRosterGear. Shared by full sync and syncone.
+// role strategies, deterministically re-gear it for that spec (set-aware, enchanted,
+// gemmed) via RaidRosterGear, and teach its era's class-book spells. Shared by full sync
+// and syncone.
 static void SyncBotToSpec(Player* master, Player* bot, int specTab)
 {
     // 1) Level to master + learn spells/skills/glyphs/pet/consumables. Randomize also
@@ -419,6 +420,12 @@ static void SyncBotToSpec(Player* master, Player* bot, int specTab)
 
     // 7) Match the bot's IP era to the master's so grouped raids run at the master's tier.
     RaidRosterEra::SyncBotToMaster(master, bot);
+
+    // 8) Class-book spells (Prayer of Fortitude, Arcane Brilliance, the AQ20 rank books, ...).
+    //    IP re-gates their trainer rows to level 61/71, so step 1's trainer pass can't teach them
+    //    to a Vanilla/TBC-band bot. MUST follow step 7: the tier gate reads the bot's own IP state.
+    //    Re-runs every sync because step 1's Randomize(false) ClearSpells() wipes them.
+    RaidRosterEra::LearnBookSpells(bot);
 }
 
 // Canonical spec tab for a class filling a role (0=tank, 1=heal, 2=dps), matching the
