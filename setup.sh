@@ -31,7 +31,7 @@ MODULES=(
 )
 
 # Modules we author and ship from THIS repo (copied in, not git-cloned). Kept by the reconcile.
-LOCAL_MODULES=( "mod-playerbot-chatter" "mod-raid-roster" "mod-ahbot-price" "mod-wintergrasp-bots" "mod-arena-roster" "mod-battleground-bots" )
+LOCAL_MODULES=( "mod-playerbot-chatter" "mod-raid-roster" "mod-ahbot-price" "mod-wintergrasp-bots" "mod-arena-roster" "mod-battleground-bots" "mod-enchanter-npc" )
 
 # Optional commit pins (repo-pins.txt): freeze the fork and/or a module at a known-good commit
 # instead of its branch tip — used to hold a stable upstream when the latest HEAD is broken.
@@ -910,6 +910,18 @@ AHPRICE_CONF="$MODETC/mod_ahbot_price.conf"
 if [[ -f "$AHPRICE_CONF" ]]; then
   set_conf "AHBotPrice.Enable"            "${AHPRICE_ENABLE:-0}"              "$AHPRICE_CONF"
   set_conf "AHBotPrice.HideUnauctionable" "${AHPRICE_HIDE_UNAUCTIONABLE:-1}"  "$AHPRICE_CONF"
+fi
+
+# ── Enchanter NPC (mod-enchanter-npc) ────────────────────────────────────────
+# City NPC selling era/level/profession-legal permanent enchants for the reagents'
+# live AH price + a labor tip. Catalog is built at worldserver startup.
+ENCHANTER_CONF="$MODETC/mod_enchanter_npc.conf"
+if [[ -f "$ENCHANTER_CONF" ]]; then
+  set_conf "EnchanterNpc.Enable"          "${ENCHANTER_ENABLE:-1}"            "$ENCHANTER_CONF"
+  set_conf "EnchanterNpc.MatsPct"         "${ENCHANTER_MATS_PCT:-100}"        "$ENCHANTER_CONF"
+  set_conf "EnchanterNpc.LaborAtMax"      "${ENCHANTER_LABOR_AT_MAX:-50000}"  "$ENCHANTER_CONF"
+  set_conf "EnchanterNpc.PriceRefreshSec" "${ENCHANTER_PRICE_REFRESH_SEC:-300}" "$ENCHANTER_CONF"
+  set_conf "EnchanterNpc.Debug"           "${ENCHANTER_DEBUG:-0}"             "$ENCHANTER_CONF"
 fi
 
 # ── Wintergrasp bots (mod-wintergrasp-bots) ──────────────────────────────────

@@ -1,0 +1,30 @@
+[worldserver]
+
+########################################
+# mod-enchanter-npc configuration
+########################################
+
+# EnchanterNpc.Enable
+#   Master switch. Default 1. setup.sh sets this from .env ENCHANTER_ENABLE.
+#   When 0 the NPC only says it is closed, and no catalog or price cache is built.
+#   Changing it needs a worldserver restart (the catalog is built at startup).
+EnchanterNpc.Enable = 1
+
+# EnchanterNpc.MatsPct
+#   Percent of the reagents' market value charged. Default 100. (.env ENCHANTER_MATS_PCT)
+EnchanterNpc.MatsPct = 100
+
+# EnchanterNpc.LaborAtMax
+#   Labor tip in copper at recipe skill 450; scales with (rank/450)^2. Default 50000 (5g):
+#   ~2g22s at 300, ~55s at 150, ~6s at 50. (.env ENCHANTER_LABOR_AT_MAX)
+EnchanterNpc.LaborAtMax = 50000
+
+# EnchanterNpc.PriceRefreshSec
+#   Seconds between AH price-cache rebuilds (world thread). Default 300, minimum 30.
+#   (.env ENCHANTER_PRICE_REFRESH_SEC)
+EnchanterNpc.PriceRefreshSec = 300
+
+# EnchanterNpc.Debug
+#   1 = log each purchase with its per-reagent price breakdown, and each cache rebuild.
+#   Default 0. (.env ENCHANTER_DEBUG)
+EnchanterNpc.Debug = 0

@@ -66,6 +66,10 @@ this repo.
   that show the buy-value range the AH bot buyer will pay for an item, so you can price your
   listings to actually sell. Off by default (`AHPRICE_ENABLE`). See
   [Auction house economy](#auction-house-economy-ahbot--optional).
+- **Enchanter NPC** (`mod-enchanter-npc`): an enchanter in every capital, Shattrath and Dalaran
+  who puts any permanent enchant your character could legitimately get **in its era** on your gear,
+  charging what the materials cost on the auction house plus a small labor fee, or less if you bring
+  your own mats. On by default (`ENCHANTER_ENABLE`). See [Enchanter NPC](#enchanter-npc-mod-enchanter-npc).
 - **Per-character expansion progression** via
   [mod-individual-progression](https://github.com/ZhengPeiRu21/mod-individual-progression):
   every character starts in Vanilla and earns its way into TBC and WotLK on one realm, with the
@@ -797,6 +801,78 @@ Under the hood the arena AI (team-shared kill target, rating-banded aggression, 
 use that works while crowd-controlled) ships as tracked fork patch `patches/0005`, applied
 automatically by `setup.sh`/`update.sh`.
 
+## Enchanter NPC (mod-enchanter-npc)
+
+**Selvyn Brightthread** ("Enchantments") stands near the enchanting trainer in every capital city
+(a Night Elf in Stormwind/Ironforge/Darnassus, an Undead in Orgrimmar/Undercity/Thunder Bluff) and a
+Human one in Shattrath and Dalaran. Talk to the enchanter to see your equipped gear listed. Pick a
+slot to get every **permanent** enchant that piece can take, strongest first, with the price on
+each line. Confirm, pay, and it's applied, just as if an enchanter had cast it on you.
+
+**What is sold.** The list isn't hand-written. It's built at server startup from the game's own
+data:
+- every Enchanting recipe that permanently enchants gear;
+- the crafter-only enchants from Tailoring, Leatherworking, Engineering and Inscription;
+- the "use to enchant" upgrade items: Arcanums, shoulder Inscriptions, Leg Armors, Spellthreads,
+  armor kits, scopes and so on.
+
+Temporary enchants (oils, poisons, sharpening stones), sockets and gems aren't included.
+
+**How it follows Individual Progression.** The enchanter holds each character to the same rules
+as the rest of this server's era system:
+- **Era.** A character sees only enchants from its current era and earlier. A Vanilla-era
+  character gets Vanilla enchants only (Crusader yes, Mongoose no). A TBC-era character adds TBC
+  enchants, and a WotLK-era character sees everything. A recipe's era comes from the Enchanting
+  skill it needs (up to 300 is Vanilla, up to 375 is TBC) and from the expansion materials it uses
+  (Arcane Dust / Void Crystals mean TBC; Infinite Dust / Abyss Crystals mean WotLK). Upgrade items
+  are banded by required level and item era.
+- **Raid progression.** Enchants whose recipes or items only drop in (or are sold for) a raid stay
+  hidden until your character has reached that raid's IP stage. For example, Enchant Gloves - Threat
+  and Enchant Cloak - Subtlety, from Ahn'Qiraj, unlock when your character reaches AQ. Outland and
+  Northrend sources open with their expansion. Anything also available from a trainer, a quest or a
+  world drop is open as soon as its era is.
+- **Level.** The same rule the game uses when an enchanter casts on you: some enchants need a
+  minimum item level on the piece, and an enchant with a character-level requirement waits until
+  you reach it. Upgrade items need you to be able to use them yourself (level, reputation such as
+  Sons of Hodir or Aldor/Scryer, and so on).
+- **Professions.** Crafter-only enchants appear only to characters who could apply them to their
+  own gear: ring enchants for enchanters, embroideries for tailors, fur linings for
+  leatherworkers, tinkers for engineers, and master's inscriptions for scribes.
+
+With `IP_ENABLE=0`, every character is treated as WotLK and only the level, profession and
+reputation rules apply.
+
+**Price.** Each enchant costs the market value of its materials plus a small labor fee that grows
+with the recipe's skill (about 6s at skill 50, 55s at 150, 2g 22s at 300 and 5g at 450). Each
+material is priced, in order of preference, at:
+1. the cheapest buyout on your faction's auction house right now;
+2. an unlimited-supply vendor's price;
+3. the price the AH bot would pay for it.
+
+An upgrade item is priced as the item itself. Prices refresh every 5 minutes. If a price rises
+between opening the menu and confirming, you're shown the new price instead of being charged more.
+
+**Bring your own materials.** The first line of the menu is **Use my materials: ON** (ON every time
+you open it). While it's on, any of the recipe's materials in your **bags** are used first, and
+the price drops by exactly their market value; the confirm box lists what will be consumed ("Uses
+your 4x Arcane Dust"). Carrying the upgrade item itself (e.g. an Arcanum) leaves only the labor
+fee. Your bank is never touched, and items sitting in a trade window don't count. Click the line to
+turn it OFF and pay full price instead, which is useful when you want to keep rare mats.
+
+**Enable / tune** (`.env`, then re-run `./setup.sh`):
+
+| Setting | Default | What it does |
+|---|---|---|
+| `ENCHANTER_ENABLE` | 1 | 0 closes the enchanter |
+| `ENCHANTER_MATS_PCT` | 100 | % of the materials' value charged |
+| `ENCHANTER_LABOR_AT_MAX` | 50000 | labor fee in copper at skill 450 |
+| `ENCHANTER_PRICE_REFRESH_SEC` | 300 | how often AH prices are re-read |
+| `ENCHANTER_DEBUG` | 0 | log each purchase with its price breakdown |
+
+GM/console: **`.enchanter dump <vanilla|tbc|wotlk> [name]`** lists what's sold in an era, with each
+entry's raid stage, profession requirement and the source of every material price.
+**`.enchanter reloadprices`** re-reads the auction house now.
+
 ## Era talents (mod-era-talents)
 
 **Era-authentic talent trees** for characters progressing through the expansions: while a character
@@ -959,6 +1035,10 @@ star and support the original projects; they did the hard part.
   jobs); the battle-invite and siege-vehicle AI ship as fork patches `patches/0003`/`0004`.
 - **`modules/mod-ahbot-price/`** — read-only `.ahprice` AH price lookup, paired with the
   **`AHPrice`** client addon (`client-addons-src/AHPrice/`).
+- **`modules/mod-enchanter-npc/`** — the era-gated Enchanter NPC: a data-driven catalog of every
+  permanent enchant, Individual Progression era and raid-stage gating, and auction-house pricing
+  with a bring-your-own-materials discount. (Inspired by StygianCore's `mod-npc-enchanter`, rewritten
+  from scratch.)
 - **[azerothcore-mod-era-talents](https://github.com/lathcf/azerothcore-mod-era-talents)** (own repo, installed by
   `setup.sh`) — era-authentic Vanilla/TBC talent trees for Individual Progression characters (and
   optionally bots), with the **`EraTalents`** client addon, a `patch-V.mpq` merge and its own core /
