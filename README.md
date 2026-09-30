@@ -813,10 +813,14 @@ each line. Confirm, pay, and it's applied, just as if an enchanter had cast it o
 data:
 - every Enchanting recipe that permanently enchants gear;
 - the crafter-only enchants from Tailoring, Leatherworking, Engineering and Inscription;
-- the "use to enchant" upgrade items: Arcanums, shoulder Inscriptions, Leg Armors, Spellthreads,
-  armor kits, scopes and so on.
+- the "use to enchant" items a profession crafts: Leg Armors, Spellthreads, armor kits, scopes,
+  shield spikes and weapon chains.
 
-Temporary enchants (oils, poisons, sharpening stones), sockets and gems aren't included.
+In other words, the enchanter acts like a player crafter who knows the recipes. Enchants you earn
+by turning in items or with reputation aren't sold here: Zul'Gurub signets and idols, Dire Maul
+arcanums, the Naxxramas shoulder enchants, Aldor/Scryer and Sons of Hodir inscriptions, and so on.
+Get those from their usual vendors and quests. Temporary enchants (oils, poisons, sharpening
+stones), sockets and gems aren't included either.
 
 **How it follows Individual Progression.** The enchanter holds each character to the same rules
 as the rest of this server's era system:
@@ -833,8 +837,8 @@ as the rest of this server's era system:
   world drop is open as soon as its era is.
 - **Level.** The same rule the game uses when an enchanter casts on you: some enchants need a
   minimum item level on the piece, and an enchant with a character-level requirement waits until
-  you reach it. Upgrade items need you to be able to use them yourself (level, reputation such as
-  Sons of Hodir or Aldor/Scryer, and so on).
+  you reach it. Upgrade items need you to be able to use them yourself (level, reputation and
+  so on).
 - **Professions.** Crafter-only enchants appear only to characters who could apply them to their
   own gear: ring enchants for enchanters, embroideries for tailors, fur linings for
   leatherworkers, tinkers for engineers, and master's inscriptions for scribes.
@@ -855,7 +859,7 @@ between opening the menu and confirming, you're shown the new price instead of b
 **Bring your own materials.** The first line of the menu is **Use my materials: ON** (ON every time
 you open it). While it's on, any of the recipe's materials in your **bags** are used first, and
 the price drops by exactly their market value; the confirm box lists what will be consumed ("Uses
-your 4x Arcane Dust"). Carrying the upgrade item itself (e.g. an Arcanum) leaves only the labor
+your 4x Arcane Dust"). Carrying the upgrade item itself (e.g. a Leg Armor) leaves only the labor
 fee. Your bank is never touched, and items sitting in a trade window don't count. Click the line to
 turn it OFF and pay full price instead, which is useful when you want to keep rare mats.
 

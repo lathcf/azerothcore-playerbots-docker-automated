@@ -208,6 +208,27 @@ void EnchanterCatalog::Build()
 
     ItemTemplateContainer const& itemStore = *sObjectMgr->GetItemTemplateStore();
 
+    // --- Items some profession recipe creates (Source 2 sells only these).
+    std::unordered_set<uint32> craftedItems;
+    for (SkillLineAbilityEntry const* a : sSkillLineAbilityStore)
+    {
+        switch (a->SkillLine)
+        {
+            case SKILL_BLACKSMITHING: case SKILL_LEATHERWORKING: case SKILL_ALCHEMY:
+            case SKILL_TAILORING: case SKILL_ENGINEERING: case SKILL_ENCHANTING:
+            case SKILL_JEWELCRAFTING: case SKILL_INSCRIPTION:
+                break;
+            default:
+                continue;
+        }
+        SpellInfo const* si = sSpellMgr->GetSpellInfo(a->Spell);
+        if (!si)
+            continue;
+        for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+            if (si->Effects[i].Effect == SPELL_EFFECT_CREATE_ITEM && si->Effects[i].ItemType)
+                craftedItems.insert(si->Effects[i].ItemType);
+    }
+
     // --- Formula items, indexed by the recipe they teach, with the lowest nonzero learn rank.
     std::unordered_map<uint32, std::vector<uint32>> formulasBySpell;
     std::unordered_map<uint32, uint32> formulaRankBySpell;
@@ -298,7 +319,12 @@ void EnchanterCatalog::Build()
         if (rankUnknown.count(g_offers[i].spellId))
             ++unknownRank;
 
-    // --- Source 2: on-use upgrade items.
+    // --- Source 2: on-use upgrade items, but ONLY ones a profession recipe crafts (leg armors,
+    // spellthreads, armor kits, scopes, shield spikes, weapon chains). The NPC acts like a player
+    // crafter: quest/reputation/turn-in items (ZG signets and idols, Dire Maul and Kirin Tor
+    // arcanums, Naxxramas/Argent Dawn, Aldor/Scryer and Sons of Hodir shoulder inscriptions, ...)
+    // stay with their vendors and quest givers.
+    uint32 nonCrafted = 0;
     for (auto const& [entry, proto] : itemStore)
     {
         if (proto.Class == ITEM_CLASS_RECIPE || kExcludedItems.count(entry) || IsJunkName(proto.Name1))
@@ -311,6 +337,11 @@ void EnchanterCatalog::Build()
             uint32 enchantId = 0;
             if (!si || !PermanentEnchantOf(si, enchantId))
                 continue;
+            if (!craftedItems.count(entry))
+            {
+                ++nonCrafted;
+                break;   // not a crafter's product: next item
+            }
             if (recipeByEnchant.count(enchantId))
                 break;   // a recipe already sells it (this also drops the Enchanting vellum scrolls)
 
@@ -402,9 +433,9 @@ void EnchanterCatalog::Build()
         ++byEra[o.kind == EnchantSource::UPGRADE_ITEM ? 1 : 0][std::min<uint8>(o.era, 2)];
     LOG_INFO("server.loading",
         "[Enchanter] Catalog: {} recipes (V/T/W {}/{}/{}), {} upgrade items (V/T/W {}/{}/{}), "
-        "{} rank-unknown, {} tier-gated, {} priced items, built in {} ms",
+        "{} non-crafted upgrade items skipped, {} rank-unknown, {} tier-gated, {} priced items, built in {} ms",
         recipeCount, byEra[0][0], byEra[0][1], byEra[0][2],
-        g_offers.size() - recipeCount, byEra[1][0], byEra[1][1], byEra[1][2],
+        g_offers.size() - recipeCount, byEra[1][0], byEra[1][1], byEra[1][2], nonCrafted,
         unknownRank, tiered, g_pricedItems.size(), GetMSTimeDiffToNow(startMs));
 }
 
