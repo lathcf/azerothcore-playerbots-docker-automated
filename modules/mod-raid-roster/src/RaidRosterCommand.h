@@ -17,5 +17,7 @@ public:
     static bool HandleReset(ChatHandler* handler);
     static bool HandleRemove(ChatHandler* handler, Optional<std::string> confirm);
     static bool HandleStatus(ChatHandler* handler);
+    static bool HandleItemTier(ChatHandler* handler, uint32 itemId);
+    static bool HandleTierSweep(ChatHandler* handler, uint32 maxTier, uint32 minIlvl);
 };
 #endif

@@ -79,14 +79,19 @@ namespace
     // Core ChatChannels.dbc id for the per-zone General channel.
     constexpr uint32 GENERAL_CHANNEL_ID = 1;
 
-    // Lighter gate for ambient buffer feeds: a real player, non-addon line. (Unlike
-    // Eligible(), this does NOT drop command-like text — General/guild banter is fair
-    // game to react to.)
-    bool BufferEligible(Player* sender, uint32 lang)
+    // Gate for ambient buffer feeds: a real player, non-addon, non-command line. A command
+    // must never enter the buffer — OnPlayerLine re-energizes the thread, so a bot would
+    // "reply" to "summon"/"stay". Party/raid is where bot commands are typed, so it uses the
+    // full IsCommand (prefix + first-word match, same as the reactive path); General/guild
+    // only drop whole-line commands, since a keyword can legitimately open banter there
+    // ("trade chat is wild", "sell me your gold").
+    bool BufferEligible(Player* sender, uint32 lang, std::string const& msg, bool groupChat)
     {
         return g_PBChatEnable && g_PBChatAmbientEnable
             && lang != LANG_ADDON
-            && PBChatterClassifier::IsRealPlayerSender(sender);
+            && PBChatterClassifier::IsRealPlayerSender(sender)
+            && !(groupChat ? PBChatterClassifier::IsCommand(msg)
+                           : PBChatterClassifier::IsBareCommand(msg));
     }
 }
 
@@ -120,7 +125,7 @@ bool PBChatterObserver::OnPlayerCanUseChat(Player* player, uint32 type, uint32 l
         for (Player* bot : PBChatterClassifier::ResolveGroupTargets(player, group, msg))
             Enqueue(bot, player, ch, msg);
     }
-    if (group && BufferEligible(player, lang))
+    if (group && BufferEligible(player, lang, msg, true))
         PBChatterAmbient::OnPlayerLine(AMB_GROUP, group->GetGUID().GetRawValue(),
                                        player->GetGUID().GetCounter(), player->GetName(), msg);
     return true; // never block
@@ -128,7 +133,7 @@ bool PBChatterObserver::OnPlayerCanUseChat(Player* player, uint32 type, uint32 l
 
 bool PBChatterObserver::OnPlayerCanUseChat(Player* player, uint32 /*type*/, uint32 lang, std::string& msg, Guild* guild)
 {
-    if (guild && BufferEligible(player, lang))
+    if (guild && BufferEligible(player, lang, msg, false))
         PBChatterAmbient::OnPlayerLine(AMB_GUILD, guild->GetId(),
                                        player->GetGUID().GetCounter(), player->GetName(), msg);
     return true; // never block
@@ -136,7 +141,7 @@ bool PBChatterObserver::OnPlayerCanUseChat(Player* player, uint32 /*type*/, uint
 
 bool PBChatterObserver::OnPlayerCanUseChat(Player* player, uint32 /*type*/, uint32 lang, std::string& msg, Channel* channel)
 {
-    if (channel && channel->GetChannelId() == GENERAL_CHANNEL_ID && BufferEligible(player, lang))
+    if (channel && channel->GetChannelId() == GENERAL_CHANNEL_ID && BufferEligible(player, lang, msg, false))
         PBChatterAmbient::OnPlayerLine(AMB_ZONE, player->GetZoneId(),
                                        player->GetGUID().GetCounter(), player->GetName(), msg);
     return true; // never block

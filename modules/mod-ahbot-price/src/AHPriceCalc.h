@@ -5,23 +5,16 @@
 
 struct ItemTemplate;
 
-// Per-single-unit buy-value band, in copper. The AH bot buyer compares a random
-// draw within [minCopper, maxCopper] * stackCount against a listing's buyout.
+// Per-single-unit AH-bot LISTING range, in copper (the bot's sell floor..ceiling for one unit).
+// A thin wrapper over the in-house mod-ah-bot-plus pricing table
+// (AuctionHouseBot::GetItemPricing), so every consumer reads the bot's real numbers —
+// mod-enchanter-npc uses minCopper as its reagent-price floor. {0,0} until the table is built.
 struct AHPriceBand
 {
     uint64 minCopper;
     uint64 maxCopper;
 };
 
-// Reimplements mod-ah-bot-plus AuctionHouseBot::CalculateItemValue's deterministic
-// ENVELOPE (min/max, not one random sample), reading the live AuctionHouseBot.*
-// config keys so it always matches the running config. Includes the deterministic
-// AuctionHouseBot::GetAdvancedPricingMultiplier port (per-subclass formulas for
-// consumables/gems/trade goods/misc, plus the CategoryMount/CategoryPet quality
-// multipliers) AND the per-(class x quality) CategoryQuality matrix (which ships
-// with large values, e.g. Recipe/Epic 20x). Remaining simplification: the advanced
-// DROP-RATE multiplier (AdvancedListingRules.UseDropRates, off by default) and the
-// per-item PriceMinimumCenterBase.OverrideItems floor map (empty by default).
 AHPriceBand AHPriceComputeBand(ItemTemplate const* proto);
 
 #endif

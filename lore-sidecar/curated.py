@@ -99,3 +99,23 @@ def region_for(zone_name: str, map_id: int) -> str:
     Draenei isles) that continent_for would mislabel; otherwise falls back to the continent."""
     override = _REGION_OVERRIDES.get(_norm(zone_name or ""))
     return override if override else continent_for(map_id)
+
+
+# Capitals per faction, in the order a "not around here, try ..." answer should name them,
+# then the neutral hubs. Names are the DB zone/area names (mod_chatter_npc_area).
+CAPITALS = {
+    "Alliance": ["Stormwind City", "Ironforge", "Darnassus", "The Exodar"],
+    "Horde": ["Orgrimmar", "Undercity", "Thunder Bluff", "Silvermoon City"],
+}
+NEUTRAL_HUBS = ["Dalaran", "Shattrath City"]
+
+
+def capitals_for(faction: str) -> list[str]:
+    return list(CAPITALS.get(faction or "", []))
+
+
+def enemy_capitals_for(faction: str) -> list[str]:
+    """The other faction's capitals (empty when the faction is unknown)."""
+    if faction not in CAPITALS:
+        return []
+    return [c for f, caps in CAPITALS.items() if f != faction for c in caps]

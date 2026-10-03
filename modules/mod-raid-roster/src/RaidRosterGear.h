@@ -15,6 +15,9 @@ namespace RaidRosterGear
 // Returns false when the bot was skipped (not in world / below level 5) or gearing
 // was too incomplete to trust (< 8 pieces equipped).
 bool EquipForSpec(Player* bot, Player* master, int specTab);
+
+// Build the gear index (and with it the item tier table) if not built yet. World thread.
+void EnsureIndex();
 }
 
 #endif

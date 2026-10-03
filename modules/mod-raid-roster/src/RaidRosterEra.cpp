@@ -1,4 +1,5 @@
 #include "RaidRosterEra.h"
+#include "RaidRosterTierRules.h"
 #include "IndividualProgression.h"   // pulls Player.h etc.; see RaidRosterEra.h for why this is isolated
 #include "ObjectMgr.h"
 #include "ItemTemplate.h"
@@ -106,6 +107,22 @@ namespace
             return true;
         return sIndividualProgression->hasPassedProgression(bot, static_cast<ProgressionState>(tier));
     }
+
+    // Master's era: live IP state, or the level-band fallback when it reads unset (0) — a fresh
+    // overlay character whose era has not been hand-set yet (<=60 Vanilla / 61-70 TBC / 71-80 WotLK).
+    // Shared by SyncBotToMaster and MasterTier so the bot's era and the gear cap never disagree.
+    uint8 MasterState(Player* master)
+    {
+        uint8 state = sIndividualProgression->GetPlayerProgressionFromQuests(master);
+        if (state == 0)
+        {
+            uint8 lvl = master->GetLevel();
+            state = (lvl >= 71) ? PROGRESSION_TBC_TIER_5   // 13 = WotLK entry
+                  : (lvl >= 61) ? PROGRESSION_PRE_TBC      // 8  = TBC entry
+                  :               PROGRESSION_START;        // 0  = Vanilla
+        }
+        return state;
+    }
 }
 
 // Set a synced bot's IP era to match the master's, so the bot shares the master's content tier,
@@ -117,17 +134,8 @@ void RaidRosterEra::SyncBotToMaster(Player* master, Player* bot)
 {
     if (!master->IsInWorld() || !bot->IsInWorld())
         return;
-    // Source of truth = master's live era.
-    uint8 state = sIndividualProgression->GetPlayerProgressionFromQuests(master);
-    // Fallback by level band when the master reads as unset (0) — a fresh overlay character whose
-    // era has not been hand-set yet (≤60 Vanilla / 61-70 TBC / 71-80 WotLK).
-    if (state == 0)
-    {
-        uint8 lvl = master->GetLevel();
-        state = (lvl >= 71) ? PROGRESSION_TBC_TIER_5   // 13 = WotLK entry
-              : (lvl >= 61) ? PROGRESSION_PRE_TBC      // 8  = TBC entry
-              :               PROGRESSION_START;        // 0  = Vanilla
-    }
+    // Source of truth = master's live era, with the level-band fallback (see MasterState).
+    uint8 state = MasterState(master);
     if (state == 0)
     {
         // ForceUpdateProgressionState early-returns on stage 0 (landmine), so demote a
@@ -141,6 +149,16 @@ void RaidRosterEra::SyncBotToMaster(Player* master, Player* bot)
     {
         sIndividualProgression->ForceUpdateProgressionState(bot, static_cast<ProgressionState>(state));
     }
+}
+
+uint8 RaidRosterEra::MasterTier(Player* master)
+{
+    if (!master || !sIndividualProgression->enabled)
+        return RaidRosterTierRules::kTierUncapped;
+    uint8 state = MasterState(master);
+    if (sIndividualProgression->progressionLimit && state > sIndividualProgression->progressionLimit)
+        state = uint8(sIndividualProgression->progressionLimit);
+    return state;
 }
 
 // Teach every class-book spell the bot's class/level/IP-tier has unlocked. Book-only spells

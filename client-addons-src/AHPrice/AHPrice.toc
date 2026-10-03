@@ -1,8 +1,8 @@
 ## Interface: 30300
 ## Title: AHPrice
-## Notes: Search items and see the AH bot's buy-value range (mod-ahbot-price).
+## Notes: Search items and see what the AH bot sells them for and pays for them (mod-ahbot-price).
 ## Author: thrashernet
-## Version: 1.0
+## Version: 1.1
 ## SavedVariablesPerCharacter: AHPriceDB
 Comm.lua
 Model.lua

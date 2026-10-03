@@ -76,25 +76,45 @@ PlayerbotChatter.AmbientGeneral = 1
 PlayerbotChatter.AmbientGroup = 1
 PlayerbotChatter.AmbientGuild = 1
 
-# Two-speed cadence (seconds). Seed = cold-channel opening line; Follow = fast
-# in-thread reply while a context is active.
-PlayerbotChatter.AmbientSeedMin = 60
-PlayerbotChatter.AmbientSeedMax = 90
-PlayerbotChatter.AmbientFollowMin = 4
-PlayerbotChatter.AmbientFollowMax = 9
-PlayerbotChatter.AmbientActiveWindow = 75
+# Two-speed cadence (seconds). Seed = cold-channel opening line; Follow = in-thread
+# reply gap while a context is active. AmbientActiveWindow must exceed FollowMax or a
+# thread goes "cold" between its own lines.
+PlayerbotChatter.AmbientSeedMin = 180
+PlayerbotChatter.AmbientSeedMax = 360
+PlayerbotChatter.AmbientFollowMin = 8
+PlayerbotChatter.AmbientFollowMax = 22
+PlayerbotChatter.AmbientActiveWindow = 90
 
-# Loop brakes. Bots may chat with each other, bounded by these.
-PlayerbotChatter.AmbientBotStreakMax = 4
+# Loop brakes / thread model. Bots may chat with each other, bounded by these.
+#   A bot-only thread runs at least AmbientThreadMinLen lines; after that each further
+#   line ends it with AmbientThreadEndPct% chance (a geometric tail: mean length ~
+#   MinLen + 100/EndPct - 1, e.g. 3 + 100/20 - 1 = ~7 lines at the defaults),
+#   hard-capped at AmbientBotStreakMax. When a thread ends the
+#   context goes quiet for AmbientCooldown seconds. A human line resets the streak.
+#   AmbientThreadReactPct: % of in-thread follow-ups that answer the conversation (React)
+#     instead of rolling the content blend below (which would open a new topic).
+#   AmbientPerBotCooldown: global min gap (s) between one bot's ambient lines.
+#   AmbientThreadReplyCooldown: a bot that already spoke in the current thread may answer
+#     again after only this many seconds (so two bots can go back and forth).
+#   AmbientThreadParticipantPct: % of thread replies drawn from bots already in the thread
+#     (the rest pick from everyone eligible, so a newcomer can join).
+#   Each context runs one generation at a time; the next follow-up is timed from when the
+#   previous line actually appeared (AmbientFollowMin/Max).
+PlayerbotChatter.AmbientBotStreakMax = 10
 PlayerbotChatter.AmbientCooldown = 75
-PlayerbotChatter.AmbientPerBotCooldown = 120
+PlayerbotChatter.AmbientPerBotCooldown = 180
+PlayerbotChatter.AmbientThreadReactPct = 85
+PlayerbotChatter.AmbientThreadMinLen = 3
+PlayerbotChatter.AmbientThreadEndPct = 20
+PlayerbotChatter.AmbientThreadReplyCooldown = 30
+PlayerbotChatter.AmbientThreadParticipantPct = 60
 
 # Global safety ceiling (server-wide ambient messages per minute). Raise for livelier
 # channels, lower if the Ollama GPU is the bottleneck.
-PlayerbotChatter.AmbientMaxPerMin = 25
+PlayerbotChatter.AmbientMaxPerMin = 12
 
 # Per-context rolling buffer depth (recent lines fed to react mode).
-PlayerbotChatter.AmbientBufferLen = 8
+PlayerbotChatter.AmbientBufferLen = 12
 
 # Content-mode weights (relative; react needs buffer, event needs a fresh event, both fall
 # back to generic when unavailable). Banter (social/community/takes/off-topic) is weighted

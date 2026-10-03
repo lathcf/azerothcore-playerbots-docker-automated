@@ -3,6 +3,8 @@
 #include "RaidRosterComp.h"
 #include "RaidRosterStore.h"
 #include "RaidRosterGear.h"
+#include "RaidRosterItemTier.h"
+#include "RaidRosterLevelLock.h"   // XP-hook level lock for pinned bots
 #include "RaidRosterLoginPlan.h"   // ComputeLoginPlan — the pure login arithmetic (tests/ covers it)
 #include "Chat.h"
 #include "StringFormat.h"   // Acore::StringFormat for the login era-band suffix
@@ -55,6 +57,8 @@ ChatCommandTable RaidRosterCommand::GetCommands() const
         { "reset",  HandleReset,  SEC_PLAYER, Console::Yes },
         { "remove", HandleRemove, SEC_PLAYER, Console::Yes },
         { "status", HandleStatus, SEC_PLAYER, Console::Yes },
+        { "itemtier", HandleItemTier, SEC_PLAYER,     Console::Yes },
+        { "tiersweep",HandleTierSweep,SEC_GAMEMASTER, Console::Yes },
     };
     static ChatCommandTable root = { { "raidroster", sub } };
     return root;
@@ -156,9 +160,14 @@ bool RaidRosterCommand::HandleCreate(ChatHandler* handler)
         rows.push_back(row);
     }
 
+    std::vector<uint32> newGuids;
+    newGuids.reserve(rows.size());
+    for (RaidRosterRow const& r : rows) newGuids.push_back(r.botGuid);
+
     if (existing.empty())
     {
         RaidRosterStore::Replace(owner, rows);
+        RaidRosterLevelLock::Add(newGuids);
         handler->PSendSysMessage("Created roster of {} bots (4 tank / 9 heal / 27 dps in every era: 4 Death Knight "
             "slots active at level {}+, 4 substitutes below). Use .raidroster login [5|10|25|40] then .raidroster sync.",
             (uint32)rows.size(), (uint32)kWotlkBandMinLevel);
@@ -166,6 +175,7 @@ bool RaidRosterCommand::HandleCreate(ChatHandler* handler)
     else
     {
         RaidRosterStore::Append(owner, rows);         // no-op on empty
+        RaidRosterLevelLock::Add(newGuids);           // no-op on empty
         RaidRosterStore::UpdateBands(owner, reband);  // no-op on empty
         handler->PSendSysMessage("Roster topped up: added {} slot(s), re-banded {} existing slot(s). "
             "Run .raidroster login to apply.", (uint32)rows.size(), (uint32)reband.size());
@@ -377,8 +387,8 @@ bool RaidRosterCommand::HandleLogin(ChatHandler* handler, Optional<uint32> sizeA
 
 // Force one bot to the master's level and the given talent spec (0-based tab), re-derive
 // role strategies, deterministically re-gear it for that spec (set-aware, enchanted,
-// gemmed) via RaidRosterGear, and teach its era's class-book spells. Shared by full sync
-// and syncone.
+// gemmed) via RaidRosterGear, and teach its era's class-book spells. Shared by full sync and
+// syncone.
 static void SyncBotToSpec(Player* master, Player* bot, int specTab)
 {
     // 1) Level to master + learn spells/skills/glyphs/pet/consumables. Randomize also
@@ -426,6 +436,8 @@ static void SyncBotToSpec(Player* master, Player* bot, int specTab)
     //    to a Vanilla/TBC-band bot. MUST follow step 7: the tier gate reads the bot's own IP state.
     //    Re-runs every sync because step 1's Randomize(false) ClearSpells() wipes them.
     RaidRosterEra::LearnBookSpells(bot);
+
+    // Level lock = the OnPlayerGiveXP hook in RaidRosterLevelLock (playerbots login wipes the no-XP-gain flag).
 }
 
 // Canonical spec tab for a class filling a role (0=tank, 1=heal, 2=dps), matching the
@@ -650,13 +662,18 @@ bool RaidRosterCommand::HandleRemove(ChatHandler* handler, Optional<std::string>
     std::vector<RaidRosterRow> rows = RaidRosterStore::Load(owner);
     if (rows.empty()) { handler->SendSysMessage("No roster to remove."); return true; }
 
-    // Log out any that are online, then drop the rows. We do NOT delete the characters.
+    // Log out any that are online, release the XP lock, then drop the rows. We do NOT delete the
+    // characters.
     PlayerbotMgr* mgr = GET_PLAYERBOT_MGR(master);
+    std::vector<uint32> guids;
+    guids.reserve(rows.size());
     for (RaidRosterRow const& r : rows)
     {
         ObjectGuid g = ObjectGuid::Create<HighGuid::Player>(r.botGuid);
         if (mgr && mgr->GetPlayerBot(g)) mgr->LogoutPlayerBot(g);
+        guids.push_back(r.botGuid);
     }
+    RaidRosterLevelLock::Remove(guids);
     RaidRosterStore::Clear(owner);
     handler->SendSysMessage("Roster removed. Characters are back in the shared addclass pool.");
     return true;
@@ -701,5 +718,25 @@ bool RaidRosterCommand::HandleStatus(ChatHandler* handler)
     if (stale)
         handler->PSendSysMessage("WARNING: {} roster slot(s) are stale (character deleted or left "
             "the addclass pool). Run .raidroster remove confirm then .raidroster create.", stale);
+    return true;
+}
+
+// Diagnostics for the sync era gate: why an item has the tier it has, and a review list of the
+// quest/fallback verdicts (the ones the data can mis-tier). Both build the gear index on first use.
+bool RaidRosterCommand::HandleItemTier(ChatHandler* handler, uint32 itemId)
+{
+    if (!g_RaidRosterEnable) { handler->SendSysMessage("RaidRoster is disabled (set RaidRoster.Enable=1)."); return true; }
+    RaidRosterGear::EnsureIndex();
+    for (std::string const& line : RaidRosterItemTier::Explain(itemId))
+        handler->SendSysMessage(line);
+    return true;
+}
+
+bool RaidRosterCommand::HandleTierSweep(ChatHandler* handler, uint32 maxTier, uint32 minIlvl)
+{
+    if (!g_RaidRosterEnable) { handler->SendSysMessage("RaidRoster is disabled (set RaidRoster.Enable=1)."); return true; }
+    RaidRosterGear::EnsureIndex();
+    for (std::string const& line : RaidRosterItemTier::Sweep(uint8(std::min<uint32>(maxTier, 255)), minIlvl))
+        handler->SendSysMessage(line);
     return true;
 }

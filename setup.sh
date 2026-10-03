@@ -23,7 +23,6 @@ MODULES=(
   # "mod-aoe-loot|https://github.com/azerothcore/mod-aoe-loot.git"
   "mod-junk-to-gold|https://github.com/noisiver/mod-junk-to-gold.git"
   "mod-multibot-bridge|https://github.com/Wishmaster117/mod-multibot-bridge.git"
-  "mod-ah-bot-plus|https://github.com/NathanHandley/mod-ah-bot-plus.git"
   "mod-individual-progression|https://github.com/ZhengPeiRu21/mod-individual-progression.git"
   # Era talents (own repo since 2026-09-07): requires IP above; its playerbots/bridge patches and bot
   # layer switch on automatically because those modules are present. Pinned in repo-pins.txt.
@@ -31,7 +30,7 @@ MODULES=(
 )
 
 # Modules we author and ship from THIS repo (copied in, not git-cloned). Kept by the reconcile.
-LOCAL_MODULES=( "mod-playerbot-chatter" "mod-raid-roster" "mod-ahbot-price" "mod-wintergrasp-bots" "mod-arena-roster" "mod-battleground-bots" "mod-enchanter-npc" )
+LOCAL_MODULES=( "mod-playerbot-chatter" "mod-raid-roster" "mod-ahbot-price" "mod-wintergrasp-bots" "mod-arena-roster" "mod-battleground-bots" "mod-enchanter-npc" "mod-ah-bot-plus" )
 
 # Optional commit pins (repo-pins.txt): freeze the fork and/or a module at a known-good commit
 # instead of its branch tip — used to hold a stable upstream when the latest HEAD is broken.
@@ -741,14 +740,37 @@ if [[ -f "$AH_CONF" ]]; then
     set_conf "AuctionHouseBot.GUIDs"                        "${AHBOT_GUIDS}" "$AH_CONF"
     set_conf "AuctionHouseBot.EnableSeller"                 "true"           "$AH_CONF"
     set_conf "AuctionHouseBot.Buyer.Enabled"               "true"           "$AH_CONF"
-    # 1.0 = pays roughly the item's calculated value; raise (e.g. 1.25) to be more generous.
+    # Legacy cap; the effective buyer cap is the lower of this and Buyer.PriceCeiling below.
     set_conf "AuctionHouseBot.Buyer.AcceptablePriceModifier" "1"            "$AH_CONF"
 
+    # Seller roles (in-house mod-ah-bot-plus): one character per role, each owning its share of
+    # MaxItems. All three must be set, or the bot stays in legacy single-pool mode.
+    if [[ -n "${AHBOT_SELLER_MATERIALS:-}" && -n "${AHBOT_SELLER_CRAFTED:-}" && -n "${AHBOT_SELLER_GEAR:-}" ]]; then
+      set_conf "AuctionHouseBot.Sellers" "Materials:${AHBOT_SELLER_MATERIALS},Crafted:${AHBOT_SELLER_CRAFTED},Gear:${AHBOT_SELLER_GEAR}" "$AH_CONF"
+    else
+      set_conf "AuctionHouseBot.Sellers" "" "$AH_CONF"
+    fi
+    set_conf "AuctionHouseBot.SellerShares" "${AHBOT_SELLER_SHARES:-45,30,25}" "$AH_CONF"
+    # Pricing: crafted = reagent cost x markup (never below the formula); the buyer pays at most
+    # value x ceiling (crafted: reagent cost), clamped below the seller's floor by the module.
+    set_conf "AuctionHouseBot.Pricing.CraftMarkup" "${AHBOT_CRAFT_MARKUP:-1.15}"  "$AH_CONF"
+    set_conf "AuctionHouseBot.Buyer.PriceCeiling"  "${AHBOT_BUYER_CEILING:-0.80}" "$AH_CONF"
+
     # Stock depth: more total listings so bought-out goods reappear sooner
-    # (refill is ItemsPerCycle=150/min toward this cap; there is no per-item restock).
-    set_conf "AuctionHouseBot.Alliance.MaxItems" "25000" "$AH_CONF"
-    set_conf "AuctionHouseBot.Horde.MaxItems"    "25000" "$AH_CONF"
-    set_conf "AuctionHouseBot.Neutral.MaxItems"  "25000" "$AH_CONF"
+    # (refill is ItemsPerCycle=150/min toward this cap). MinItems is the REFILL threshold —
+    # the bot lists only while a house is below it — so MinItems = MaxItems fills every house
+    # to the cap instead of hovering at MinItems.
+    AH_MAX_ITEMS="${AHBOT_MAX_ITEMS:-25000}"
+    set_conf "AuctionHouseBot.Alliance.MaxItems" "$AH_MAX_ITEMS" "$AH_CONF"
+    set_conf "AuctionHouseBot.Horde.MaxItems"    "$AH_MAX_ITEMS" "$AH_CONF"
+    set_conf "AuctionHouseBot.Neutral.MaxItems"  "$AH_MAX_ITEMS" "$AH_CONF"
+    set_conf "AuctionHouseBot.Alliance.MinItems" "$AH_MAX_ITEMS" "$AH_CONF"
+    set_conf "AuctionHouseBot.Horde.MinItems"    "$AH_MAX_ITEMS" "$AH_CONF"
+    set_conf "AuctionHouseBot.Neutral.MinItems"  "$AH_MAX_ITEMS" "$AH_CONF"
+    # Scarcest-first: each fresh listing picks its category by ListProportion weight, then draws K
+    # candidates within it and lists the one with the fewest current listings in that house, so
+    # per-item depth evens out inside each category (1 = pure random).
+    set_conf "AuctionHouseBot.ListScarcestOfCandidates" "${AHBOT_SCARCEST_OF:-8}" "$AH_CONF"
 
     # Listing mix (relative weights per category/quality roll): bias the AH toward a
     # consumable/crafting economy — gems, glyphs, trade goods, reagents up; the
@@ -774,7 +796,10 @@ if [[ -f "$AH_CONF" ]]; then
     set_conf "AuctionHouseBot.ListProportion.CategoryArmor.QualityRare"      "10" "$AH_CONF"
     set_conf "AuctionHouseBot.ListProportion.CategoryArmor.QualityEpic"      "3"  "$AH_CONF"
     echo "    AHBot ON (char GUIDs: ${AHBOT_GUIDS}) -> lists goods and buys fairly-priced player auctions."
-    echo "      (consumable/crafting-weighted mix: gems+glyphs+trade goods up, weapons/armor down; 25k listings/house)"
+    echo "      (consumable/crafting-weighted mix: gems+glyphs+trade goods up, weapons/armor down; ${AH_MAX_ITEMS} listings/house)"
+    if [[ -n "${AHBOT_SELLER_MATERIALS:-}" && -n "${AHBOT_SELLER_CRAFTED:-}" && -n "${AHBOT_SELLER_GEAR:-}" ]]; then
+      echo "      seller roles: Materials ${AHBOT_SELLER_MATERIALS} / Crafted ${AHBOT_SELLER_CRAFTED} / Gear ${AHBOT_SELLER_GEAR} (shares ${AHBOT_SELLER_SHARES:-45,30,25})"
+    fi
   else
     set_conf "AuctionHouseBot.EnableSeller"  "false" "$AH_CONF"
     set_conf "AuctionHouseBot.Buyer.Enabled" "false" "$AH_CONF"
@@ -833,6 +858,10 @@ if [[ -f "$PBCHAT_CONF" ]]; then
   set_conf "PlayerbotChatter.GroupChance"   "${CHATTER_GROUP_CHANCE:-50}"           "$PBCHAT_CONF"
   set_conf "PlayerbotChatter.GroupGuaranteeOne" "${CHATTER_GROUP_GUARANTEE_ONE:-1}" "$PBCHAT_CONF"
   set_conf "PlayerbotChatter.WhisperChance" "${CHATTER_WHISPER_CHANCE:-100}"        "$PBCHAT_CONF"
+  # Managed here (not left to the instantiated conf): an install whose conf predates a keyword
+  # (prod lacked "summon"/"do attack") otherwise keeps the stale list forever. The module also
+  # has a built-in whole-line command floor; this list adds first-word/prefix matching.
+  set_conf "PlayerbotChatter.CommandKeywords" "\"${CHATTER_COMMAND_KEYWORDS:-follow,stay,flee,grind,attack,tank attack,do attack,accept,talk,reset,runaway,summon,q,c,u,e,ue,t,nt,s,b,r,rep,items,inv,pvp stats,add all loot,move from group,enter vehicle,leave vehicle,buy,sell,trade,cast,co,nc,rti,los,ll}\"" "$PBCHAT_CONF"
   set_conf "PlayerbotChatter.HistoryLen"    "${CHATTER_HISTORY_LEN:-10}"            "$PBCHAT_CONF"
   set_conf "PlayerbotChatter.ReplyMaxLen"   "${CHATTER_REPLY_MAXLEN:-200}"          "$PBCHAT_CONF"
   set_conf "PlayerbotChatter.LoreEnable"  "${LORE_ENABLE:-0}"                                   "$PBCHAT_CONF"
@@ -842,16 +871,21 @@ if [[ -f "$PBCHAT_CONF" ]]; then
   set_conf "PlayerbotChatter.AmbientGeneral"    "${CHATTER_AMBIENT_GENERAL:-1}"                   "$PBCHAT_CONF"
   set_conf "PlayerbotChatter.AmbientGroup"      "${CHATTER_AMBIENT_GROUP:-1}"                     "$PBCHAT_CONF"
   set_conf "PlayerbotChatter.AmbientGuild"      "${CHATTER_AMBIENT_GUILD:-1}"                     "$PBCHAT_CONF"
-  set_conf "PlayerbotChatter.AmbientSeedMin"    "${CHATTER_AMBIENT_SEED_MIN:-60}"                 "$PBCHAT_CONF"
-  set_conf "PlayerbotChatter.AmbientSeedMax"    "${CHATTER_AMBIENT_SEED_MAX:-90}"                 "$PBCHAT_CONF"
-  set_conf "PlayerbotChatter.AmbientFollowMin"  "${CHATTER_AMBIENT_FOLLOWUP_MIN:-4}"              "$PBCHAT_CONF"
-  set_conf "PlayerbotChatter.AmbientFollowMax"  "${CHATTER_AMBIENT_FOLLOWUP_MAX:-9}"             "$PBCHAT_CONF"
-  set_conf "PlayerbotChatter.AmbientActiveWindow" "${CHATTER_AMBIENT_ACTIVE_WINDOW:-75}"          "$PBCHAT_CONF"
-  set_conf "PlayerbotChatter.AmbientBotStreakMax" "${CHATTER_AMBIENT_BOT_STREAK_MAX:-4}"          "$PBCHAT_CONF"
+  set_conf "PlayerbotChatter.AmbientSeedMin"    "${CHATTER_AMBIENT_SEED_MIN:-180}"                 "$PBCHAT_CONF"
+  set_conf "PlayerbotChatter.AmbientSeedMax"    "${CHATTER_AMBIENT_SEED_MAX:-360}"                 "$PBCHAT_CONF"
+  set_conf "PlayerbotChatter.AmbientFollowMin"  "${CHATTER_AMBIENT_FOLLOWUP_MIN:-8}"              "$PBCHAT_CONF"
+  set_conf "PlayerbotChatter.AmbientFollowMax"  "${CHATTER_AMBIENT_FOLLOWUP_MAX:-22}"             "$PBCHAT_CONF"
+  set_conf "PlayerbotChatter.AmbientActiveWindow" "${CHATTER_AMBIENT_ACTIVE_WINDOW:-90}"          "$PBCHAT_CONF"
+  set_conf "PlayerbotChatter.AmbientBotStreakMax" "${CHATTER_AMBIENT_BOT_STREAK_MAX:-10}"         "$PBCHAT_CONF"
   set_conf "PlayerbotChatter.AmbientCooldown"   "${CHATTER_AMBIENT_COOLDOWN:-75}"                 "$PBCHAT_CONF"
-  set_conf "PlayerbotChatter.AmbientPerBotCooldown" "${CHATTER_AMBIENT_PER_BOT_COOLDOWN:-120}"    "$PBCHAT_CONF"
-  set_conf "PlayerbotChatter.AmbientMaxPerMin"  "${CHATTER_AMBIENT_MAX_PER_MIN:-25}"              "$PBCHAT_CONF"
-  set_conf "PlayerbotChatter.AmbientBufferLen"  "${CHATTER_AMBIENT_BUFFER_LEN:-8}"                "$PBCHAT_CONF"
+  set_conf "PlayerbotChatter.AmbientPerBotCooldown" "${CHATTER_AMBIENT_PER_BOT_COOLDOWN:-180}"    "$PBCHAT_CONF"
+  set_conf "PlayerbotChatter.AmbientThreadReactPct" "${CHATTER_AMBIENT_THREAD_REACT_PCT:-85}"     "$PBCHAT_CONF"
+  set_conf "PlayerbotChatter.AmbientThreadMinLen" "${CHATTER_AMBIENT_THREAD_MIN_LEN:-3}"          "$PBCHAT_CONF"
+  set_conf "PlayerbotChatter.AmbientThreadEndPct" "${CHATTER_AMBIENT_THREAD_END_PCT:-20}"         "$PBCHAT_CONF"
+  set_conf "PlayerbotChatter.AmbientThreadReplyCooldown" "${CHATTER_AMBIENT_THREAD_REPLY_COOLDOWN:-30}" "$PBCHAT_CONF"
+  set_conf "PlayerbotChatter.AmbientThreadParticipantPct" "${CHATTER_AMBIENT_THREAD_PARTICIPANT_PCT:-60}" "$PBCHAT_CONF"
+  set_conf "PlayerbotChatter.AmbientMaxPerMin"  "${CHATTER_AMBIENT_MAX_PER_MIN:-12}"              "$PBCHAT_CONF"
+  set_conf "PlayerbotChatter.AmbientBufferLen"  "${CHATTER_AMBIENT_BUFFER_LEN:-12}"               "$PBCHAT_CONF"
   set_conf "PlayerbotChatter.AmbientWeightBanter" "${CHATTER_AMBIENT_W_BANTER:-40}"               "$PBCHAT_CONF"
   set_conf "PlayerbotChatter.AmbientWeightGeneric" "${CHATTER_AMBIENT_W_GENERIC:-10}"             "$PBCHAT_CONF"
   set_conf "PlayerbotChatter.AmbientWeightReact" "${CHATTER_AMBIENT_W_REACT:-35}"                 "$PBCHAT_CONF"

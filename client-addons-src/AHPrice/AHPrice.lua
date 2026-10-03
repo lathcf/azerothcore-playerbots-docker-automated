@@ -292,22 +292,40 @@ function showDetail(p)
   dv.name:SetText(p.name); dv.name:SetTextColor(qcolor(p.quality))
   dv.vendor:SetText("vendor sell  " .. M.money(p.sell))
 
-  local frac = 0.5
-  if p.maxBuy > 0 then frac = p.minBuy / p.maxBuy end
-  if frac < 0.06 then frac = 0.06 elseif frac > 1 then frac = 1 end
-  local trackW = card:GetWidth() - (trackInset * 2) - 2
-  if trackW < 20 then trackW = 20 end
-  dv.green:SetWidth(trackW * frac)
-  dv.gold:SetWidth(trackW * (1 - frac))
+  local function gauge(frac)
+    if frac < 0.06 then frac = 0.06 elseif frac > 1 then frac = 1 end
+    local trackW = card:GetWidth() - (trackInset * 2) - 2
+    if trackW < 20 then trackW = 20 end
+    dv.green:SetWidth(trackW * frac)
+    dv.gold:SetWidth(trackW * (1 - frac))
+  end
 
-  dv.minVal:SetText(M.money(p.minBuy))
-  dv.maxVal:SetText(M.money(p.maxBuy))
-  if p.maxStack and p.maxStack > 1 then
-    dv.stack:SetText(string.format("full stack x%d:  %s  -  %s",
-      p.maxStack, M.money(p.minBuy * p.maxStack), M.money(p.maxBuy * p.maxStack)))
-    dv.stack:Show()
+  local n = (p.maxStack and p.maxStack > 1) and p.maxStack or nil
+  if p.sellMax and p.sellMax > 0 then
+    -- Current server: the bot BUYS at one fixed price (green) and SELLS within a range (gold).
+    dv.caption:SetText("BOT  BUYS   ·   BOT  SELLS   ·   PER  UNIT")
+    gauge(p.buy / p.sellMax)
+    dv.minVal:SetText(M.money(p.buy)); dv.minCap:SetText("bot buys at")
+    dv.maxVal:SetText(M.money(p.sellMin) .. " - " .. M.money(p.sellMax)); dv.maxCap:SetText("bot sells for")
+    if n then
+      dv.stack:SetText(string.format("full stack x%d:  buys %s  ·  sells %s - %s", n,
+        M.money(p.buy * n), M.money(p.sellMin * n), M.money(p.sellMax * n)))
+      dv.stack:Show()
+    else
+      dv.stack:Hide()
+    end
   else
-    dv.stack:Hide()
+    -- Older server: a buy band.
+    dv.caption:SetText("BOT  WILL  PAY   ·   PER  UNIT")
+    gauge(p.maxBuy > 0 and (p.minBuy / p.maxBuy) or 0.5)
+    dv.minVal:SetText(M.money(p.minBuy)); dv.minCap:SetText("guaranteed sell")
+    dv.maxVal:SetText(M.money(p.maxBuy)); dv.maxCap:SetText("possible up to")
+    if n then
+      dv.stack:SetText(string.format("full stack x%d:  %s  -  %s", n, M.money(p.minBuy * n), M.money(p.maxBuy * n)))
+      dv.stack:Show()
+    else
+      dv.stack:Hide()
+    end
   end
 end
 

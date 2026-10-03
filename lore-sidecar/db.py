@@ -47,18 +47,48 @@ class Db:
                 return list(cur.fetchall())
 
     # --- service NPCs ---------------------------------------------------------
-    def service_npcs(self, map_id: int, flag: int, subname_like: Optional[str]) -> list[dict]:
+    # mod_chatter_npc_area.team (filled by the worldserver backfill): 0 = Alliance-only,
+    # 1 = Horde-only, 2 = both, 3 = neither, NULL = not computed. NULL fails open.
+    @staticmethod
+    def _team_clause(team: Optional[int], params: dict) -> str:
+        if team is None:
+            return ""
+        params["team"] = int(team)
+        return " AND (a.team IS NULL OR a.team = 2 OR a.team = %(team)s)"
+
+    def service_npcs(self, map_id: int, flag: int, subname_like: Optional[str],
+                     team: Optional[int] = None) -> list[dict]:
         sql = (
             "SELECT ct.entry AS entry, ct.name AS name, ct.subname AS subname, "
             "c.position_x AS x, c.position_y AS y "
             "FROM creature c JOIN creature_template ct ON c.id = ct.entry "
+            "LEFT JOIN mod_chatter_npc_area a ON a.creature_entry = ct.entry "
             "WHERE c.map = %(map)s AND (ct.npcflag & %(flag)s) <> 0"
         )
         params = {"map": map_id, "flag": flag}
         if subname_like:
             sql += " AND ct.subname LIKE %(subname)s"
             params["subname"] = f"%{subname_like}%"
+        sql += self._team_clause(team, params)
         sql += " LIMIT 400"
+        return self._query(sql, params)
+
+    def service_npc_places(self, flag: int, subname_like: Optional[str],
+                           team: Optional[int] = None) -> list[dict]:
+        """World-wide (every map) faction-usable NPCs of a service, counted per resolved
+        zone/area — the 'not around here, try X' fallback. Only area-resolved entries count."""
+        sql = (
+            "SELECT a.zone_name AS zone_name, a.area_name AS area_name, COUNT(*) AS n "
+            "FROM creature c JOIN creature_template ct ON c.id = ct.entry "
+            "JOIN mod_chatter_npc_area a ON a.creature_entry = ct.entry "
+            "WHERE (ct.npcflag & %(flag)s) <> 0"
+        )
+        params = {"flag": flag}
+        if subname_like:
+            sql += " AND ct.subname LIKE %(subname)s"
+            params["subname"] = f"%{subname_like}%"
+        sql += self._team_clause(team, params)
+        sql += " GROUP BY a.zone_name, a.area_name ORDER BY n DESC LIMIT 200"
         return self._query(sql, params)
 
     def mailboxes(self, map_id: int) -> list[dict]:

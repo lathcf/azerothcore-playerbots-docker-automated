@@ -1,0 +1,31 @@
+mod-ah-bot-plus (in-house fork)
+================================
+
+Origin:   https://github.com/NathanHandley/mod-ah-bot-plus
+Imported: upstream commit f685832994c825f90aa5a3dc0e1620aa568e875b (2026-07-02), on 2026-10-01
+
+Licensing
+---------
+src/AuctionHouseBot.cpp and src/AuctionHouseBot.h are GNU GPL v2 "or (at your option) any later
+version" (TrinityCore / MaNGOS lineage, Nathan Handley). src/AuctionHouseBotScript.cpp and
+src/ah_bot_loader.cpp are GNU AGPL v3 (AzerothCore). Upstream ships no LICENSE file; the per-file
+headers grant the rights. Exercising the "any later version" option, this fork as a whole is
+distributed under the GNU Affero General Public License v3 — see LICENSE-AGPL3. Every original
+copyright header is retained; files we changed carry an added modification notice.
+
+Changes in this fork
+--------------------
+2026-10 — seller roles (AuctionHouseBot.Sellers / SellerShares): Materials, Crafted and Gear
+          characters each own a share of every house's listing cap.
+2026-10 — pricing table (new src/AHBotPricing.*, src/AHBotRoles.*): crafted items priced from
+          their reagents (+ CraftMarkup, never below the original formula); non-crafted gear
+          calibrated against crafted gear of the same quality/item level; materials keep the
+          original formula. The buyer pays a fixed price clamped below the seller's floor.
+2026-10 — .ahbot price command; public AuctionHouseBot::GetItemPricing API (used by
+          mod-ahbot-price and, through it, mod-enchanter-npc).
+2026-10 — bot listings' start bid is floored just above the buyer's price, so winning a bot
+          auction at its start bid and reselling it to the buyer bot always loses money.
+2026-10 — scarcest-first listing (AuctionHouseBot.ListScarcestOfCandidates): each fresh listing
+          picks the item category by ListProportion weight as before, then draws K candidates
+          from within it and lists the one with the fewest current listings in that house, so
+          per-item stock depth evens out inside each category instead of varying by luck.

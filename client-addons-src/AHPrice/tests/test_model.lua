@@ -20,6 +20,16 @@ return function(H)
   H.eq(p.maxBuy, 1250, "P max")
   H.eq(p.maxStack, 20, "P maxStack")
 
+  -- parseLine: P from a current server — fields 9/10 carry the bot's sell range; 6/7 = buy price
+  local n = M.parseLine("P\t17193\t4\tSulfuron Hammer\t122311\t3280000\t3280000\t1\t3500000\t5100000")
+  H.eq(n.buy, 3280000, "P buy")
+  H.eq(n.sellMin, 3500000, "P sellMin")
+  H.eq(n.sellMax, 5100000, "P sellMax")
+  H.eq(n.maxStack, 1, "P maxStack (new)")
+  -- an older server sends 8 fields: no sell range
+  H.eq(p.sellMin, nil, "P old sellMin")
+  H.eq(p.buy, 1250, "P old buy = maxBuy")
+
   -- control lines
   H.eq(M.parseLine("N\tcopper").kind, "N", "N kind (no results)")
   H.eq(M.parseLine("E\t9999").kind, "E", "E kind (not found)")

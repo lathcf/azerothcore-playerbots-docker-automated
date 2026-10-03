@@ -19,6 +19,11 @@ namespace RaidRosterEra
     // trainer rows) that its IP progression tier and level have unlocked. Call AFTER
     // SyncBotToMaster — the tier read is the bot's own. Returns the number of spells learned.
     uint32 LearnBookSpells(Player* bot);
+
+    // The master's IP progression state as a gear-tier cap: live state, else the level-band
+    // fallback SyncBotToMaster uses (>=71 WotLK / >=61 TBC / else Vanilla), clamped to IP's
+    // ProgressionLimit. IP disabled -> RaidRosterTierRules::kTierUncapped (0xFF, allow all).
+    uint8 MasterTier(Player* master);
 }
 
 #endif // MOD_RAIDROSTER_ERA_H

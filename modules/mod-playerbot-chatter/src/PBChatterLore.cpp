@@ -42,6 +42,15 @@ namespace
         }
     }
 
+    // Area name (DBC, default locale) of the unit's current area; "the wilds" when unknown.
+    std::string AreaNameOf(Player* p)
+    {
+        if (AreaTableEntry const* a = sAreaTableStore.LookupEntry(p->GetAreaId()))
+            if (char const* nm = a->area_name[sWorld->GetDefaultDbcLocale()])
+                return nm;
+        return "the wilds";
+    }
+
     // The sender's real quest log with per-objective progress. Kill/GO objectives read the
     // quest-log slot counters; item objectives read inventory count. Names resolved in-memory.
     nlohmann::json BuildPlayerQuests(Player* sender)
@@ -99,10 +108,7 @@ namespace
 
 std::string PBChatterLore::BuildPayload(Player* bot, Player* sender, std::string const& question)
 {
-    std::string area = "the wilds";
-    if (AreaTableEntry const* a = sAreaTableStore.LookupEntry(bot->GetAreaId()))
-        if (char const* nm = a->area_name[sWorld->GetDefaultDbcLocale()])
-            area = nm;
+    std::string area = AreaNameOf(bot);
 
     nlohmann::json quests = nlohmann::json::array();
     for (uint8 slot = 0; slot < MAX_QUEST_LOG_SIZE; ++slot)
@@ -132,6 +138,21 @@ std::string PBChatterLore::BuildPayload(Player* bot, Player* sender, std::string
             {"z", bot->GetPositionZ()},
             {"active_quests", quests},
             {"snapshot", PBChatterContext::BuildSnapshot(bot)},
+        }},
+        // The ASKER (whisper sender): the sidecar measures "nearest"/direction/distance and
+        // applies faction + level from here — the whispered bot may be anywhere. `bot` stays
+        // the voice for phrasing.
+        {"asker", {
+            {"name", sender->GetName()},
+            {"level", sender->GetLevel()},
+            {"class", ClassName(sender->getClass())},
+            {"race", RaceName(sender->getRace())},
+            {"faction", (sender->GetTeamId() == TEAM_ALLIANCE) ? "Alliance" : "Horde"},
+            {"map", sender->GetMapId()},
+            {"zone", AreaNameOf(sender)},
+            {"x", sender->GetPositionX()},
+            {"y", sender->GetPositionY()},
+            {"z", sender->GetPositionZ()},
         }},
         {"player", sender->GetName()},
         {"player_quests", BuildPlayerQuests(sender)},

@@ -67,17 +67,67 @@ namespace
     }
 }
 
-bool PBChatterClassifier::IsCommand(std::string const& msg)
+namespace
 {
-    std::string m = Lower(msg);
-    size_t a = m.find_first_not_of(" \t");
-    if (a == std::string::npos)
-        return true; // empty -> nothing to reply to
-    m = m.substr(a);
+    // Lowercase, trim surrounding whitespace, and drop trailing punctuation so "Stay!",
+    // "Summon." and "follow " read the same as the bare keyword.
+    std::string NormalizeForCommand(std::string const& msg)
+    {
+        std::string m = Lower(msg);
+        size_t a = m.find_first_not_of(" \t");
+        if (a == std::string::npos)
+            return "";
+        size_t b = m.find_last_not_of(" \t.!?,");
+        if (b == std::string::npos || b < a)
+            return m.substr(a, 1); // all punctuation: keep the first char for the prefix test
+        return m.substr(a, b - a + 1);
+    }
 
     // Control prefixes used by playerbots/MultiBot/console. '@' is MultiBot's
     // role/name target prefix (e.g. "@tank do attack my target", "@dps ...").
-    if (!m.empty() && (m[0] == '.' || m[0] == '+' || m[0] == '-' || m[0] == '!' || m[0] == '#' || m[0] == '@'))
+    bool HasControlPrefix(std::string const& m)
+    {
+        return !m.empty() && (m[0] == '.' || m[0] == '+' || m[0] == '-' || m[0] == '!' || m[0] == '#' || m[0] == '@');
+    }
+
+    // Built-in floor of playerbots chat commands (the fork's ChatCommandHandlerStrategy
+    // trigger names), matched ONLY against the whole line. Independent of the configurable
+    // CommandKeywords so a stale instantiated conf (it isn't regenerated from conf.dist) can
+    // never let a bare "summon" through again. Whole-line only, so ambiguous words here
+    // ("who", "go", "ready") still count as conversation when they open a sentence.
+    char const* const kBareCommands[] = {
+        "accept", "attack", "attackers", "aura", "autogear", "b", "bank", "buff", "buy", "bwl",
+        "c", "calc", "cast", "castnc", "chat", "cheat", "co", "craft", "cs", "de", "destroy",
+        "disperse", "dps", "drink", "drop", "e", "emblems", "emote", "equip", "flag", "flee",
+        "follow", "formation", "gb", "ginvite", "glyphs", "go", "grind", "help", "hire", "home",
+        "inv", "invite", "items", "leave", "lfg", "ll", "log", "loot", "los", "mail", "naxx",
+        "nc", "nt", "outfit", "pet", "position", "pull", "q", "qi", "quests", "r", "ra", "range",
+        "ready", "rebuff", "release", "rep", "repair", "reputation", "revive", "reward", "roll",
+        "rti", "rtsc", "runaway", "s", "sell", "sendmail", "share", "spell", "spells", "ss",
+        "stance", "stats", "stay", "summon", "t", "talents", "talk", "tame", "target", "taxi",
+        "teleport", "trade", "trainer", "u", "ue", "unequip", "use", "who", "wipe", "wts",
+        // multi-word commands that are commands only as the whole line
+        "attack my target", "pull my target", "pull back", "max dps", "save mana", "ready check",
+        "give leader", "pet attack", "focus heal", "open items", "force rebuff", "tell attackers",
+        "tell target", "equip upgrade", "autogear bis", "spirit healer", "accept quest",
+        "item count", "do attack", "tank attack",
+    };
+
+    bool IsBuiltInBareCommand(std::string const& m)
+    {
+        for (char const* c : kBareCommands)
+            if (m == c)
+                return true;
+        return false;
+    }
+}
+
+bool PBChatterClassifier::IsCommand(std::string const& msg)
+{
+    std::string m = NormalizeForCommand(msg);
+    if (m.empty())
+        return true; // empty -> nothing to reply to
+    if (HasControlPrefix(m) || IsBuiltInBareCommand(m))
         return true;
 
     for (std::string const& kw : g_PBChatCommandKeywords)
@@ -88,6 +138,17 @@ bool PBChatterClassifier::IsCommand(std::string const& msg)
         if (m.size() > kw.size() && m.compare(0, kw.size(), kw) == 0 && m[kw.size()] == ' ')
             return true;
     }
+    return false;
+}
+
+bool PBChatterClassifier::IsBareCommand(std::string const& msg)
+{
+    std::string m = NormalizeForCommand(msg);
+    if (m.empty() || HasControlPrefix(m) || IsBuiltInBareCommand(m))
+        return true;
+    for (std::string const& kw : g_PBChatCommandKeywords)
+        if (m == kw)
+            return true;
     return false;
 }
 

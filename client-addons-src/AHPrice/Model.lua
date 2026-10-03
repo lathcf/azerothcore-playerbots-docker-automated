@@ -27,6 +27,9 @@ function M.parseLine(line)
       itemID = tonumber(f[2]), quality = tonumber(f[3]) or 0, name = f[4] or "",
       sell = tonumber(f[5]) or 0, minBuy = tonumber(f[6]) or 0,
       maxBuy = tonumber(f[7]) or 0, maxStack = tonumber(f[8]) or 1,
+      -- current servers: one fixed buy price (fields 6/7) + the bot's own sell range (9/10)
+      buy = tonumber(f[7]) or 0,
+      sellMin = tonumber(f[9]), sellMax = tonumber(f[10]),
     }
   elseif tag == "N" then
     return { kind = "N", term = f[2] or "" }

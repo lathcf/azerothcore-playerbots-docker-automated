@@ -27,9 +27,10 @@ class FakeDb:
 def _client(llm, facts, capture=None):
     import app as appmod
 
-    def fake_dispatch(skill, ent, bot, db, player_quests=None):
+    def fake_dispatch(skill, ent, bot, db, player_quests=None, asker=None):
         if capture is not None:
             capture["player_quests"] = player_quests
+            capture["asker"] = asker
         return facts
 
     app_ = create_app(llm=llm, db=FakeDb(), dispatch=fake_dispatch)
@@ -55,12 +56,58 @@ def test_ask_chitchat_returns_ok_false_without_phrasing():
     assert llm.phrased is False
 
 
-def test_ask_no_facts_returns_ok_false():
-    llm = FakeLlm({"skill": "item_info", "entities": {"item": "nope"}})
+def test_ask_no_facts_phrases_honest_not_found():
+    # A factual miss must NOT return ok:false (the C++ free-form fallback would invent a place):
+    # phrase an honest "not sure" from not_found facts instead.
+    class CapLlm(FakeLlm):
+        def phrase(self, q, facts, bot):
+            self.phrased = True
+            self.facts = facts
+            return "no idea offhand, sorry"
+
+    llm = CapLlm({"skill": "item_info", "entities": {"item": "nope"}})
     c = _client(llm, facts=None)
     r = c.post("/ask", json={"bot": BOT, "player": "Lewis", "question": "what is nope"})
     body = r.json()
-    assert body["ok"] is False and body["reply"] == ""
+    assert body == {"ok": True, "reply": "no idea offhand, sorry", "matched_skill": "item_info"}
+    assert llm.facts == {"not_found": True, "asked_about": "nope"}
+
+
+def test_ask_not_found_describes_service():
+    class CapLlm(FakeLlm):
+        def phrase(self, q, facts, bot):
+            self.facts = facts
+            return "not sure"
+
+    llm = CapLlm({"skill": "find_service_npc",
+                  "entities": {"service": "class_trainer", "class": "paladin"}})
+    c = _client(llm, facts=None)
+    c.post("/ask", json={"bot": BOT, "question": "nearest paladin trainer?"})
+    assert llm.facts == {"not_found": True, "asked_about": "paladin trainer"}
+
+
+def test_ask_not_found_with_empty_phrase_is_ok_false():
+    llm = FakeLlm({"skill": "item_info", "entities": {"item": "nope"}}, reply="")
+    c = _client(llm, facts=None)
+    r = c.post("/ask", json={"bot": BOT, "question": "what is nope"})
+    assert r.json() == {"ok": False, "reply": "", "matched_skill": "item_info"}
+
+
+def test_ask_forwards_asker_to_dispatch():
+    llm = FakeLlm({"skill": "find_service_npc", "entities": {"service": "vendor"}})
+    cap = {}
+    c = _client(llm, facts={"name": "Bob"}, capture=cap)
+    asker = {"name": "Lewis", "faction": "Horde", "map": 1, "x": 1.0, "y": 2.0, "level": 20}
+    c.post("/ask", json={"bot": BOT, "asker": asker, "question": "vendor?"})
+    assert cap["asker"] == asker
+
+
+def test_ask_without_asker_passes_empty_dict():
+    llm = FakeLlm({"skill": "find_service_npc", "entities": {"service": "vendor"}})
+    cap = {}
+    c = _client(llm, facts={"name": "Bob"}, capture=cap)
+    c.post("/ask", json={"bot": BOT, "question": "vendor?"})
+    assert cap["asker"] == {}
 
 
 def test_ask_internal_error_returns_ok_false():
@@ -103,7 +150,7 @@ def test_ask_forwards_recent_to_classify():
             return "x"
 
     import app as appmod
-    app_ = appmod.create_app(llm=CapLlm(), db=FakeDb(), dispatch=lambda s, e, b, d, pq=None: None)
+    app_ = appmod.create_app(llm=CapLlm(), db=FakeDb(), dispatch=lambda s, e, b, d, pq=None, asker=None: None)
     c = TestClient(app_)
     recent = [{"player": "p", "bot": "b"}]
     c.post("/ask", json={"bot": BOT, "player": "L", "question": "what town is he in?", "recent": recent})

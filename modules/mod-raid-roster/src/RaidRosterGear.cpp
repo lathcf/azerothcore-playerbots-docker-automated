@@ -1,4 +1,7 @@
 #include "RaidRosterGear.h"
+#include "RaidRosterEra.h"        // MasterTier (IP-free header)
+#include "RaidRosterItemTier.h"   // TierOf (IP-free header)
+#include "RaidRosterTierRules.h"  // Allowed
 #include "DBCStores.h"
 #include "ItemTemplate.h"
 #include "Log.h"
@@ -254,6 +257,16 @@ GearIndex const& GetIndex()
             if (!idx.setClass.count(legacy.setId))
                 idx.setClass[legacy.setId] = 1u << (legacy.cls - 1);
 
+        // Era gate: tier every pool entry from its sources (spec 2026-10-01). reqLevel holds
+        // every curated entry with its equipCacheNew key — the fallback needs that key.
+        {
+            std::vector<std::pair<uint32, uint8>> poolEntries;
+            poolEntries.reserve(idx.reqLevel.size());
+            for (auto const& [entry, lvl] : idx.reqLevel)
+                poolEntries.push_back({ entry, lvl });
+            RaidRosterItemTier::Build(poolEntries);
+        }
+
         LOG_INFO("playerbots", "[RaidRoster] Gear index built: {} inventory types, {} candidate sets, {} class-owned sets.",
                  uint32(idx.byInvType.size()), uint32(idx.sets.size()), uint32(idx.setClass.size()));
         return idx;
@@ -297,10 +310,11 @@ bool EquipEntry(Player* bot, uint32 entry)
 // Usable candidates of the given inventory types, ranked best spec-score first.
 // floorIlvl/ceilIlvl of 0 mean unbounded on that side (the sub-50 path passes 0/0).
 // Preferred-armor-subclass body pieces get factory-style 3x preference; items scoring
-// <= 0 (nothing useful for this spec) are dropped outright.
+// <= 0 (nothing useful for this spec) are dropped outright. Entries above the master's
+// IP tier (tierCap) are skipped.
 std::vector<std::pair<float, uint32>> RankedCandidates(
     Player* bot, StatsWeightCalculator& calc, std::initializer_list<uint32> invTypes,
-    int32 floorIlvl, int32 ceilIlvl)
+    int32 floorIlvl, int32 ceilIlvl, uint8 tierCap)
 {
     GearIndex const& idx = GetIndex();
     uint32 const classMask = 1u << (bot->getClass() - 1);
@@ -330,6 +344,8 @@ std::vector<std::pair<float, uint32>> RankedCandidates(
                 continue;
             if (!MeetsLevelRequirement(idx, itr->second, bot->GetLevel()))
                 continue;
+            if (!RaidRosterTierRules::Allowed(RaidRosterItemTier::TierOf(itr->second), tierCap))
+                continue;  // content the master's IP tier hasn't unlocked (e.g. AQ gear at BWL)
             if (bot->CanUseItem(proto) != EQUIP_ERR_OK)  // level/skill/faction gate
                 continue;
             float score = calc.CalculateItem(itr->second);
@@ -376,7 +392,7 @@ struct ChosenSet
 // green the win before quality or spec ever mattered; leading with quality keeps a tank
 // slot in its epic tier set (the score tiebreak still separates same-ilvl tank vs dps
 // versions — Scourgeborne Plate vs Battlegear — with no name tables).
-bool PickSet(Player* bot, StatsWeightCalculator& calc, int32 target, ChosenSet& out)
+bool PickSet(Player* bot, StatsWeightCalculator& calc, int32 target, uint8 tierCap, ChosenSet& out)
 {
     GearIndex const& idx = GetIndex();
     uint32 const classMask = 1u << (bot->getClass() - 1);
@@ -400,6 +416,8 @@ bool PickSet(Player* bot, StatsWeightCalculator& calc, int32 target, ChosenSet& 
                 continue;
             if (!MeetsLevelRequirement(idx, entry, bot->GetLevel()))
                 continue;
+            if (!RaidRosterTierRules::Allowed(RaidRosterItemTier::TierOf(entry), tierCap))
+                continue;  // locked piece: a set losing pieces falls under MIN_SET_SLOTS (T2.5 pre-AQ)
             if (bot->CanUseItem(proto) != EQUIP_ERR_OK)
                 continue;
             int32 slot = BodySlotForInvType(proto->InventoryType);
@@ -491,6 +509,9 @@ bool EquipForSpec(Player* bot, Player* master, int specTab)
     // best-in-slot-for-level special case: no target at all.
     int32 const target = targeted ? int32(master->GetAverageItemLevelForDF() + 0.5f) : 0;
 
+    // Era gate: the MASTER's tier — gearing (sync step 4) runs before the bot's own era sync (step 7).
+    uint8 const tierCap = RaidRosterEra::MasterTier(master);
+
     // Strip everything except the cosmetic shirt/tabard (factory second_chance style).
     for (uint8 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; ++slot)
     {
@@ -506,7 +527,7 @@ bool EquipForSpec(Player* bot, Player* master, int specTab)
 
     // ---- Set stage (level >= 50): assemble the tier set for the target band. ----
     ChosenSet set;
-    bool const haveSet = targeted && PickSet(bot, calc, target, set);
+    bool const haveSet = targeted && PickSet(bot, calc, target, tierCap, set);
     if (haveSet)
     {
         // Track which slots actually EQUIPPED — a piece that fails the equip probe
@@ -560,7 +581,7 @@ bool EquipForSpec(Player* bot, Player* master, int specTab)
         {
             uint32 want = count;
             for (auto const& [score, entry] :
-                 RankedCandidates(bot, calc, invTypes, curFloor, ceilIlvl))
+                 RankedCandidates(bot, calc, invTypes, curFloor, ceilIlvl, tierCap))
             {
                 if (EquipEntry(bot, entry) && --want == 0)
                     break;
@@ -624,7 +645,7 @@ bool EquipForSpec(Player* bot, Player* master, int specTab)
                      { INVTYPE_WEAPON, INVTYPE_2HWEAPON, INVTYPE_WEAPONMAINHAND,
                        INVTYPE_WEAPONOFFHAND, INVTYPE_SHIELD, INVTYPE_HOLDABLE,
                        INVTYPE_RANGED, INVTYPE_RANGEDRIGHT, INVTYPE_THROWN, INVTYPE_RELIC },
-                     curFloor, ceilIlvl))
+                     curFloor, ceilIlvl, tierCap))
             {
                 if (EquipEntry(bot, entry))
                     ++equipped;
@@ -640,10 +661,15 @@ bool EquipForSpec(Player* bot, Player* master, int specTab)
     }
     bot->AutoUnequipOffhandIfNeed();
 
-    LOG_INFO("playerbots", "[RaidRoster] Geared {} (spec tab {}, level {}): {} piece(s), target ilvl {}, ilvl ceiling {}{}.",
-             bot->GetName(), specTab, level, equipped, target, ceilIlvl,
+    LOG_INFO("playerbots", "[RaidRoster] Geared {} (spec tab {}, level {}): {} piece(s), target ilvl {}, ilvl ceiling {}, tier cap {}{}.",
+             bot->GetName(), specTab, level, equipped, target, ceilIlvl, uint32(tierCap),
              haveSet ? ", tier set assembled" : "");
     return equipped >= 8;
+}
+
+void EnsureIndex()
+{
+    GetIndex();
 }
 
 } // namespace RaidRosterGear

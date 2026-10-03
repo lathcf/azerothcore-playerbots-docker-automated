@@ -67,3 +67,28 @@ def test_place_by_name_joins_area_and_creature():
 
 def test_place_by_name_miss_returns_none():
     assert RecordingDb([]).place_by_name("nowhere") is None
+
+
+def test_service_npcs_faction_filter_param():
+    db = RecordingDb([])
+    db.service_npcs(map_id=1, flag=NPC_FLAGS["trainer"], subname_like="Paladin", team=1)
+    sql, params = db.calls[0]
+    assert "LEFT JOIN mod_chatter_npc_area a ON a.creature_entry = ct.entry" in sql
+    assert "(a.team IS NULL OR a.team = 2 OR a.team = %(team)s)" in sql
+    assert params["team"] == 1
+
+
+def test_service_npcs_no_team_no_filter():
+    db = RecordingDb([])
+    db.service_npcs(map_id=1, flag=NPC_FLAGS["vendor"], subname_like=None)
+    sql, params = db.calls[0]
+    assert "a.team" not in sql and "team" not in params
+
+
+def test_service_npc_places_world_wide_grouped():
+    db = RecordingDb([])
+    db.service_npc_places(flag=NPC_FLAGS["trainer"], subname_like="Paladin", team=0)
+    sql, params = db.calls[0]
+    assert "c.map" not in sql  # every map
+    assert "JOIN mod_chatter_npc_area a" in sql and "GROUP BY a.zone_name, a.area_name" in sql
+    assert params == {"flag": NPC_FLAGS["trainer"], "subname": "%Paladin%", "team": 0}

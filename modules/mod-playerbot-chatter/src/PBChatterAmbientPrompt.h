@@ -26,6 +26,18 @@ namespace PBChatterAmbientPrompt
     // (g_PBChatStyleExamples) when present, else the built-in list. Shared by the
     // ambient prompts here and the reactive prompt in PBChatterObserver.
     std::string StyleExamples(int n);
+
+    // Deterministic safety net for an ambient reply (any thread; pure string work, no
+    // Player/world access — implemented in PBChatterScrubReply.cpp so the standalone
+    // tests/test_scrub_reply.cpp can compile it without core headers). Case-insensitively
+    // strips, at word boundaries: a leading "@?<name>" address followed by , : ! . - or
+    // whitespace (and a "<name> is right"-style third-person verdict opener); a trailing
+    // ", <name>" / " <name>" (trailing . ! ? kept); and ONE leading affirmation token
+    // ("Facts.", "exactly,", "fr ..."; the ambiguous this/same/real/true/yeah/ya only when
+    // followed by . or !), re-stripping a leading name after it. Returns "" when nothing
+    // but an affirmation / a name / a name verdict remains — the caller drops the line.
+    // `names` = the other speakers in the context buffer (never the bot's own name).
+    std::string ScrubReply(std::string reply, std::vector<std::string> const& names);
 }
 
 #endif

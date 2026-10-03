@@ -38,10 +38,11 @@ def main() -> int:
 
     print("classify probe:")
     try:
-        intent = llm.classify("where is the nearest vendor?")
+        # A question the deterministic fast path does NOT match, so this really calls Ollama.
+        intent = llm.classify("what does linen cloth drop from")
         print("  classify ->", intent)
-        if intent.get("skill") != "find_service_npc":
-            print("  WARN: classify did not return find_service_npc", file=sys.stderr)
+        if intent.get("skill") != "item_info":
+            print("  WARN: classify did not return item_info", file=sys.stderr)
     except Exception as e:
         print(f"  [FAIL] classify: {type(e).__name__}: {e}", file=sys.stderr)
         return 1
@@ -50,6 +51,10 @@ def main() -> int:
     ok = True
     ok &= _probe("service_npcs(vendor, map 0)", lambda: db.service_npcs(0, NPC_FLAGS["vendor"], None))
     ok &= _probe("service_npcs(trainer subname)", lambda: db.service_npcs(0, NPC_FLAGS["trainer"], "Mining"))
+    ok &= _probe("service_npcs(trainer, Horde filter)",
+                 lambda: db.service_npcs(0, NPC_FLAGS["trainer"], "Paladin", team=1))
+    ok &= _probe("service_npc_places(trainer, world-wide)",
+                 lambda: db.service_npc_places(NPC_FLAGS["trainer"], "Paladin", team=0))
     ok &= _probe("mailboxes(map 0)", lambda: db.mailboxes(0))
     ok &= _probe("item_by_name('Linen Cloth')", lambda: db.item_by_name("Linen Cloth"))
     ok &= _probe("item_drop_sources(2589)", lambda: db.item_drop_sources(2589))  # 2589 = Linen Cloth

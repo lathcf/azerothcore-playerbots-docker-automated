@@ -27,6 +27,9 @@ struct PBChatJob
     uint8_t      ambientKind = 0;   // 0 zone, 1 group, 2 guild
     uint64_t     ambientIdent = 0;  // zoneId / group raw guid / guildId
     uint64_t     anchorPlayerGuid = 0; // a present real player's GUID counter
+    // Other speakers' names in the context buffer (not the bot's own). The drain's
+    // ScrubReply strips a leading/trailing address to any of these from the reply.
+    std::vector<std::string> addressNames;
 };
 
 struct PBChatResult
@@ -41,6 +44,7 @@ struct PBChatResult
     uint8_t      ambientKind = 0;
     uint64_t     ambientIdent = 0;
     uint64_t     anchorPlayerGuid = 0;
+    std::vector<std::string> addressNames; // see PBChatJob::addressNames
 };
 
 namespace PBChatterQueue

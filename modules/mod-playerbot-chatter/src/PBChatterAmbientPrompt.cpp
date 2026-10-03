@@ -82,6 +82,26 @@ namespace
         return kBanterTopics[urand(0, n - 1)];
     }
 
+    // MODE_REACT "move": one conversational move per call, so a bot reply doesn't settle into
+    // the agree-and-echo rut ("Facts.", "X is right") a small model falls into when told only
+    // to "reply". Picked uniformly.
+    char const* const kReactMoves[] = {
+        "push back or disagree a little",
+        "add your own related experience or a quick story",
+        "go off on a small tangent from what was said",
+        "ask a follow-up question about it",
+        "make a joke or a dry remark about it",
+        "give your own hot take on it",
+        "complain about something related",
+        "half-agree but add a catch",
+    };
+
+    char const* PickReactMove()
+    {
+        int const n = (int)(sizeof(kReactMoves) / sizeof(*kReactMoves));
+        return kReactMoves[urand(0, n - 1)];
+    }
+
     // Topics valid at any level — variety that's never level-inappropriate.
     char const* const kTopicsAny[] = {
         "where you are right now or a quest you're working on",
@@ -191,17 +211,24 @@ std::string PBChatterAmbientPrompt::Build(int mode, Player* bot, uint8_t kind,
     {
         case MODE_REACT:
         {
+            std::string const name = bot->GetName();
             std::string p = Acore::StringFormat(
-                "{} You're chatting in {}. Here's the recent conversation (oldest first):\n",
-                PBChatterContext::BuildIdentity(bot), where);
+                "{} Your character's name is {}; lines from {} are yours. You're chatting in {}. "
+                "Here's the recent conversation (oldest first):\n",
+                PBChatterContext::BuildIdentity(bot), name, name, where);
             for (auto const& [speaker, text] : recent)
                 p += Acore::StringFormat("{}: {}\n", speaker, text);
-            p += "Reply directly to the last message like you're part of the conversation — agree, "
-                 "joke, answer the question, or add your own take. Stay true to your own level: if "
-                 "they're talking about content you're not high enough for yet, react like a player "
-                 "who isn't there yet (curious, or looking forward to it), don't pretend you're "
-                 "doing it. Keep it short and natural, don't repeat what they said, and don't start "
-                 "with \"anyone\".";
+            p += "Reply to the latest message the way a real player would in chat. Don't address "
+                 "anyone by name - real players almost never do: never start or end your line with "
+                 "someone's name, and don't talk about another player in the third person (\"X is "
+                 "right\"). Don't open by agreeing or affirming (\"facts\", \"true\", \"exactly\", "
+                 "\"this\", \"that's right\", \"fr\", \"100%\", \"same\", \"lol yeah\") - say "
+                 "something new instead of repeating a point that's already been made. "
+                 "Stay true to your own level: if they're talking about content you're not high "
+                 "enough for yet, react like a player who isn't there yet (curious, or looking "
+                 "forward to it), don't pretend you're doing it. Keep it short and natural, and "
+                 "don't start with \"anyone\".";
+            p += Acore::StringFormat(" This time: {}.", PickReactMove());
             return p + StyleExamples(2) + Tail();
         }
         case MODE_FLAVOR:

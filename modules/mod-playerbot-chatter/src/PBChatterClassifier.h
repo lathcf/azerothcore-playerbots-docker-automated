@@ -11,6 +11,10 @@ class Group;
 namespace PBChatterClassifier
 {
     bool IsCommand(std::string const& msg);                 // true -> leave it for playerbots
+    // Narrower: the WHOLE line is a command (control prefix or exactly one keyword, trailing
+    // punctuation ignored). For General/guild buffer feeds, where a keyword can legitimately
+    // open banter ("trade chat is wild") but a bare "follow" is never conversation.
+    bool IsBareCommand(std::string const& msg);
     // Loose heuristic: does this read like a factual question? (ends with '?' or
     // opens with a question word). Used to route whispers to the lore sidecar.
     bool IsLikelyQuestion(std::string const& msg);

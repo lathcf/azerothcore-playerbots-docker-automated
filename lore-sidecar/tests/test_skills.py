@@ -5,8 +5,11 @@ class FakeDb:
     def __init__(self, **rows):
         self.rows = rows
 
-    def service_npcs(self, map_id, flag, subname_like):
+    def service_npcs(self, map_id, flag, subname_like, team=None):
         return self.rows.get("service", [])
+
+    def service_npc_places(self, flag, subname_like, team=None):
+        return self.rows.get("places", [])
 
     def mailboxes(self, map_id):
         return self.rows.get("mailboxes", [])
@@ -50,7 +53,7 @@ def test_find_profession_trainer_passes_subname():
     captured = {}
 
     class Cap(FakeDb):
-        def service_npcs(self, map_id, flag, subname_like):
+        def service_npcs(self, map_id, flag, subname_like, team=None):
             captured["subname"] = subname_like
             return [{"name": "Brock", "subname": "Mining Trainer", "x": 10.0, "y": 0.0}]
 
@@ -299,3 +302,123 @@ def test_where_is_creature_wins_over_place():
 
 def test_where_is_neither_creature_nor_place_returns_none():
     assert skills.dispatch("where_is_npc", {"npc": "nonexistent"}, BOT, NpcFakeDb()) is None
+
+
+# --- asker-relative origin ------------------------------------------------------------------
+
+ASKER = {"name": "Lewis", "level": 20, "class": "paladin", "faction": "Horde",
+         "map": 1, "x": 1000.0, "y": 0.0, "z": 0.0, "zone": "The Barrens"}
+
+
+class RecDb(AreaFakeDb):
+    def __init__(self, **rows):
+        super().__init__(**rows)
+        self.calls = []
+
+    def service_npcs(self, map_id, flag, subname_like, team=None):
+        self.calls.append(("service", map_id, subname_like, team))
+        return self.rows.get("service", [])
+
+    def service_npc_places(self, flag, subname_like, team=None):
+        self.calls.append(("places", subname_like, team))
+        return self.rows.get("places", [])
+
+
+def test_find_service_measures_from_asker_not_bot():
+    db = RecDb(service=[{"name": "Near Asker", "subname": "General Goods", "x": 1050.0, "y": 0.0},
+                        {"name": "Near Bot", "subname": "General Goods", "x": 10.0, "y": 0.0}])
+    facts = skills.dispatch("find_service_npc", {"service": "vendor"}, BOT, db, asker=ASKER)
+    assert facts["name"] == "Near Asker"
+    assert facts["distance_yards"] == 50 and facts["direction"] == "north"
+    # asker's map + team, and an unnamed class trainer would use the ASKER's class
+    assert db.calls[0] == ("service", 1, None, 1)
+
+
+def test_find_service_class_trainer_defaults_to_asker_class():
+    db = RecDb(service=[{"name": "T", "subname": "Paladin Trainer", "x": 1000.0, "y": 0.0}])
+    skills.dispatch("find_service_npc", {"service": "class_trainer"}, BOT, db, asker=ASKER)
+    assert db.calls[0][2] == "paladin"
+
+
+def test_find_service_asker_without_position_falls_back_to_bot():
+    db = RecDb(service=[{"name": "V", "subname": "", "x": 10.0, "y": 0.0}])
+    facts = skills.dispatch("find_service_npc", {"service": "vendor"}, BOT, db,
+                            asker={"name": "Lewis", "faction": "Horde"})
+    assert db.calls[0] == ("service", 0, None, 0)  # bot map 0, bot faction Alliance
+    assert facts["distance_yards"] == 10
+
+
+def test_where_is_npc_and_turnin_measure_from_asker():
+    db = NpcFakeDb(creature={"entry": 1, "name": "Brock"},
+                   spawn={"map": 1, "x": 1100.0, "y": 0.0}, area=None)
+    facts = skills.dispatch("where_is_npc", {"npc": "brock"}, BOT, db, asker=ASKER)
+    assert facts["same_map"] is True and facts["distance_yards"] == 100
+    pq = [{"id": 26, "title": "Red Linen Goods",
+           "objectives": [{"text": "x", "have": 1, "need": 1, "done": True}]}]
+    db2 = AreaFakeDb(turnin={"name": "Sarah", "map": 1, "x": 1000.0, "y": 200.0}, area=None)
+    facts2 = skills.dispatch("quest_info", {"quest": "red linen"}, BOT, db2, pq, asker=ASKER)
+    assert facts2["turnin"]["distance_yards"] == 200 and facts2["turnin"]["direction"] == "west"
+
+
+def test_where_to_level_uses_asker_level_and_faction():
+    facts = skills.dispatch("where_to_level", {}, BOT, FakeDb(), asker=ASKER)
+    assert facts["level"] == 20
+    assert "The Barrens" in facts["zones"]  # Horde 11-20 band, not the bot's level-34 Alliance one
+
+
+# --- world-wide 'try' fallback ---------------------------------------------------------------
+
+def test_find_service_world_fallback_when_nothing_on_map():
+    places = [
+        {"zone_name": "Dustwallow Marsh", "area_name": "Theramore Isle", "n": 9},
+        {"zone_name": "Ironforge", "area_name": "Ironforge", "n": 3},
+        {"zone_name": "Stormwind City", "area_name": "Stormwind City", "n": 3},
+        {"zone_name": "Elwynn Forest", "area_name": "Goldshire", "n": 1},
+        {"zone_name": "Dalaran", "area_name": "Dalaran", "n": 1},
+    ]
+    alliance = {**ASKER, "faction": "Alliance", "map": 571}
+    db = RecDb(service=[], places=places)
+    facts = skills.dispatch("find_service_npc", {"service": "class_trainer", "class": "paladin"},
+                            BOT, db, asker=alliance)
+    assert facts == {"not_nearby": True, "service": "paladin trainer",
+                     "try": ["Stormwind City", "Ironforge", "Dalaran"]}
+    assert db.calls[1] == ("places", "paladin", 0)
+
+
+def test_find_service_world_fallback_on_cross_region_nearest():
+    db = RecDb(service=[{"name": "Far", "subname": "Paladin Trainer", "x": 20000.0, "y": 0.0}],
+               places=[{"zone_name": "Orgrimmar", "area_name": "Orgrimmar", "n": 1}])
+    facts = skills.dispatch("find_service_npc", {"service": "class_trainer", "class": "paladin"},
+                            BOT, db, asker=ASKER)
+    assert facts["try"] == ["Orgrimmar"] and facts["not_nearby"] is True
+
+
+def test_find_service_none_only_when_nothing_anywhere():
+    db = RecDb(service=[], places=[])
+    assert skills.dispatch("find_service_npc", {"service": "banker"}, BOT, db, asker=ASKER) is None
+
+
+def test_rank_try_places_capitals_hubs_then_count_enemy_last():
+    rows = [
+        {"zone_name": "Orgrimmar", "area_name": "Orgrimmar", "n": 50},  # enemy capital
+        {"zone_name": "Wetlands", "area_name": "Menethil Harbor", "n": 2},
+        {"zone_name": "Dustwallow Marsh", "area_name": "Theramore Isle", "n": 4},
+        {"zone_name": "Shattrath City", "area_name": "Shattrath City", "n": 1},
+        {"zone_name": "The Exodar", "area_name": "The Exodar", "n": 1},
+    ]
+    assert skills.rank_try_places(rows, "Alliance", limit=5) == [
+        "The Exodar", "Shattrath City", "Theramore Isle (Dustwallow Marsh)",
+        "Menethil Harbor (Wetlands)", "Orgrimmar"]
+
+
+def test_mailbox_has_no_world_fallback():
+    db = RecDb(mailboxes=[], places=[{"zone_name": "X", "area_name": "Y", "n": 1}])
+    assert skills.dispatch("find_service_npc", {"service": "mailbox"}, BOT, db, asker=ASKER) is None
+
+
+def test_describe_ask():
+    assert skills.describe_ask("find_service_npc", {"service": "flight_master"}) == "flight master"
+    assert skills.describe_ask("find_service_npc",
+                               {"service": "profession_trainer", "profession": "mining"}) == "mining trainer"
+    assert skills.describe_ask("where_is_npc", {"npc": "Thrall"}) == "Thrall"
+    assert skills.describe_ask("quest_info", {}) == "that quest"

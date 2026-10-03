@@ -9,6 +9,7 @@
 #include "ObjectGuid.h"
 #include "Playerbots.h"
 #include "Random.h"
+#include <algorithm>  // std::find
 #include <deque>
 #include <iterator>   // std::next
 #include <string>
@@ -32,6 +33,17 @@ namespace
         uint64_t lastAuthorBot = 0; // GUID counter of the last bot to speak here
         std::deque<Line> buffer;
         bool     eligible = true;
+        // Bots that have spoken in the CURRENT thread (GUID counter -> ms they last spoke).
+        // Lets participants answer each other inside the thread on the short
+        // ThreadReplyCooldown instead of the long global PerBotCooldown. Cleared when the
+        // thread ends (streak cap / natural end) and when a cold seed starts a fresh thread;
+        // a human line does NOT clear it (they joined the thread, it carries on).
+        std::unordered_map<uint64_t, uint32_t> threadSpeakers;
+        // Single-flight: while a generated line for this context is still with the model,
+        // the context does not emit again (the next prompt must see the in-flight line).
+        // Cleared by OnAmbientJobFinished; the 70s value is only a safety net (> the 60s
+        // HTTP read timeout) in case a result never comes back.
+        uint32_t inFlightUntilMs = 0;
     };
 
     std::unordered_map<std::string, Ctx>      g_ctx;          // key -> context
@@ -201,36 +213,78 @@ namespace
             return;
         }
 
+        bool active = Active(c);
+        if (!active)
+            c.threadSpeakers.clear(); // cold seed: this line opens a fresh thread
+
+        // Inside a live thread, most follow-ups answer the conversation (REACT) rather than
+        // rolling the flat content blend, which would open a new topic and break the thread.
+        bool threadReply = active && !c.buffer.empty()
+                           && urand(0, 99) < g_PBChatAmbientThreadReactPct;
+
         std::vector<Player*> cands;
         CollectCandidates(c, anchor, cands);
 
-        std::vector<Player*> pool;
+        std::vector<Player*> pool;          // every eligible bot
+        std::vector<Player*> participants;  // eligible bots that already spoke in this thread
+        uint32_t const threadReplyMs = g_PBChatAmbientThreadReplyCooldown * 1000u;
         for (Player* b : cands)
         {
             uint64_t counter = b->GetGUID().GetCounter();
             if (counter == c.lastAuthorBot)
                 continue; // no immediate self-reply
             auto cit = g_botCooldown.find(counter);
-            if (cit != g_botCooldown.end() && g_nowMs < cit->second)
+            bool eligible = cit == g_botCooldown.end() || g_nowMs >= cit->second;
+            bool inThread = false;
+            if (active)
+            {
+                auto sit = c.threadSpeakers.find(counter);
+                if (sit != c.threadSpeakers.end())
+                {
+                    inThread = true;
+                    if (g_nowMs - sit->second >= threadReplyMs)
+                        eligible = true; // a participant may talk back on the short cooldown
+                }
+            }
+            if (!eligible)
                 continue;
             pool.push_back(b);
+            if (inThread)
+                participants.push_back(b);
         }
         if (pool.empty())
         {
-            c.nextEmitMs = g_nowMs + NextInterval(Active(c));
+            c.nextEmitMs = g_nowMs + NextInterval(active);
             return;
         }
 
-        Player* bot = pool[urand(0, pool.size() - 1)];
+        Player* bot;
+        if (threadReply && !participants.empty() && urand(0, 99) < g_PBChatAmbientThreadParticipantPct)
+            bot = participants[urand(0, participants.size() - 1)];
+        else
+            bot = pool[urand(0, pool.size() - 1)]; // anyone, so a newcomer can join
 
-        bool haveBuffer = !c.buffer.empty();
         std::string eventHint;
-        bool haveEvent = PBChatterEvents::Take(bot->GetGUID().GetCounter(), g_nowMs, eventHint);
-        int mode = PickMode(haveBuffer, haveEvent);
+        int mode;
+        if (threadReply)
+            mode = PBChatterAmbientPrompt::MODE_REACT; // events stay queued for a non-thread line
+        else
+        {
+            bool haveBuffer = !c.buffer.empty();
+            bool haveEvent = PBChatterEvents::Take(bot->GetGUID().GetCounter(), g_nowMs, eventHint);
+            mode = PickMode(haveBuffer, haveEvent);
+        }
 
         std::vector<std::pair<std::string, std::string>> recent;
+        std::vector<std::string> addressNames; // distinct other speakers, for ScrubReply
+        std::string const botName = bot->GetName();
         for (Line const& l : c.buffer)
+        {
             recent.emplace_back(l.speaker, l.text);
+            if (!l.speaker.empty() && l.speaker != botName &&
+                std::find(addressNames.begin(), addressNames.end(), l.speaker) == addressNames.end())
+                addressNames.push_back(l.speaker);
+        }
 
         PBChatJob job;
         job.botGuid          = bot->GetGUID().GetCounter();
@@ -242,13 +296,14 @@ namespace
         job.ambientKind      = c.kind;
         job.ambientIdent     = c.ident;
         job.anchorPlayerGuid = c.anchor;
+        job.addressNames     = std::move(addressNames);
 
-        bool active = Active(c);
         if (PBChatterQueue::TrySubmitAmbient(std::move(job)))
         {
             ++g_rateCount;
             g_botCooldown[bot->GetGUID().GetCounter()] =
                 g_nowMs + g_PBChatAmbientPerBotCooldown * 1000u;
+            c.inFlightUntilMs = g_nowMs + 70000; // single-flight; cleared by OnAmbientJobFinished
             c.nextEmitMs = g_nowMs + NextInterval(active);
         }
         else
@@ -290,6 +345,8 @@ void PBChatterAmbient::Tick(uint32_t diff)
             continue;
         if (g_nowMs < c.cooldownUntilMs)
             continue;
+        if (g_nowMs < c.inFlightUntilMs)
+            continue; // a line for this context is still being generated
         if (g_nowMs < c.nextEmitMs)
             continue;
         TryEmit(c);
@@ -324,10 +381,35 @@ void PBChatterAmbient::OnBotLineDispatched(uint8_t kind, uint64_t ident, uint64_
     PushLine(c, speaker, text);
     c.lastLineMs = g_nowMs;
     c.lastAuthorBot = botGuidCounter;
+    c.threadSpeakers[botGuidCounter] = g_nowMs;
     ++c.botStreak;
-    if (static_cast<uint32>(c.botStreak) >= g_PBChatAmbientBotStreakMax)
+
+    // Natural thread length: at least ThreadMinLen bot lines, then each further line ends
+    // the thread with ThreadEndPct% (a geometric tail), hard-capped at BotStreakMax.
+    uint32 const streak = static_cast<uint32>(c.botStreak);
+    bool const threadEnds = streak >= g_PBChatAmbientBotStreakMax
+                     || (streak >= g_PBChatAmbientThreadMinLen
+                         && urand(0, 99) < g_PBChatAmbientThreadEndPct);
+    if (threadEnds)
     {
         c.cooldownUntilMs = g_nowMs + g_PBChatAmbientCooldown * 1000u;
         c.botStreak = 0;
+        c.threadSpeakers.clear();
     }
+    else
+    {
+        // Reading/typing delay measured from when the line actually appeared.
+        c.nextEmitMs = g_nowMs + RandSecMs(g_PBChatAmbientFollowMin, g_PBChatAmbientFollowMax);
+    }
+}
+
+void PBChatterAmbient::OnAmbientJobFinished(uint8_t kind, uint64_t ident)
+{
+    auto it = g_ctx.find(Key(kind, ident));
+    if (it == g_ctx.end())
+        return;
+    Ctx& c = it->second;
+    c.inFlightUntilMs = 0;
+    if (c.nextEmitMs < g_nowMs)
+        c.nextEmitMs = g_nowMs + 3000; // a failed/empty reply must not trigger an instant retry burst
 }

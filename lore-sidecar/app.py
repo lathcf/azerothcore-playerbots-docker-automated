@@ -21,16 +21,21 @@ def create_app(llm, db, dispatch=skills_module.dispatch) -> FastAPI:
     async def ask(req: Request):
         payload = await req.json()
         bot = payload.get("bot", {})
+        asker = payload.get("asker") or {}
         question = payload.get("question", "")
         try:
             intent = llm.classify(question, payload.get("recent"))
             skill = intent.get("skill", "chitchat")
             if skill == "chitchat":
                 return {"ok": False, "reply": "", "matched_skill": "chitchat"}
-            facts = dispatch(skill, intent.get("entities", {}), bot, db,
-                             payload.get("player_quests") or [])
+            entities = intent.get("entities", {}) or {}
+            facts = dispatch(skill, entities, bot, db,
+                             payload.get("player_quests") or [], asker=asker)
             if not facts:
-                return {"ok": False, "reply": "", "matched_skill": skill}
+                # Honest miss: a factual question we can't answer must NOT return ok:false —
+                # that hands the whisper to the C++ free-form reply, which invents a place.
+                facts = {"not_found": True,
+                         "asked_about": skills_module.describe_ask(skill, entities)}
             reply = llm.phrase(question, facts, bot)
             if not reply:
                 return {"ok": False, "reply": "", "matched_skill": skill}

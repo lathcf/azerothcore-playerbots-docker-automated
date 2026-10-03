@@ -1,6 +1,6 @@
 #include "AHPriceCommand.h"
 #include "AHPriceConfig.h"
-#include "AHPriceCalc.h"
+#include "AuctionHouseBot.h"
 #include "Chat.h"
 #include "CommandScript.h"
 #include "RBAC.h"
@@ -83,11 +83,17 @@ bool AHPriceCommand::HandleItem(ChatHandler* handler, uint32 itemId)
     ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
     if (!proto) { handler->SendSysMessage(Acore::StringFormat("E\t{}", itemId).c_str()); return true; } // E = not found
 
-    AHPriceBand band = AHPriceComputeBand(proto);
+    AHBotItemPricing pricing;
+    if (!auctionbot->GetItemPricing(itemId, pricing))
+    {
+        handler->SendSysMessage(Acore::StringFormat("E\t{}", itemId).c_str());
+        return true;
+    }
     uint32 maxStack = proto->GetMaxStackSize();
-    // P\t<itemID>\t<quality>\t<name>\t<sellPrice>\t<minBuy>\t<maxBuy>\t<maxStack>
-    handler->SendSysMessage(Acore::StringFormat("P\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+    // P\t<itemID>\t<quality>\t<name>\t<sellPrice>\t<buy>\t<buy>\t<maxStack>\t<sellMin>\t<sellMax>
+    // Fields 6/7 stay "what the bot pays" so addons predating fields 9/10 still read correctly.
+    handler->SendSysMessage(Acore::StringFormat("P\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
         proto->ItemId, proto->Quality, proto->Name1, proto->SellPrice,
-        band.minCopper, band.maxCopper, maxStack).c_str());
+        pricing.buyMax, pricing.buyMax, maxStack, pricing.sellMin, pricing.sellMax).c_str());
     return true;
 }

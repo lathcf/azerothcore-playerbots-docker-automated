@@ -30,10 +30,18 @@ namespace PBChatterAmbient
                       std::string const& speaker, std::string const& text);
 
     // World thread. An ambient bot line was actually delivered on a channel. Appends to
-    // the context buffer and advances the consecutive-bot streak (tripping cooldown at
-    // the cap). botGuidCounter = bot's GUID counter.
+    // the context buffer, records the bot as a thread participant, and advances the
+    // consecutive-bot streak: the thread ends (cooldown) at the BotStreakMax ceiling or,
+    // past ThreadMinLen, with ThreadEndPct% per line; otherwise the next follow-up is
+    // scheduled from now. botGuidCounter = bot's GUID counter.
     void OnBotLineDispatched(uint8_t kind, uint64_t ident, uint64_t botGuidCounter,
                              std::string const& speaker, std::string const& text);
+
+    // World thread. An ambient job for this context came back from the worker, whether or
+    // not a line was produced/sent. Releases the context's single-flight gate and, if its
+    // next emit is already due, pushes it a few seconds out so a failed reply doesn't
+    // trigger an instant retry burst. Call BEFORE OnBotLineDispatched for the same result.
+    void OnAmbientJobFinished(uint8_t kind, uint64_t ident);
 }
 
 #endif

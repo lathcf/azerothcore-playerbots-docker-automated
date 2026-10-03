@@ -62,9 +62,14 @@ this repo.
   plus a premade, tiered opponent ladder that feeds the **real** rated queue (ratings/points stay
   real) — so you can play 2v2/3v3/5v5 arena solo or with friends and actually climb. Off by
   default (`ARENAROSTER_ENABLE`). See [Rated arena with bots](#rated-arena-with-bots-mod-arena-roster).
+- Optional **auction house economy** (`mod-ah-bot-plus`, carried here as a modified copy): a
+  market-maker that keeps every house stocked (25k listings by default, items within a category
+  kept about equally deep), prices crafted gear from its reagents, and buys your listings at a fair
+  price. Can split its stock across Materials / Crafted / Gear seller characters. Off by default
+  (`AHBOT_GUIDS`). See [Auction house economy](#auction-house-economy-ahbot--optional).
 - Optional **AH price lookup** (`mod-ahbot-price`): a `.ahprice` command and matching client addon
-  that show the buy-value range the AH bot buyer will pay for an item, so you can price your
-  listings to actually sell. Off by default (`AHPRICE_ENABLE`). See
+  that show what the AH bot sells an item for (a range) and the most it will pay for one, so you
+  can price your listings to actually sell. Off by default (`AHPRICE_ENABLE`). See
   [Auction house economy](#auction-house-economy-ahbot--optional).
 - **Enchanter NPC** (`mod-enchanter-npc`): an enchanter in every capital, Shattrath and Dalaran
   who puts any permanent enchant your character could legitimately get **in its era** on your gear,
@@ -366,6 +371,8 @@ and **CompactRaidFrame-3.3.5** (raid frames) for raiding with bot groups.
 By default the playerbots only *sell* on the AH. The `mod-ah-bot-plus` module adds a dedicated
 auction-house agent that both **lists goods** and **buys fairly-priced player auctions** — so
 items you post actually get bought. It's a market-maker, not the adventuring bots themselves.
+This repo carries its own modified copy of the module (`modules/mod-ah-bot-plus/`, AGPLv3 — see its
+`NOTICE`) with seller roles and the pricing described below.
 
 **Setup:**
 1. Create a **normal account + character** to act as the AH bot (NOT a playerbot account), and
@@ -376,22 +383,55 @@ items you post actually get bought. It's a market-maker, not the adventuring bot
    docker compose exec -T ac-database mysql -uroot -p"$DOCKER_DB_ROOT_PASSWORD" \
      -e "SELECT guid,name FROM acore_characters.characters WHERE name='YourAHChar';"
    ```
-3. Set it in `azerothcore-wotlk/.env` and re-run `./setup.sh`:
+3. Set it in `.env` and re-run `./setup.sh`:
    ```dotenv
    AHBOT_GUIDS=5        # comma-separate for multiple, e.g. 5,6
    ```
    `setup.sh` then enables the seller + buyer and assigns that character (no rebuild needed — it
    only re-patches the config and restarts). Leaving `AHBOT_GUIDS` blank keeps AHBot off even
    though the module is built in.
+4. *(Optional)* **Seller roles.** Split the bot's stock across three sellers — Materials, Crafted
+   and Gear — so each keeps its own share of the listings and shows its own name in the AH. Create
+   two more normal characters on the same AH account (the one from step 1 can be the third), find
+   their GUIDs as in step 2, and add to `.env`:
+   ```dotenv
+   AHBOT_GUIDS=5               # still required — it's the on/off switch
+   AHBOT_SELLER_MATERIALS=5
+   AHBOT_SELLER_CRAFTED=6
+   AHBOT_SELLER_GEAR=7
+   AHBOT_SELLER_SHARES=45,30,25  # optional: relative listing share, Materials,Crafted,Gear
+   ```
+   then re-run `./setup.sh`. All three roles must be set (and exist) or the bot runs as one pool.
 
 **How it prices items (important):** it does **not** look at other listings or supply/demand.
-Each item's value is computed from a per-category base price (`PriceMinimumCenterBase.*`) and/or
-its vendor sell price, scaled by quality/item level, with a random ±25%. The buyer pays that
-calculated value × `AuctionHouseBot.Buyer.AcceptablePriceModifier` (default 1.0). So **list at
-or below an item's calculated value and the bot buys it out**; overprice it and it won't.
+Each item gets one value, and listings vary from 15% below to 25% above it:
+- **Materials** (and anything not covered below) keep the original formula: a per-category base
+  price (`PriceMinimumCenterBase.*`) and/or the vendor sell price, scaled by quality/item level.
+- **Crafted items** are priced from their cheapest profession recipe: the reagents' cost ×
+  `AHBOT_CRAFT_MARKUP` (default 1.15), never below the formula.
+- **Drop gear** (weapons/armor no profession makes) is calibrated against crafted gear: its vendor
+  sell price × the median value-to-vendor ratio of crafted gear of the same quality and a similar
+  item level.
 
-**Useful knobs** in `azerothcore-wotlk/env/dist/etc/modules/mod_ahbot.conf`:
-- `Buyer.AcceptablePriceModifier` — raise above 1.0 (e.g. 1.25) so more of your listings sell.
+The buyer pays a **fixed fraction** of that value — `AHBOT_BUYER_CEILING` (default 0.80; for
+crafted items, of the reagent cost) — and always less than the bot's own lowest listing, so the
+bot's stock can't be bought and flipped back to it. So **list at or below that price and the bot
+buys it out**; overprice it and it won't. Use the [`.ahprice`](#ah-price-lookup-mod-ahbot-price)
+lookup to see the number, or `.ahbot price <item>` (GM / console) for the full breakdown.
+
+**Tuning** (in `.env`, then re-run `./setup.sh`):
+- `AHBOT_BUYER_CEILING` — raise toward the cap so more of your listings sell. It is clamped below
+  the bot's lowest listing (≤0.84 with the default listing variance).
+- `AHBOT_CRAFT_MARKUP` — how far above reagent cost crafted items list.
+- `AHBOT_MAX_ITEMS` (default 25000) — listings per house. The bot refills every house to this cap.
+- `AHBOT_SCARCEST_OF` (default 8) — each new listing picks its category by the usual weights, then
+  draws this many candidates from that category and lists the one with the fewest current listings,
+  so items in a category stay about equally deep (1 = pure random).
+
+After changing pricing, `.ahbot empty` (GM / console) clears the bot's auctions so they're
+relisted at the new prices.
+
+**Other knobs** in `azerothcore-wotlk/env/dist/etc/modules/mod_ahbot.conf`:
 - `Buyer.BidAgainstPlayers` (default `false`) — leave off so the bot doesn't outbid your family
   on auctions they're trying to win; buyouts of your listings still work with it off.
 - `Buyer.PreventOverpayingForVendorItems` (default `true`) — stops vendor-flip exploits.
@@ -402,13 +442,13 @@ Note: with both this and playerbots running, the AH gets listings from both — 
 
 Because the AHBot buyer pays a *calculated* value rather than reacting to the market, it's easy to
 overprice a listing and have it sit forever. A small local module in this repo (`mod-ahbot-price`)
-exposes that hidden number: the **`.ahprice`** chat command — and a matching **AHPrice** client
-addon — show the per-item buy-value **range** the buyer will pay (the price band × stack count),
-computed live from your `AuctionHouseBot.*` config. Price a listing at or under the top of that
-range and the bot buys it out.
+exposes those hidden numbers: the **`.ahprice`** chat command — and a matching **AHPrice** client
+addon — show what the bot **sells** an item for (a range) and the **most it pays** for one, read
+from the AH bot's own pricing. Price a listing at or under the most-it-pays figure and the bot buys
+it out.
 
 It's built into the server always but inert unless enabled. Turn it on with `AHPRICE_ENABLE=1` in
-`.env` and re-run `./setup.sh`. It's read-only (it only *reads* the AHBot pricing formula), so it's
+`.env` and re-run `./setup.sh`. It's read-only (it only *reads* the AHBot pricing), so it's
 useful whether or not the AHBot buyer itself is running. `AHPRICE_HIDE_UNAUCTIONABLE=1` (default)
 hides items the bot can never buy (soulbound/quest-bound, conjured, limited-duration) from results.
 The AHPrice addon is staged by `./fetch-client-addons.sh` — install it like any other client addon.
@@ -1004,7 +1044,8 @@ star and support the original projects; they did the hard part.
 - **[mod-multibot-bridge](https://github.com/Wishmaster117/mod-multibot-bridge)** (Wishmaster117)
   — the server half of the in-game *MultiBot* control addon.
 - **[mod-ah-bot-plus](https://github.com/NathanHandley/mod-ah-bot-plus)** (Nathan Handley) — the
-  optional auction-house economy agent (the AHBot in [Auction house economy](#auction-house-economy-ahbot--optional)).
+  optional auction-house economy agent (the AHBot in [Auction house economy](#auction-house-economy-ahbot--optional));
+  vendored and modified in-house (AGPLv3; see `modules/mod-ah-bot-plus/NOTICE`).
 - **[mod-individual-progression](https://github.com/ZhengPeiRu21/mod-individual-progression)**
   (ZhengPeiRu21) — per-character Vanilla → TBC → WotLK progression on one realm; the era system
   that [Era talents](#era-talents-mod-era-talents) builds on.
@@ -1037,6 +1078,10 @@ star and support the original projects; they did the hard part.
   Paired with a season-set gear engine; arena AI ships as fork patch `patches/0005`.
 - **`modules/mod-wintergrasp-bots/`** — bot-driven Wintergrasp battles (director + siege/defense
   jobs); the battle-invite and siege-vehicle AI ship as fork patches `patches/0003`/`0004`.
+- **`modules/mod-ah-bot-plus/`** — in-house fork of
+  [NathanHandley/mod-ah-bot-plus](https://github.com/NathanHandley/mod-ah-bot-plus): seller roles,
+  scarcest-first restocking that fills houses to the cap, reagent-based crafted pricing, crafted-calibrated gear pricing, and a buyer that always pays
+  below the bot's own listings (AGPLv3; see its `NOTICE`).
 - **`modules/mod-ahbot-price/`** — read-only `.ahprice` AH price lookup, paired with the
   **`AHPrice`** client addon (`client-addons-src/AHPrice/`).
 - **`modules/mod-enchanter-npc/`** — the era-gated Enchanter NPC: a data-driven catalog of every

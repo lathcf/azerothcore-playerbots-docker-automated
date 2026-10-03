@@ -38,9 +38,16 @@ extern uint32_t    g_PBChatAmbientSeedMax;     // s: cold-start interval upper b
 extern uint32_t    g_PBChatAmbientFollowMin;   // s: active follow-up lower bound
 extern uint32_t    g_PBChatAmbientFollowMax;   // s: active follow-up upper bound
 extern uint32_t    g_PBChatAmbientActiveWindow;// s: context stays "active" after a line
-extern uint32_t    g_PBChatAmbientBotStreakMax;// consecutive bot lines before cooldown
-extern uint32_t    g_PBChatAmbientCooldown;    // s: post-streak quiet period
-extern uint32_t    g_PBChatAmbientPerBotCooldown; // s: min gap between one bot's lines
+extern uint32_t    g_PBChatAmbientBotStreakMax;// hard ceiling on consecutive bot lines in a thread
+extern uint32_t    g_PBChatAmbientCooldown;    // s: quiet period after a thread ends
+extern uint32_t    g_PBChatAmbientPerBotCooldown; // s: min gap between one bot's lines (global)
+// Thread model: a bot-only thread runs >= ThreadMinLen lines, then each further line ends
+// it with ThreadEndPct% (geometric tail), capped by BotStreakMax.
+extern uint32_t    g_PBChatAmbientThreadReactPct;      // % of in-thread follow-ups forced to REACT
+extern uint32_t    g_PBChatAmbientThreadMinLen;        // bot lines before a thread may end naturally
+extern uint32_t    g_PBChatAmbientThreadEndPct;        // % chance per line past MinLen to end the thread
+extern uint32_t    g_PBChatAmbientThreadReplyCooldown; // s: participant's min gap inside a thread
+extern uint32_t    g_PBChatAmbientThreadParticipantPct;// % of thread replies drawn from participants
 extern uint32_t    g_PBChatAmbientMaxPerMin;   // global safety ceiling (msgs/min)
 extern uint32_t    g_PBChatAmbientBufferLen;   // per-context rolling buffer depth
 extern uint32_t    g_PBChatAmbientWGeneric;    // content weight: generic small talk

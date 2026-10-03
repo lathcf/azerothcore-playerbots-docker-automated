@@ -38,6 +38,9 @@ _PHRASE_SYSTEM = (
     "Use ONLY the facts provided — never invent names, places, or numbers. If a direction or "
     "distance is given, mention it naturally. If the facts say not_nearby, say it's NOT close "
     "by (a long way off / back in a city) and do NOT make up a distance or direction. "
+    "If the facts carry a try list, say there isn't one around here and name those places "
+    "(only those). If the facts say not_found, say you're not sure / don't know offhand — "
+    "never guess a name, place, or number. "
     "No markdown, no emojis, no quotes, one line."
 )
 
@@ -86,13 +89,8 @@ def _find_word(words: list, text: str) -> Optional[str]:
     return None
 
 
-def refine_intent(intent: dict, question: str) -> dict:
-    """Override the model when the question unambiguously names a trainer's class/profession.
-
-    Only fires for training/trainer questions; otherwise returns the model's intent as-is.
-    A profession match wins over a class match (e.g. "mining trainer").
-    """
-    q = (question or "").lower()
+def _trainer_intent(q: str) -> Optional[dict]:
+    """'train'/'trainer' + a named profession/class -> that trainer (profession wins)."""
     if "train" in q:  # matches both 'train' and 'trainer'
         prof = _find_word(PROFESSION_WORDS, q)
         if prof:
@@ -102,7 +100,48 @@ def refine_intent(intent: dict, question: str) -> dict:
         if klass:
             return {"skill": "find_service_npc",
                     "entities": {"service": "class_trainer", "class": klass}}
-    return intent
+    return None
+
+
+def refine_intent(intent: dict, question: str) -> dict:
+    """Override the model when the question unambiguously names a trainer's class/profession.
+
+    Only fires for training/trainer questions; otherwise returns the model's intent as-is.
+    A profession match wins over a class match (e.g. "mining trainer").
+    """
+    return _trainer_intent((question or "").lower()) or intent
+
+
+# Deterministic service lookups: a service word AND a location cue. The cue keeps idle
+# mentions ("my repair bill sucks") out. First match wins, so more specific rules go first.
+_LOCATION_CUE = re.compile(r"\b(?:where|nearest|closest|find|know where)\b|\?")
+_SERVICE_RULES = [
+    (re.compile(r"\b(?:flight\s+(?:masters?|paths?)|fp)\b"), "flight_master"),
+    (re.compile(r"\b(?:innkeepers?|inns?)\b"), "innkeeper"),
+    (re.compile(r"\b(?:bankers?|banks?)\b"), "banker"),
+    # bare "ah" must not be the leading word: "ah, where are you?" is an interjection.
+    (re.compile(r"\b(?:auction\s+house|auctioneers?)\b|(?<!^)\bah\b"), "auctioneer"),
+    (re.compile(r"\b(?:mail\s?box(?:es)?)\b"), "mailbox"),
+    (re.compile(r"\brepairs?\b"), "repair"),
+    (re.compile(r"\bvendors?\b"), "vendor"),
+]
+
+
+def fast_intent(question: str) -> Optional[dict]:
+    """Deterministic pre-classifier: an intent when the text is unambiguous, else None
+    (then the model classifies). Saves one Ollama round-trip on the common questions."""
+    q = re.sub(r"\s+", " ", (question or "").lower()).strip()
+    if not q:
+        return None
+    trainer = _trainer_intent(q)
+    if trainer:
+        return trainer
+    if not _LOCATION_CUE.search(q):
+        return None
+    for rx, service in _SERVICE_RULES:
+        if rx.search(q):
+            return {"skill": "find_service_npc", "entities": {"service": service}}
+    return None
 
 
 def _facts_to_text(facts: dict) -> str:
@@ -113,26 +152,31 @@ class Llm:
     def __init__(self, settings):
         self._settings = settings
 
-    def _generate(self, prompt: str, system: str) -> str:
+    def _generate(self, prompt: str, system: str, json_format: bool = False) -> str:
         s = self._settings
         url = s.ollama_url.rstrip("/") + "/api/generate"
         body = {"model": s.model, "system": system, "prompt": prompt,
                 "stream": False, "think": False}
+        if json_format:  # Ollama JSON mode: constrains classify output to valid JSON
+            body["format"] = "json"
         # Per-call ceiling (LORE_GEN_TIMEOUT). An 8B model on a shared GPU under chatter
         # contention is slow, so match the proven chatter module's 60s default. /ask makes
-        # TWO sequential calls (classify + phrase); the C++ PlayerbotChatter.LoreTimeout
-        # bounds the total and falls back gracefully if the pair runs long.
+        # up to TWO sequential calls (classify, skipped on a fast_intent hit, + phrase); the
+        # C++ PlayerbotChatter.LoreTimeout bounds the total and falls back if they run long.
         resp = requests.post(url, json=body, timeout=s.gen_timeout)
         resp.raise_for_status()
         return resp.json().get("response", "")
 
     def classify(self, question: str, recent=None) -> dict:
+        fast = fast_intent(question)
+        if fast is not None:
+            return fast
         ctx = ""
         if recent:
             lines = "\n".join(f"Player: {t.get('player','')}\nYou: {t.get('bot','')}" for t in recent)
             ctx = f"Recent conversation (for resolving pronouns):\n{lines}\n\n"
         prompt = f'{ctx}Classify this message:\n"{question}"'
-        intent = parse_intent(self._generate(prompt, _CLASSIFY_SYSTEM))
+        intent = parse_intent(self._generate(prompt, _CLASSIFY_SYSTEM, json_format=True))
         return refine_intent(intent, question)
 
     def phrase(self, question: str, facts: dict, bot: dict) -> str:

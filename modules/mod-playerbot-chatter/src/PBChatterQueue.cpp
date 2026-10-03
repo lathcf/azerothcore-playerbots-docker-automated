@@ -39,7 +39,10 @@ namespace
             reply = PBChatterLore::Ask(job.lorePayload);   // sidecar first
         if (reply.empty())                                  // disabled/miss/timeout -> reactive fallback
             reply = PBChatterOllama::Ask(job.systemPrompt, job.prompt);
-        if (!reply.empty())
+        // Reactive: an empty reply produces no result. Ambient: ALWAYS produce a result,
+        // even an empty one, so the world thread can release the context's single-flight
+        // gate (PBChatterAmbient::OnAmbientJobFinished); the drain skips sending it.
+        if (!reply.empty() || job.ambient)
         {
             if (!job.ambient)
                 PBChatterMemory::Append(job.botGuid, job.playerGuid, job.playerMessage, reply);
@@ -54,9 +57,10 @@ namespace
             r.ambientKind       = job.ambientKind;
             r.ambientIdent      = job.ambientIdent;
             r.anchorPlayerGuid  = job.anchorPlayerGuid;
+            r.addressNames      = std::move(job.addressNames);
             g_results.push_back(std::move(r));
         }
-        else if (g_PBChatDebug)
+        if (reply.empty() && g_PBChatDebug)
         {
             // Empty after a successful POST usually means the model returned no text.
             // Drop silently in normal operation; surface it when debugging.
