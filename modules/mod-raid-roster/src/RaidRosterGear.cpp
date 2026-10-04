@@ -2,12 +2,17 @@
 #include "RaidRosterEra.h"        // MasterTier (IP-free header)
 #include "RaidRosterItemTier.h"   // TierOf (IP-free header)
 #include "RaidRosterTierRules.h"  // Allowed
+#include "DatabaseEnv.h"
 #include "DBCStores.h"
+#include "Field.h"
 #include "ItemTemplate.h"
 #include "Log.h"
 #include "ObjectMgr.h"
 #include "Player.h"
+#include "QueryResult.h"
 #include "SharedDefines.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
 #include "Mgr/Item/RandomItemMgr.h"
 #include "Mgr/Item/StatsWeightCalculator.h"
 #include <algorithm>
@@ -141,13 +146,80 @@ constexpr LegacySetClass kLegacyDungeonSetClass[] = {
     { 519, CLASS_SHAMAN },  // The Five Thunders
 };
 
+// Every item entry a player can actually OBTAIN on this server (2026-10-03). The pool's
+// own filter, mod-playerbots' IsInternalItem, is a case-sensitive name list ("Unused "
+// with a trailing space, "Test", "Deprecated", ...), so it misses hundreds of dev /
+// placeholder / unreleased entries — "Blessed Qiraji Naturalist Staff UNUSED" (21276, an
+// epic ilvl-80 staff) got through and was equipped on Enhancement shamans. A DB sweep
+// found ~1,200 of the ~22,240 uncommon..epic pool items with NO in-game source; every one
+// examined was a test/placeholder item or a source-less duplicate of a real one (46238 vs
+// the real 46121), and no non-PvP set with >= MIN_SET_SLOTS body pieces loses
+// qualification. An item no player can get on this server is one a bot should not wear
+// either — the module's "acts like a player" stance. A source is any of:
+//   - an ITEM row (Reference = 0, not a reference link) of any *_loot_template
+//     (creature, reference, gameobject, item, mail, spell, fishing, pickpocketing,
+//     skinning) — reference rows are covered because reference_loot_template is scanned;
+//   - npc_vendor;
+//   - a quest reward (RewardItem1..4 / RewardChoiceItemID1..6);
+//   - the ItemType of a CREATE_ITEM / CREATE_ITEM_2 effect of a PROFESSION spell (one
+//     with a SkillLineAbility row) — this deliberately excludes dev create spells like
+//     23193, which creates "Lok'delar ... DEP" (20487).
+std::unordered_set<uint32> BuildObtainableItems()
+{
+    std::unordered_set<uint32> obtainable;
+    static char const* const kSql =
+        "SELECT CAST(Item AS UNSIGNED) FROM creature_loot_template WHERE Reference = 0 "
+        "UNION SELECT CAST(Item AS UNSIGNED) FROM reference_loot_template WHERE Reference = 0 "
+        "UNION SELECT CAST(Item AS UNSIGNED) FROM gameobject_loot_template WHERE Reference = 0 "
+        "UNION SELECT CAST(Item AS UNSIGNED) FROM item_loot_template WHERE Reference = 0 "
+        "UNION SELECT CAST(Item AS UNSIGNED) FROM mail_loot_template WHERE Reference = 0 "
+        "UNION SELECT CAST(Item AS UNSIGNED) FROM spell_loot_template WHERE Reference = 0 "
+        "UNION SELECT CAST(Item AS UNSIGNED) FROM fishing_loot_template WHERE Reference = 0 "
+        "UNION SELECT CAST(Item AS UNSIGNED) FROM pickpocketing_loot_template WHERE Reference = 0 "
+        "UNION SELECT CAST(Item AS UNSIGNED) FROM skinning_loot_template WHERE Reference = 0 "
+        "UNION SELECT CAST(item AS UNSIGNED) FROM npc_vendor WHERE item > 0 "
+        "UNION SELECT CAST(RewardItem1 AS UNSIGNED) FROM quest_template WHERE RewardItem1 > 0 "
+        "UNION SELECT CAST(RewardItem2 AS UNSIGNED) FROM quest_template WHERE RewardItem2 > 0 "
+        "UNION SELECT CAST(RewardItem3 AS UNSIGNED) FROM quest_template WHERE RewardItem3 > 0 "
+        "UNION SELECT CAST(RewardItem4 AS UNSIGNED) FROM quest_template WHERE RewardItem4 > 0 "
+        "UNION SELECT CAST(RewardChoiceItemID1 AS UNSIGNED) FROM quest_template WHERE RewardChoiceItemID1 > 0 "
+        "UNION SELECT CAST(RewardChoiceItemID2 AS UNSIGNED) FROM quest_template WHERE RewardChoiceItemID2 > 0 "
+        "UNION SELECT CAST(RewardChoiceItemID3 AS UNSIGNED) FROM quest_template WHERE RewardChoiceItemID3 > 0 "
+        "UNION SELECT CAST(RewardChoiceItemID4 AS UNSIGNED) FROM quest_template WHERE RewardChoiceItemID4 > 0 "
+        "UNION SELECT CAST(RewardChoiceItemID5 AS UNSIGNED) FROM quest_template WHERE RewardChoiceItemID5 > 0 "
+        "UNION SELECT CAST(RewardChoiceItemID6 AS UNSIGNED) FROM quest_template WHERE RewardChoiceItemID6 > 0";
+    if (QueryResult r = WorldDatabase.Query(kSql))
+    {
+        do
+        {
+            obtainable.insert(uint32((*r)[0].Get<uint64>()));
+        } while (r->NextRow());
+    }
+
+    for (uint32 spellId = 1; spellId < sSpellMgr->GetSpellInfoStoreSize(); ++spellId)
+    {
+        SpellInfo const* spell = sSpellMgr->GetSpellInfo(spellId);
+        if (!spell)
+            continue;
+        SkillLineAbilityMapBounds const bounds = sSpellMgr->GetSkillLineAbilityMapBounds(spellId);
+        if (bounds.first == bounds.second)
+            continue;  // not a profession recipe
+        for (SpellEffectInfo const& eff : spell->GetEffects())
+            if ((eff.Effect == SPELL_EFFECT_CREATE_ITEM || eff.Effect == SPELL_EFFECT_CREATE_ITEM_2) &&
+                eff.ItemType)
+                obtainable.insert(eff.ItemType);
+    }
+    return obtainable;
+}
+
 // Bot-independent gear index, built once on first sync (world thread only, like every
 // caller in this module — no locking).
 //   byInvType: invType -> (ItemLevel, entry) sorted by ItemLevel, for ilvl-window range
 //     scans. Sourced from mod-playerbots' curated equipCacheNew (its IsValidItem pass
 //     drops name-matched test/deprecated/unobtainable items and everything above epic —
 //     but has NO quality floor, so we additionally drop below-uncommon at the build loop
-//     below), flattened across all of that cache's level keys.
+//     below), flattened across all of that cache's level keys. The pool is additionally
+//     restricted to items with an in-game source (BuildObtainableItems, 2026-10-03).
 //   reqLevel: entry -> the equipCacheNew KEY it was cached under, i.e. its EFFECTIVE
 //     required level: max(RequiredLevel, questLevel) for quest rewards, RequiredLevel
 //     otherwise. Flattening byInvType destroys that key, and it is the only place the
@@ -186,6 +258,8 @@ GearIndex const& GetIndex()
             INVTYPE_WEAPONOFFHAND, INVTYPE_SHIELD, INVTYPE_HOLDABLE,
             INVTYPE_RANGED, INVTYPE_RANGEDRIGHT, INVTYPE_THROWN, INVTYPE_RELIC,
         };
+        std::unordered_set<uint32> const obtainable = BuildObtainableItems();
+        uint32 unobtainableDropped = 0;
         for (uint32 lvl = 0; lvl <= kMaxLevel; ++lvl)
             for (InventoryType invType : kInvTypes)
                 for (uint32 itemId : sRandomItemMgr.GetEquipmentNew(lvl, invType))
@@ -205,6 +279,12 @@ GearIndex const& GetIndex()
                     if (!proto || proto->Quality < ITEM_QUALITY_UNCOMMON ||
                         proto->Quality > ITEM_QUALITY_EPIC)
                         continue;
+                    // No in-game source = dev/placeholder entry (see BuildObtainableItems).
+                    if (!obtainable.count(itemId))
+                    {
+                        ++unobtainableDropped;
+                        continue;
+                    }
                     idx.byInvType[invType].push_back({ uint16(proto->ItemLevel), itemId });
                     // Each entry is cached under exactly one key (the quest pass
                     // dedupes, the template pass skips what the quest pass took), so
@@ -267,8 +347,9 @@ GearIndex const& GetIndex()
             RaidRosterItemTier::Build(poolEntries);
         }
 
-        LOG_INFO("playerbots", "[RaidRoster] Gear index built: {} inventory types, {} candidate sets, {} class-owned sets.",
-                 uint32(idx.byInvType.size()), uint32(idx.sets.size()), uint32(idx.setClass.size()));
+        LOG_INFO("playerbots", "[RaidRoster] Gear index built: {} inventory types, {} candidate sets, {} class-owned sets, {} unobtainable pool items dropped.",
+                 uint32(idx.byInvType.size()), uint32(idx.sets.size()), uint32(idx.setClass.size()),
+                 unobtainableDropped);
         return idx;
     }();
     return index;

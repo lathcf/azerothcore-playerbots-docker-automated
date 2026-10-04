@@ -30,6 +30,7 @@
 #include "SharedDefines.h"
 #include "Containers.h"
 #include <array>
+#include <deque>
 #include <utility>
 #include <unordered_set>
 #include <vector>
@@ -39,6 +40,57 @@
 #include <algorithm>
 
 using namespace Acore::ChatCommands;
+
+namespace
+{
+// Time-sliced `.raidroster sync` (2026-10-03). A full sync used to run SyncBotToSpec for all ~40
+// roster bots back-to-back inside one command handler, freezing the realm for seconds. HandleSync
+// now only enqueues; RaidRosterCommand::ProcessSyncQueue (WorldScript::OnUpdate) syncs ONE bot per
+// world tick.
+//
+// World-thread only, no lock — same as the gear index. Writers are command handlers
+// (CMSG_MESSAGECHAT is PROCESS_THREADUNSAFE -> world thread) and the reader is
+// WorldScript::OnUpdate, which World::Update calls after sMapMgr->Update has returned, so no map
+// thread can reach these.
+struct PendingSync
+{
+    ObjectGuid master;
+    ObjectGuid bot;
+    int specTab;
+};
+
+struct SyncProgress
+{
+    uint32 total = 0;     // entries enqueued by the HandleSync that started this run
+    uint32 synced = 0;    // synced by the queue, or overtaken by a syncone (still synced)
+    uint32 skipped = 0;   // bot logged out before its turn
+};
+
+std::deque<PendingSync> g_SyncQueue;
+std::map<ObjectGuid, SyncProgress> g_SyncProgress;
+
+bool HasPendingSync(ObjectGuid master)
+{
+    return std::any_of(g_SyncQueue.begin(), g_SyncQueue.end(),
+                       [&](PendingSync const& p) { return p.master == master; });
+}
+
+// Drop every queued entry and the progress of one master (re-issued sync, or master gone).
+void DropPendingSync(ObjectGuid master)
+{
+    g_SyncQueue.erase(std::remove_if(g_SyncQueue.begin(), g_SyncQueue.end(),
+                                     [&](PendingSync const& p) { return p.master == master; }),
+                      g_SyncQueue.end());
+    g_SyncProgress.erase(master);
+}
+
+void ReportSyncComplete(Player* master, SyncProgress const& prog)
+{
+    ChatHandler(master->GetSession()).PSendSysMessage(
+        "Sync complete: {} bot(s) synced to your level/gear and roles{}.", prog.synced,
+        prog.skipped ? Acore::StringFormat(", {} skipped (logged out)", prog.skipped) : std::string());
+}
+}
 
 ChatCommandTable RaidRosterCommand::GetCommands() const
 {
@@ -388,7 +440,8 @@ bool RaidRosterCommand::HandleLogin(ChatHandler* handler, Optional<uint32> sizeA
 // Force one bot to the master's level and the given talent spec (0-based tab), re-derive
 // role strategies, deterministically re-gear it for that spec (set-aware, enchanted,
 // gemmed) via RaidRosterGear, and teach its era's class-book spells. Shared by full sync and
-// syncone.
+// syncone. Expensive (a full factory Randomize + gear pass): full sync calls it for ONE bot per
+// world tick via ProcessSyncQueue, because 40 back-to-back calls in one handler froze the realm.
 static void SyncBotToSpec(Player* master, Player* bot, int specTab)
 {
     // 1) Level to master + learn spells/skills/glyphs/pet/consumables. Randomize also
@@ -480,6 +533,9 @@ static int SpecTabForRole(uint8 cls, uint8 role)
     return -1;
 }
 
+// Full sync is TIME-SLICED: this handler only validates and enqueues every online roster bot;
+// ProcessSyncQueue (WorldScript::OnUpdate) syncs one bot per world tick and reports completion.
+// Running all ~40 SyncBotToSpec calls synchronously here froze the realm for seconds.
 bool RaidRosterCommand::HandleSync(ChatHandler* handler)
 {
     if (!g_RaidRosterEnable) { handler->SendSysMessage("RaidRoster is disabled (set RaidRoster.Enable=1)."); return true; }
@@ -494,20 +550,74 @@ bool RaidRosterCommand::HandleSync(ChatHandler* handler)
     PlayerbotMgr* mgr = GET_PLAYERBOT_MGR(master);
     if (!mgr) { handler->SendSysMessage("Playerbot manager unavailable."); return true; }
 
-    uint32 synced = 0, offline = 0;
+    // A re-issued sync restarts: drop whatever this master still had queued.
+    ObjectGuid const masterGuid = master->GetGUID();
+    DropPendingSync(masterGuid);
+
+    uint32 queued = 0, offline = 0;
     for (RaidRosterRow const& r : rows)
     {
         ObjectGuid g = ObjectGuid::Create<HighGuid::Player>(r.botGuid);
-        Player* bot = mgr->GetPlayerBot(g);
-        if (!bot) { ++offline; continue; }
+        if (!mgr->GetPlayerBot(g)) { ++offline; continue; }
 
-        SyncBotToSpec(master, bot, (int)r.specTab);
-        ++synced;
+        g_SyncQueue.push_back({ masterGuid, g, (int)r.specTab });
+        ++queued;
     }
 
-    handler->PSendSysMessage("Synced {} online bot(s) to your level/gear and roles; {} offline (login them first).",
-        synced, offline);
+    if (!queued)
+    {
+        handler->PSendSysMessage("Nothing to sync: no roster bot online; {} offline (login them first).", offline);
+        return true;
+    }
+
+    g_SyncProgress[masterGuid].total = queued;
+    handler->PSendSysMessage("Syncing {} bot(s), one per server tick; {} offline (login them first).",
+        queued, offline);
     return true;
+}
+
+// Drives the time-sliced full sync: pops queue entries until exactly ONE bot has been synced (or
+// the queue is empty). Called from RaidRosterWorld::OnUpdate on the world thread, after the map
+// threads have finished their update — the same context the command handler ran it in before.
+void RaidRosterCommand::ProcessSyncQueue()
+{
+    if (!g_RaidRosterEnable)
+        return;
+
+    while (!g_SyncQueue.empty())
+    {
+        PendingSync const job = g_SyncQueue.front();
+        g_SyncQueue.pop_front();
+
+        Player* master = ObjectAccessor::FindConnectedPlayer(job.master);
+        if (!master)
+        {
+            DropPendingSync(job.master);   // master logged off: abandon the run silently
+            continue;
+        }
+
+        SyncProgress& prog = g_SyncProgress[job.master];   // std::map: reference stays valid
+        bool didSync = false;
+        PlayerbotMgr* mgr = GET_PLAYERBOT_MGR(master);
+        Player* bot = mgr ? mgr->GetPlayerBot(job.bot) : nullptr;
+        if (!bot)
+            ++prog.skipped;
+        else
+        {
+            SyncBotToSpec(master, bot, job.specTab);
+            ++prog.synced;
+            didSync = true;
+        }
+
+        if (!HasPendingSync(job.master))
+        {
+            ReportSyncComplete(master, prog);
+            g_SyncProgress.erase(job.master);
+        }
+
+        if (didSync)
+            break;   // one bot per tick
+    }
 }
 
 // Per-bot version of sync: force ONE roster bot to a role's canonical spec (or, with no role,
@@ -565,10 +675,34 @@ bool RaidRosterCommand::HandleSyncOne(ChatHandler* handler, std::string name, Op
         specTab = (int)row->specTab;   // reset just this bot to its roster default
     }
 
+    // If a time-sliced full sync still has this bot queued, take it out so the queued roster-
+    // default sync can't revert this one a few ticks later. The bot counts as synced for that run.
+    ObjectGuid const masterGuid = master->GetGUID();
+    ObjectGuid const botGuid = bot->GetGUID();
+    auto const queuedBefore = g_SyncQueue.size();
+    g_SyncQueue.erase(std::remove_if(g_SyncQueue.begin(), g_SyncQueue.end(),
+                                     [&](PendingSync const& p) { return p.master == masterGuid && p.bot == botGuid; }),
+                      g_SyncQueue.end());
+    bool const overtookQueued = g_SyncQueue.size() != queuedBefore;
+
     SyncBotToSpec(master, bot, specTab);
 
     handler->PSendSysMessage("Synced {} to your level/gear as {}. (A full .raidroster sync reverts it to the roster default.)",
         bot->GetName(), roleArg ? *roleArg : std::string("its roster role"));
+
+    if (overtookQueued)
+    {
+        auto itr = g_SyncProgress.find(masterGuid);
+        if (itr != g_SyncProgress.end())
+        {
+            ++itr->second.synced;   // synced + skipped still adds up to total
+            if (!HasPendingSync(masterGuid))   // it was the run's last entry: report here
+            {
+                ReportSyncComplete(master, itr->second);
+                g_SyncProgress.erase(itr);
+            }
+        }
+    }
     return true;
 }
 
@@ -661,6 +795,9 @@ bool RaidRosterCommand::HandleRemove(ChatHandler* handler, Optional<std::string>
     uint32 owner = master->GetGUID().GetCounter();
     std::vector<RaidRosterRow> rows = RaidRosterStore::Load(owner);
     if (rows.empty()) { handler->SendSysMessage("No roster to remove."); return true; }
+
+    // Cancel any in-flight time-sliced sync first: a released bot must not be re-geared next tick.
+    DropPendingSync(master->GetGUID());
 
     // Log out any that are online, release the XP lock, then drop the rows. We do NOT delete the
     // characters.

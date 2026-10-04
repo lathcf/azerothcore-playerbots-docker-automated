@@ -19,5 +19,9 @@ public:
     static bool HandleStatus(ChatHandler* handler);
     static bool HandleItemTier(ChatHandler* handler, uint32 itemId);
     static bool HandleTierSweep(ChatHandler* handler, uint32 maxTier, uint32 minIlvl);
+
+    // Time-sliced full sync: syncs at most ONE queued roster bot per call. World thread only
+    // (RaidRosterWorld::OnUpdate).
+    static void ProcessSyncQueue();
 };
 #endif
