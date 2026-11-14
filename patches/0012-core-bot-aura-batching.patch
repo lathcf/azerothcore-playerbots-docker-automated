@@ -1,8 +1,8 @@
 diff --git a/src/server/game/Entities/Unit/Unit.cpp b/src/server/game/Entities/Unit/Unit.cpp
-index 161d31ec..a861310e 100644
+index 03eafa28..c094e538 100644
 --- a/src/server/game/Entities/Unit/Unit.cpp
 +++ b/src/server/game/Entities/Unit/Unit.cpp
-@@ -4006,6 +4006,22 @@ void Unit::_UpdateSpells(uint32 time)
+@@ -3773,6 +3773,22 @@ void Unit::_UpdateSpells(uint32 time)
          }
      }
  
@@ -12,7 +12,7 @@ index 161d31ec..a861310e 100644
 +    // sweeps run at ~100ms cadence with the accumulated diff instead: identical timing semantics,
 +    // up to ~90ms added latency on periodic ticks/expiry. Real player sessions are untouched, as
 +    // is everything above this line (current-spell bookkeeping is order-sensitive per tick).
-+    if (IsPlayer() && ToPlayer()->GetSession() && ToPlayer()->GetSession()->IsBot())
++    if (IsPlayer() && ToPlayer()->GetSession() && ToPlayer()->GetSession()->IsHeadless())
 +    {
 +        constexpr uint32 BOT_AURA_UPDATE_INTERVAL = 100;
 +        m_botAuraUpdateTimer += time;
@@ -26,10 +26,10 @@ index 161d31ec..a861310e 100644
      // are deleted later in _DeleteRemovedAuras)
      m_auraUpdateSnapshot.clear();
 diff --git a/src/server/game/Entities/Unit/Unit.h b/src/server/game/Entities/Unit/Unit.h
-index edaf3e9e..f3c6c3c6 100644
+index 05caeca0..9c3b6f48 100644
 --- a/src/server/game/Entities/Unit/Unit.h
 +++ b/src/server/game/Entities/Unit/Unit.h
-@@ -2235,6 +2235,7 @@ private:
+@@ -2256,6 +2256,7 @@ private:
      uint32 m_state;                                     // Even derived shouldn't modify
      uint32 m_CombatTimer;
      uint32 m_lastManaUse;                               // msecs

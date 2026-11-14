@@ -4,9 +4,9 @@
 #
 # NOT baseline-aware: src/Ai/Base/Actions/TradeStatusAction.cpp is touched by NO other patch,
 # so a plain scoped diff of the worktree edit against the pristine index IS exactly the 0017
-# hunk. (Contrast regen-perfmon/arena/wg-siege, which share a file with earlier patches and must
+# hunk. (Contrast regen-arena/wg-siege, which share a file with earlier patches and must
 # rebuild a baseline first.) If a future patch ever also edits this file, this script must be
-# upgraded to the baseline-aware recipe — see regen-perfmon-patch.sh.
+# upgraded to the baseline-aware recipe — see regen-arena-patch.sh.
 #
 # LITERAL PATHS ONLY on every git/cp line — zsh does not word-split an unquoted $var (a `for f
 # in $FILES` loop silently copies nothing and cuts an empty patch; this trap has bitten before).

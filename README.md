@@ -282,25 +282,25 @@ guilds — rather than just running around. All of this is tunable in
 `azerothcore-wotlk/env/dist/etc/modules/playerbots.conf`.
 
 **Leveling.** Random bots span levels 1–80 and gain XP from questing/grinding. The
-level-bracket balancer built into mod-playerbots (`AiPlayerbot.LevelBrackets.*`, formerly the
+level-bracket balancer built into mod-playerbots (`Playerbots.LevelBrackets.*`, formerly the
 separate mod-player-bot-level-brackets module, now merged upstream) spreads the population across
 level ranges so every zone stays populated (the system also balances the distribution, so you won't end up with
-1000 max-level bots). Relevant keys: `AiPlayerbot.RandomBotMinLevel` / `RandomBotMaxLevel`,
-`AiPlayerbot.RandomBotXPRate` (multiplies your server XP rate for bots).
+1000 max-level bots). Relevant keys: `Playerbots.RandomBotMinLevel` / `RandomBotMaxLevel`,
+`Playerbots.RandomBotXPRate` (multiplies your server XP rate for bots).
 
 **Auction house.** Bots travel to auctioneers and post looted items for sale with real
 bid/buyout prices, so the AH fills with listings you can buy. The playerbots themselves only
 *sell* (no buy/bid code path), so they won't purchase auctions you post — if you want your
 listings bought, enable the optional **AHBot** economy (see "Auction house economy" below).
 
-**Guilds.** Bots form their own guilds (`AiPlayerbot.RandomBotGuildCount`, default 20;
+**Guilds.** Bots form their own guilds (`Playerbots.RandomBotGuildCount`, default 20;
 `RandomBotGuildSizeMax`, default 15), chat in guild about events, and will invite real
-players to groups/raids/guilds (`AiPlayerbot.AllowGuildBots = 1`).
+players to groups/raids/guilds (`Playerbots.AllowGuildBots = 1`).
 
-**Daily activity mix** (`AiPlayerbot.EnableNewRpgStrategy = 1`). When not near a real player,
+**Daily activity mix** (`Playerbots.EnableNewRpgStrategy = 1`). When not near a real player,
 each bot picks an activity by weight — raise/lower these to taste:
 
-| Activity (`AiPlayerbot.RpgStatusProbWeight.*`) | Default | Behavior |
+| Activity (`Playerbots.RpgStatusProbWeight.*`) | Default | Behavior |
 |---|---|---|
 | `DoQuest` | 60 | Pick a quest, travel to it, complete it |
 | `WanderNpc` | 20 | Interact with NPCs (trainer, vendor, repair, auctioneer, innkeeper) |
@@ -318,14 +318,14 @@ to full combat AI (tank/heal/DPS, follow, assist).
 **PvP.** Bots contest outdoor PvP objectives (e.g. Wintergrasp, Hellfire towers) when in
 those zones, and they don't randomly gank in the open world — PvP is objective/queue driven.
 
-Battlegrounds work at **all level brackets, on demand**: with `AiPlayerbot.RandomBotJoinBG = 1`,
+Battlegrounds work at **all level brackets, on demand**: with `Playerbots.RandomBotJoinBG = 1`,
 whenever you queue *any* BG/arena at *any* level, bots at your bracket fill it (the level-bracket
 module keeps bots at every level). So you can queue WSG, AB, EotS, AV, IoC, or rated arena at
 whatever level you are and it pops. `setup.sh` additionally keeps light always-on level-80
 WSG/AB/EotS running for ambiance (`RandomBotAutoJoinBG`); AV/IoC are on-demand only to avoid
 tying up bots. **Rated arena** (2v2/3v3/5v5) is enabled at level 80 — make your own arena team
 and queue; bot teams provide the opposition. (Lower-level arena needs core code changes, per the
-module.) Tune via `AiPlayerbot.RandomBotAutoJoinBG*` and `RandomBotArenaTeam*Count`.
+module.) Tune via `Playerbots.RandomBotAutoJoinBG*` and `RandomBotArenaTeam*Count`.
 
 Example tweaks: more questing → raise `DoQuest`; a grindier world → raise `GoGrind` and lower
 `DoQuest`; more bot guilds → raise `RandomBotGuildCount`. Apply changes with
@@ -489,8 +489,8 @@ For a quick one-off tweak you can also edit the live conf and restart:
 #      azerothcore-wotlk/env/dist/etc/modules/playerbots.conf (bot counts), then:
 docker compose restart ac-worldserver
 ```
-Key conf knobs: `Rate.XP.Kill/Quest/Explore`, `AiPlayerbot.MinRandomBots`,
-`AiPlayerbot.MaxRandomBots`. Note that **re-running `./setup.sh` re-applies the values from `.env`**,
+Key conf knobs: `Rate.XP.Kill/Quest/Explore`, `Playerbots.MinRandomBots`,
+`Playerbots.MaxRandomBots`. Note that **re-running `./setup.sh` re-applies the values from `.env`**,
 overwriting hand-edits — so for anything you want to keep, set it in `.env`, not just the conf.
 
 ## Updating to the latest from upstream
@@ -598,7 +598,7 @@ fantasy-accent roleplay. The personality + game grounding is one config line
 - Command-looking chat is left for playerbots/MultiBot and gets no AI reply: control prefixes
   (`.`, `+`, `-`, `!`, `#`, `@`), known command words (`follow`, `stay`, `attack`, `do attack`,
   …, tunable via `CHATTER_COMMAND_KEYWORDS`), and addon/bot/system traffic are all dropped.
-- When enabled, `setup.sh` pins `AiPlayerbot.RandomBotTalk=0`, `EnableBroadcasts=0`, and
+- When enabled, `setup.sh` pins `Playerbots.RandomBotTalk=0`, `EnableBroadcasts=0`, and
   `RandomBotSayWithoutMaster=0` to silence playerbots' built-in canned chatter (the reply engine,
   the ding/quest/loot/kill broadcaster, and unsolicited masterless talk) so this mod owns the
   whole bot voice and bots don't double-answer. This is separate from the command path — playerbot
@@ -722,10 +722,10 @@ restart also generates the addclass pool the first time).
   DPS. Override with `login <size> tank|heal|dps` (e.g. a Prot warrior who wants to DPS a run).
   At 40-man the bot pool is DPS-maxed, so taking tank/heal just shifts the freed slot to a spare
   healer — you always get a full group.
-- Bots are drawn from mod-playerbots' *addclass pool* (`AiPlayerbot.AddClassAccountPoolSize`,
+- Bots are drawn from mod-playerbots' *addclass pool* (`Playerbots.AddClassAccountPoolSize`,
   default 50 via `ADDCLASS_POOL_SIZE`). The pool must exist (needs a worldserver restart after
   first setup before `create` will find characters).
-- `.raidroster sync` caps bot gear to `AiPlayerbot.AutoInitEquipLevelLimitRatio` × your gear
+- `.raidroster sync` caps bot gear to `Playerbots.AutoInitEquipLevelLimitRatio` × your gear
   score (tunable via `GEAR_MATCH_RATIO`, default 1.0). Run it after leveling or a gear upgrade.
 - `MAX_ADDED_BOTS=60` (default; overrides the core's 40-bot limit) gives headroom for a full
   40-man plus any manually-added bots.

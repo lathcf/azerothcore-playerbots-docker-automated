@@ -93,17 +93,17 @@ if [[ "$MODE" == "0003" ]]; then
   exit 0
 fi
 P0003="$ROOT/patches/0003-playerbot-wintergrasp.patch"
-# PlayerbotAI.cpp is a shared registration file also touched by LATER patches (0011/0014/0016).
+# PlayerbotAI.cpp is a shared registration file also touched by LATER patches (0014/0016; 0011 was
+# retired 2026-11 when upstream mod-playerbots absorbed its perf-monitor guard).
 # 0004 is a MIDDLE patch, so those can't be added to the pristine+0003 baseline (their hunks were
 # cut WITH 0004 applied, and won't apply to a tree that lacks it). Instead we REVERSE-apply their
 # PlayerbotAI.cpp hunks from the diff's worktree copy, leaving pristine+0003+0004 — see step 5b.
 # Keep this list current: every patch after 0004 that edits PlayerbotAI.cpp MUST be listed, or the
 # regen silently re-absorbs its hunks into 0004 (the contamination trap that shipped a broken 0004).
 P_LATER_PBAI=("$ROOT/patches/0016-playerbot-aq40.patch" \
-              "$ROOT/patches/0014-playerbot-sunwell.patch" \
-              "$ROOT/patches/0011-playerbot-perfmon-hotpath.patch")  # REVERSE order (last patch first)
+              "$ROOT/patches/0014-playerbot-sunwell.patch")  # REVERSE order (last patch first)
 # Per-patch PlayerbotAI.cpp presence markers, index-aligned with P_LATER_PBAI (see step 5b).
-P_LATER_PBAI_MARK=("case 531:" "case 580:" "perfMonEnabled")
+P_LATER_PBAI_MARK=("case 531:" "case 580:")
 
 [[ -d "$PB/.git" ]] || { echo "ERROR: $PB is not a git clone (run setup.sh first)" >&2; exit 1; }
 [[ -f "$P0003" ]]   || { echo "ERROR: missing $P0003 (baseline needs 0003's shared-file hunks)" >&2; exit 1; }

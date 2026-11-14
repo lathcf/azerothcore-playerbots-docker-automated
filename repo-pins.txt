@@ -11,8 +11,11 @@
 #     mod-aoe-loot, ...   = any other module under azerothcore-wotlk/modules/
 #
 # --- ACTIVE PINS ---
-# Every repo our tracked patches (patches/0001-0019, plus mod-era-talents' own) modify is pinned so an upstream push can
-# never break an update. Bumped 2026-09-25 (from core 413bea61 / mpb b949b50 / IP 977e200 /
+# Every repo our tracked patches (patches/0001-0024, plus mod-era-talents' own) modify is pinned so an upstream push can
+# never break an update. Bumped 2026-11-13 (from core 7f12e89e / mpb 7bae1b5 / IP 0180b91 / bridge 1da0598 — 594 / 139 / 8 / 33
+# non-merge commits): every patch re-ported and verified in setup.sh order, 0011 retired (absorbed upstream), dev-box
+# boot + 500-bot soak clean. mod-playerbots renamed its config keys AiPlayerbot.* -> Playerbots.* (setup.sh/update.sh
+# migrate playerbots.conf in place). Previous bump 2026-09-25 (from core 413bea61 / mpb b949b50 / IP 977e200 /
 # bridge 759c100 — 288 / 50 / 3 / 1 non-merge commits behind): all patches re-verified applying
 # cleanly in setup.sh order at these tips. Core and mod-playerbots MUST move together here — core
 # f15ad949 stripped the fork's Playerbot DB layer and mpb af07882 switched to core's modular DB.
@@ -22,15 +25,15 @@
 # retired 0002 and dropped mod-player-bot-level-brackets — see git history of this file.
 # To take upstream later: comment out the pin(s), run ./update.sh, regenerate any patch that
 # aborts, test, then re-pin at new tips.
-azerothcore-wotlk 7f12e89ee5f467a50e62eba1d525eac7dc953d03
-mod-playerbots 7bae1b5c58c76a0aa20381155edc08096d1485b2
-mod-individual-progression 0180b9172d0d29bbce53dd84af133b3d998b0622
+azerothcore-wotlk 32fd3472aa74961c91cb9bc942ee3e0a44b36779
+mod-playerbots ecc4a537a3b43056e412fae63fb4a4271849b472
+mod-individual-progression e1795553d381e561ab5f37585566c22e23cdff73
 # mod-multibot-bridge: its old pin (5e5ff75) only existed because the bridge's Self-Bot code needed
 # IsSelfBot(), which mod-playerbots ba46fcd lacked; b949b50 defines it, so the bridge now rides its
 # tip. Upstream REWROTE the bridge's main as an orphan history (no shared ancestry with 5e5ff75) —
 # patch 0022 was re-verified against it. Pinned like the others so an update can't outrun 0022.
-mod-multibot-bridge 1da05982e478cb00e0b6c87314afe7e0e9653ffb
+mod-multibot-bridge 9f0e8ba767c65f7959a615f70e61ec0980266780
 # era talents module (own repo: https://github.com/lathcf/azerothcore-mod-era-talents). The sha is a commit on the PUBLIC
 # GitHub history (an orphan branch; the private Gitea history has different shas) — production clones from
 # GitHub, so a private sha would never fetch. Bump after each public sync, after verifying a build.
-mod-era-talents 0dac15c4a71d4393f4a2dd8553c460a18db3fbc8
+mod-era-talents ac91dcb8903c5a998450214ceeeded58d7e80f07

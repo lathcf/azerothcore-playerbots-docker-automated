@@ -100,6 +100,16 @@ done
 
 cd "$AC_DIR"
 
+# mod-playerbots ed54b45 (#2854) renamed every config key AiPlayerbot.* -> Playerbots.*. Rename the
+# live playerbots.conf in place so an update-only run keeps its values (bot count, BG/arena, talk
+# pins). Same one-time migration as setup.sh; a no-op once no `AiPlayerbot.` line is left.
+PB_LIVE_CONF="env/dist/etc/modules/playerbots.conf"
+if [[ -f "$PB_LIVE_CONF" ]] && grep -qE '^[[:space:]#]*AiPlayerbot\.' "$PB_LIVE_CONF"; then
+  cp -p "$PB_LIVE_CONF" "$PB_LIVE_CONF.pre-rename"
+  sed -i -E 's/^([[:space:]#]*)AiPlayerbot\./\1Playerbots./' "$PB_LIVE_CONF"
+  echo "==> playerbots.conf: renamed AiPlayerbot.* keys to Playerbots.* (backup: $PB_LIVE_CONF.pre-rename)"
+fi
+
 # An upstream client-data version bump makes ac-client-data-init re-download the data archive into
 # the ac-client-data VOLUME. That write fails ("data.zip: Permission denied") when a pre-existing
 # volume is root-owned but the container runs as the non-root UID, and Compose then reports the

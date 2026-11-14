@@ -201,7 +201,7 @@ bool RaidRosterCommand::HandleCreate(ChatHandler* handler)
         if (v.empty())
         {
             handler->PSendSysMessage("Not enough addclass characters of class {} ({} faction). "
-                "Raise AiPlayerbot.AddClassAccountPoolSize and restart.", uint32(slot.cls),
+                "Raise Playerbots.AddClassAccountPoolSize and restart.", uint32(slot.cls),
                 isAlliance ? "Alliance" : "Horde");
             return true; // nothing persisted yet (existing rows untouched)
         }

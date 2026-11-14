@@ -230,7 +230,7 @@ public:
             SendGossipMenuFor(player, kTextClosed, creature);
             return true;
         }
-        if (player->GetSession()->IsBot())
+        if (player->GetSession()->IsHeadless())
             return true;
         ShowTop(player, creature, true);
         return true;
@@ -238,7 +238,7 @@ public:
 
     bool OnGossipSelect(Player* player, Creature* creature, uint32 sender, uint32 action) override
     {
-        if (!g_EnchanterEnable || player->GetSession()->IsBot())
+        if (!g_EnchanterEnable || player->GetSession()->IsHeadless())
         {
             CloseGossipMenuFor(player);
             return true;

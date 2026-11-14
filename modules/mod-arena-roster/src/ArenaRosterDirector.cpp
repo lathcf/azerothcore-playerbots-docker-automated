@@ -738,7 +738,7 @@ void ArenaRosterDirector::PhasePinBots()
         {
             Fail("addclass pool exhausted: no free " + std::string(isAlliance ? "Alliance" : "Horde") +
                  " character of class " + std::to_string(slot.cls) +
-                 " (raise AiPlayerbot.AddClassAccountPoolSize and restart, then re-run poolinit)");
+                 " (raise Playerbots.AddClassAccountPoolSize and restart, then re-run poolinit)");
             return;
         }
         pinned.insert(chosen.GetCounter());

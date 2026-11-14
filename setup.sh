@@ -423,6 +423,16 @@ for _src in "$AC_DIR"/modules/*/conf/*.conf.dist; do
   [[ -e "$_src" ]] || continue
   cp -f "$_src" "$MODETC/$(basename "$_src")"
 done
+# mod-playerbots ed54b45 (#2854, taken in the 2026-11 bump) renamed every config key from
+# `AiPlayerbot.*` to `Playerbots.*`; the module no longer reads the old prefix. Rename the keys in
+# an existing playerbots.conf IN PLACE (active and commented lines) so hand edits survive — the
+# merge loop below would otherwise append every key at its .dist default and the old lines would
+# be silently ignored. One-time: a no-op once no `AiPlayerbot.` line is left. update.sh does the same.
+if [[ -f "$MODETC/playerbots.conf" ]] && grep -qE '^[[:space:]#]*AiPlayerbot\.' "$MODETC/playerbots.conf"; then
+  cp -p "$MODETC/playerbots.conf" "$MODETC/playerbots.conf.pre-rename"
+  sed -i -E 's/^([[:space:]#]*)AiPlayerbot\./\1Playerbots./' "$MODETC/playerbots.conf"
+  echo "    playerbots.conf: renamed AiPlayerbot.* keys to Playerbots.* (backup: playerbots.conf.pre-rename)"
+fi
 for _dist in "$MODETC"/*.conf.dist; do
   [[ -e "$_dist" ]] || continue           # glob didn't match (no .dist files yet) -> skip
   _name="$(basename "$_dist" .conf.dist)"
@@ -530,6 +540,11 @@ if [[ "${IP_ENABLE:-1}" == "1" ]]; then
   set_conf "IndividualProgression.TbcRacesUnlockProgression"   "${IP_TBC_RACES_UNLOCK:-8}"      "$IP_CONF"
   set_conf "IndividualProgression.tbcRacesStartingProgression" "${IP_TBC_RACES_START:-8}"       "$IP_CONF"
   set_conf "IndividualProgression.RequireNaxxStrathEntrance"   "${IP_REQUIRE_NAXX_STRATH:-0}"   "$IP_CONF"
+  # Four Horsemen "doable" mode: halves Zeliek's Holy Wrath, drops Blaumeux's Void Zones, lowers mark damage and
+  # (patch 0023) halves Mograine's Unholy Shadow. On by default: the playerbot strategy (patch 0022) is tuned for it.
+  set_conf "IndividualProgression.doableNaxx40Bosses_4H"       "${IP_DOABLE_NAXX40_4H:-1}"      "$IP_CONF"
+  # Patchwerk "doable" mode: Hateful Strike at 80 % (17,680-18,280 before armor instead of 22,100-22,850).
+  set_conf "IndividualProgression.doableNaxx40Bosses_Patchwerk" "${IP_DOABLE_NAXX40_PATCHWERK:-1}" "$IP_CONF"
   set_conf "IndividualProgression.BotAccountsRegex"            "${IP_BOT_ACCOUNTS_REGEX:-^RNDBOT.*}" "$IP_CONF"
   set_conf "IndividualProgression.BotAccountsMaxLevel"         "${IP_BOT_ACCOUNTS_MAX_LEVEL:-80}" "$IP_CONF"
   set_conf "IndividualProgression.ExcludedAccountsRegex"       "${IP_EXCLUDED_ACCOUNTS_REGEX:-}" "$IP_CONF"
@@ -579,12 +594,12 @@ set_conf "Cluster.Enabled" "0" "$WS_CONF"
 # Only ~BotActiveAlone% run full AI when no real player is near, and SmartScale auto-throttles
 # if the server tick gets heavy — but more online bots still cost more RAM and CPU.
 BOTS="${MAX_RANDOM_BOTS:-2000}"
-set_conf "AiPlayerbot.Enabled"            "1"      "$PB_CONF"
-set_conf "AiPlayerbot.RandomBotAutologin" "1"      "$PB_CONF"
-set_conf "AiPlayerbot.MinRandomBots"      "$BOTS"  "$PB_CONF"
-set_conf "AiPlayerbot.MaxRandomBots"      "$BOTS"  "$PB_CONF"
-# Required by the level-bracket balancer (AiPlayerbot.LevelBrackets.*): bots must keep their random levels.
-set_conf "AiPlayerbot.DisableRandomLevels" "0"   "$PB_CONF"
+set_conf "Playerbots.Enabled"            "1"      "$PB_CONF"
+set_conf "Playerbots.RandomBotAutologin" "1"      "$PB_CONF"
+set_conf "Playerbots.MinRandomBots"      "$BOTS"  "$PB_CONF"
+set_conf "Playerbots.MaxRandomBots"      "$BOTS"  "$PB_CONF"
+# Required by the level-bracket balancer (Playerbots.LevelBrackets.*): bots must keep their random levels.
+set_conf "Playerbots.DisableRandomLevels" "0"   "$PB_CONF"
 # Disable gear/spec persistence: it's incompatible with the level-bracket balancer.
 # The bracket balancer constantly re-levels bots to follow the player population, including
 # DEMOTING them (e.g. 45 -> 7) via PlayerbotFactory::Randomize(false). With persistence ON
@@ -592,21 +607,21 @@ set_conf "AiPlayerbot.DisableRandomLevels" "0"   "$PB_CONF"
 # persistence level, so a demoted bot keeps its old high-level gear; InitEquipment only
 # swaps slots where it happens to find a level-appropriate item, leaving the rest overleveled
 # (the "level 7 bot in level 45 gear" symptom). Off = every re-level re-gears from scratch.
-set_conf "AiPlayerbot.EquipAndSpecPersistence" "0" "$PB_CONF"
+set_conf "Playerbots.EquipAndSpecPersistence" "0" "$PB_CONF"
 # Battlegrounds & arenas.
 # On-demand (the key setting): with RandomBotJoinBG=1, when YOU queue any BG/arena at ANY
 # level, bots at your bracket fill it — and the level-bracket balancer keeps bots at every
 # level, so BGs pop at all brackets, not just 80. This is what lets you join whenever you want.
-set_conf "AiPlayerbot.RandomBotJoinBG" "1" "$PB_CONF"
+set_conf "Playerbots.RandomBotJoinBG" "1" "$PB_CONF"
 # Always-on ambiance: bots also run their own BGs even with no humans. Kept light at level 80
 # (WS/AB/EY) to avoid the module's documented over-queuing and draining the open world.
 # AV/IC (40v40) are left on-demand-only (count 0) — they still pop when you queue for them.
-set_conf "AiPlayerbot.RandomBotAutoJoinBG"        "1" "$PB_CONF"
-set_conf "AiPlayerbot.RandomBotAutoJoinBGWSCount" "1" "$PB_CONF"  # Warsong Gulch
-set_conf "AiPlayerbot.RandomBotAutoJoinBGABCount" "1" "$PB_CONF"  # Arathi Basin
-set_conf "AiPlayerbot.RandomBotAutoJoinBGEYCount" "1" "$PB_CONF"  # Eye of the Storm
-set_conf "AiPlayerbot.RandomBotAutoJoinBGAVCount" "0" "$PB_CONF"  # Alterac Valley (on-demand)
-set_conf "AiPlayerbot.RandomBotAutoJoinBGICCount" "0" "$PB_CONF"  # Isle of Conquest (on-demand)
+set_conf "Playerbots.RandomBotAutoJoinBG"        "1" "$PB_CONF"
+set_conf "Playerbots.RandomBotAutoJoinBGWSCount" "1" "$PB_CONF"  # Warsong Gulch
+set_conf "Playerbots.RandomBotAutoJoinBGABCount" "1" "$PB_CONF"  # Arathi Basin
+set_conf "Playerbots.RandomBotAutoJoinBGEYCount" "1" "$PB_CONF"  # Eye of the Storm
+set_conf "Playerbots.RandomBotAutoJoinBGAVCount" "0" "$PB_CONF"  # Alterac Valley (on-demand)
+set_conf "Playerbots.RandomBotAutoJoinBGICCount" "0" "$PB_CONF"  # Isle of Conquest (on-demand)
 # Rated arena (level 80 only — lower brackets need core code changes per module docs).
 # Bot arena teams (RandomBotArenaTeam*Count defaults: 10/10/5) provide the opposition.
 # NOTE: the RatedArena*Count knobs themselves are set further below, gated on
@@ -640,14 +655,14 @@ set_conf "Arena.GamesRequired"          "3" "$WS_CONF"
 AR_CONF="$MODETC/mod_arena_roster.conf"
 if [[ "${ARENAROSTER_ENABLE:-0}" == "1" ]]; then
   set_conf "ArenaRoster.Enable" "1" "$AR_CONF"
-  set_conf "AiPlayerbot.RandomBotAutoJoinBGRatedArena2v2Count" "0" "$PB_CONF"
-  set_conf "AiPlayerbot.RandomBotAutoJoinBGRatedArena3v3Count" "0" "$PB_CONF"
-  set_conf "AiPlayerbot.RandomBotAutoJoinBGRatedArena5v5Count" "0" "$PB_CONF"
+  set_conf "Playerbots.RandomBotAutoJoinBGRatedArena2v2Count" "0" "$PB_CONF"
+  set_conf "Playerbots.RandomBotAutoJoinBGRatedArena3v3Count" "0" "$PB_CONF"
+  set_conf "Playerbots.RandomBotAutoJoinBGRatedArena5v5Count" "0" "$PB_CONF"
 else
   set_conf "ArenaRoster.Enable" "0" "$AR_CONF"
-  set_conf "AiPlayerbot.RandomBotAutoJoinBGRatedArena2v2Count" "1" "$PB_CONF"
-  set_conf "AiPlayerbot.RandomBotAutoJoinBGRatedArena3v3Count" "1" "$PB_CONF"
-  set_conf "AiPlayerbot.RandomBotAutoJoinBGRatedArena5v5Count" "1" "$PB_CONF"
+  set_conf "Playerbots.RandomBotAutoJoinBGRatedArena2v2Count" "1" "$PB_CONF"
+  set_conf "Playerbots.RandomBotAutoJoinBGRatedArena3v3Count" "1" "$PB_CONF"
+  set_conf "Playerbots.RandomBotAutoJoinBGRatedArena5v5Count" "1" "$PB_CONF"
 fi
 
 # Performance / scaling tuning (mod-playerbots "Playerbot Configuration" wiki + the 2026-07 source
@@ -695,15 +710,15 @@ set_conf "Quests.IgnoreAutoAccept"         "1"  "$WS_CONF"
 #     takes N/45*20s (~15 min at 2000 bots, ~37 min at 5000) — scale it with the bot count or
 #     teleport/randomize maintenance starves. Runs on the world thread, so raise gradually.
 #   - RandomBot*Interval: the module authors' tuned cadence for the random-bot manager.
-set_conf "AiPlayerbot.BotActiveAlone"               "${BOT_ACTIVE_ALONE:-10}"   "$PB_CONF"
-set_conf "AiPlayerbot.botActiveAloneSmartScale"     "${BOT_ACTIVE_ALONE_SMART_SCALE:-1}"    "$PB_CONF"
-set_conf "AiPlayerbot.botActiveAloneSmartScaleDiffLimitCeiling" "${BOT_SMART_SCALE_CEILING:-300}" "$PB_CONF"
+set_conf "Playerbots.BotActiveAlone"               "${BOT_ACTIVE_ALONE:-10}"   "$PB_CONF"
+set_conf "Playerbots.botActiveAloneSmartScale"     "${BOT_ACTIVE_ALONE_SMART_SCALE:-1}"    "$PB_CONF"
+set_conf "Playerbots.botActiveAloneSmartScaleDiffLimitCeiling" "${BOT_SMART_SCALE_CEILING:-300}" "$PB_CONF"
 set_conf "PlayerbotsDatabase.WorkerThreads"         "${PLAYERBOTS_DB_WORKER_THREADS:-2}"    "$PB_CONF"
 set_conf "PlayerbotsDatabase.SynchThreads"          "${PLAYERBOTS_DB_SYNCH_THREADS:-2}"    "$PB_CONF"
-set_conf "AiPlayerbot.RandomBotsPerInterval"        "${RANDOM_BOTS_PER_INTERVAL:-150}" "$PB_CONF"
-set_conf "AiPlayerbot.RandomBotUpdateInterval"      "20"   "$PB_CONF"
-set_conf "AiPlayerbot.RandomBotCountChangeMinInterval" "1800" "$PB_CONF"
-set_conf "AiPlayerbot.RandomBotCountChangeMaxInterval" "7200" "$PB_CONF"
+set_conf "Playerbots.RandomBotsPerInterval"        "${RANDOM_BOTS_PER_INTERVAL:-150}" "$PB_CONF"
+set_conf "Playerbots.RandomBotUpdateInterval"      "20"   "$PB_CONF"
+set_conf "Playerbots.RandomBotCountChangeMinInterval" "1800" "$PB_CONF"
+set_conf "Playerbots.RandomBotCountChangeMaxInterval" "7200" "$PB_CONF"
 
 # Era-align bot riding to Individual Progression. IP restores original riding REQUIREMENTS at the
 # trainer (trainer_spell.ReqLevel: Apprentice 40 / Journeyman 60 / Expert-fly 70), but bots never
@@ -712,10 +727,10 @@ set_conf "AiPlayerbot.RandomBotCountChangeMaxInterval" "7200" "$PB_CONF"
 # ride at level 20 under IP. Set them to the era values ONLY when IP is on; with IP off the stock
 # WotLK levels are correct, so we leave the conf.dist defaults untouched. (See .env IP_BOT_*_LEVEL.)
 if [[ "${IP_ENABLE:-1}" == "1" ]]; then
-  set_conf "AiPlayerbot.UseGroundMountAtMinLevel"     "${IP_BOT_GROUND_MOUNT_LEVEL:-40}"      "$PB_CONF"
-  set_conf "AiPlayerbot.UseFastGroundMountAtMinLevel" "${IP_BOT_FAST_GROUND_MOUNT_LEVEL:-60}" "$PB_CONF"
-  set_conf "AiPlayerbot.UseFlyMountAtMinLevel"        "${IP_BOT_FLY_MOUNT_LEVEL:-70}"         "$PB_CONF"
-  set_conf "AiPlayerbot.UseFastFlyMountAtMinLevel"    "${IP_BOT_FAST_FLY_MOUNT_LEVEL:-70}"    "$PB_CONF"
+  set_conf "Playerbots.UseGroundMountAtMinLevel"     "${IP_BOT_GROUND_MOUNT_LEVEL:-40}"      "$PB_CONF"
+  set_conf "Playerbots.UseFastGroundMountAtMinLevel" "${IP_BOT_FAST_GROUND_MOUNT_LEVEL:-60}" "$PB_CONF"
+  set_conf "Playerbots.UseFlyMountAtMinLevel"        "${IP_BOT_FLY_MOUNT_LEVEL:-70}"         "$PB_CONF"
+  set_conf "Playerbots.UseFastFlyMountAtMinLevel"    "${IP_BOT_FAST_FLY_MOUNT_LEVEL:-70}"    "$PB_CONF"
 fi
 
 # Level-bracket distribution (native to mod-playerbots since upstream 6cc5e3a, which absorbed the
@@ -724,10 +739,10 @@ fi
 # thin across all levels). Re-evaluated every few minutes, so the crowd follows you as you level.
 # Weight 10 = strong solo focus (the original module recommended 10-15); SyncFactions makes BOTH
 # factions gather at your level too. Upstream ships Enabled=0, so this block is what turns it on.
-set_conf "AiPlayerbot.LevelBrackets.Enabled"                        "1"  "$PB_CONF"
-set_conf "AiPlayerbot.LevelBrackets.Dynamic.UseDynamicDistribution" "1"  "$PB_CONF"
-set_conf "AiPlayerbot.LevelBrackets.Dynamic.RealPlayerWeight"       "10" "$PB_CONF"
-set_conf "AiPlayerbot.LevelBrackets.Dynamic.SyncFactions"           "1"  "$PB_CONF"
+set_conf "Playerbots.LevelBrackets.Enabled"                        "1"  "$PB_CONF"
+set_conf "Playerbots.LevelBrackets.Dynamic.UseDynamicDistribution" "1"  "$PB_CONF"
+set_conf "Playerbots.LevelBrackets.Dynamic.RealPlayerWeight"       "10" "$PB_CONF"
+set_conf "Playerbots.LevelBrackets.Dynamic.SyncFactions"           "1"  "$PB_CONF"
 # The retired module's conf is dead weight once its clone is pruned; drop it so nobody tunes it.
 rm -f "$MODETC/mod_player_bot_level_brackets.conf" "$MODETC/mod_player_bot_level_brackets.conf.dist"
 
@@ -827,17 +842,17 @@ esac
 # Base playerbots: enable flag + every global channel chance (0-30000 scale), plus the
 # noisiest local talk knobs. All channels share one value so volume scales uniformly
 # (zeroing a single channel just reroutes its broadcasts to the others).
-set_conf "AiPlayerbot.EnableBroadcasts"        "$PB_BCAST"     "$PB_CONF"
+set_conf "Playerbots.EnableBroadcasts"        "$PB_BCAST"     "$PB_CONF"
 for ch in Guild World General Trade LFG LocalDefense WorldDefense GuildRecruitment; do
-  set_conf "AiPlayerbot.BroadcastTo${ch}GlobalChance" "$PB_CHANCE" "$PB_CONF"
+  set_conf "Playerbots.BroadcastTo${ch}GlobalChance" "$PB_CHANCE" "$PB_CONF"
 done
-set_conf "AiPlayerbot.RandomBotTalk"           "$PB_TALK"      "$PB_CONF"
-set_conf "AiPlayerbot.RandomBotSuggestDungeons" "$PB_SUGGEST"  "$PB_CONF"
-set_conf "AiPlayerbot.GuildRepliesRate"        "$PB_GUILDRATE" "$PB_CONF"
+set_conf "Playerbots.RandomBotTalk"           "$PB_TALK"      "$PB_CONF"
+set_conf "Playerbots.RandomBotSuggestDungeons" "$PB_SUGGEST"  "$PB_CONF"
+set_conf "Playerbots.GuildRepliesRate"        "$PB_GUILDRATE" "$PB_CONF"
 echo "    Bot chatter: ${CHATTER_MSG}"
 
 # ── AI bot chat (mod-playerbot-chatter) ───────────────────────────────────────
-# Driven by .env CHATTER_* knobs. When enabled, we PIN AiPlayerbot.RandomBotTalk=0 so
+# Driven by .env CHATTER_* knobs. When enabled, we PIN Playerbots.RandomBotTalk=0 so
 # playerbots' built-in canned ChatReplyAction can't double-answer over the AI (it is
 # orthogonal to the command path, so commands/MultiBot are unaffected).
 CHATTER_ENABLE="${CHATTER_ENABLE:-0}"
@@ -861,7 +876,7 @@ if [[ -f "$PBCHAT_CONF" ]]; then
   # Managed here (not left to the instantiated conf): an install whose conf predates a keyword
   # (prod lacked "summon"/"do attack") otherwise keeps the stale list forever. The module also
   # has a built-in whole-line command floor; this list adds first-word/prefix matching.
-  set_conf "PlayerbotChatter.CommandKeywords" "\"${CHATTER_COMMAND_KEYWORDS:-follow,stay,flee,grind,attack,tank attack,do attack,accept,talk,reset,runaway,summon,q,c,u,e,ue,t,nt,s,b,r,rep,items,inv,pvp stats,add all loot,move from group,enter vehicle,leave vehicle,buy,sell,trade,cast,co,nc,rti,los,ll}\"" "$PBCHAT_CONF"
+  set_conf "PlayerbotChatter.CommandKeywords" "\"${CHATTER_COMMAND_KEYWORDS:-follow,stay,flee,grind,attack,tank attack,do attack,accept,talk,reset,runaway,summon,q,c,u,e,ue,t,nt,s,b,r,rep,items,inv,pvp stats,add all loot,move from group,enter vehicle,leave vehicle,buy,sell,trade,cast,co,nc,rti,los,ll,twins pull}\"" "$PBCHAT_CONF"
   set_conf "PlayerbotChatter.HistoryLen"    "${CHATTER_HISTORY_LEN:-10}"            "$PBCHAT_CONF"
   set_conf "PlayerbotChatter.ReplyMaxLen"   "${CHATTER_REPLY_MAXLEN:-200}"          "$PBCHAT_CONF"
   set_conf "PlayerbotChatter.LoreEnable"  "${LORE_ENABLE:-0}"                                   "$PBCHAT_CONF"
@@ -898,9 +913,9 @@ if [[ -f "$PBCHAT_CONF" ]]; then
     # (EnableBroadcasts: ding/quest/loot/kill), and unsolicited masterless talk. These are
     # all orthogonal to the command path, so follow/trade/MultiBot are unaffected. Physical
     # emotes (RandomBotEmote) are left as-is — they are not chat.
-    set_conf "AiPlayerbot.RandomBotTalk"            "0" "$PB_CONF"
-    set_conf "AiPlayerbot.EnableBroadcasts"         "0" "$PB_CONF"
-    set_conf "AiPlayerbot.RandomBotSayWithoutMaster" "0" "$PB_CONF"
+    set_conf "Playerbots.RandomBotTalk"            "0" "$PB_CONF"
+    set_conf "Playerbots.EnableBroadcasts"         "0" "$PB_CONF"
+    set_conf "Playerbots.RandomBotSayWithoutMaster" "0" "$PB_CONF"
     echo "    AI chat ON -> pinned RandomBotTalk=0, EnableBroadcasts=0, RandomBotSayWithoutMaster=0"
     echo "      (playerbots' canned + broadcast voice off; mod-playerbot-chatter owns chatter)."
   fi
@@ -925,10 +940,10 @@ fi
 # Gated: only touch playerbots pool/bot-count config when the module is enabled, so a
 # disabled mod-raid-roster never mutates an existing install's playerbots settings.
 if [[ "${RAIDROSTER_ENABLE:-0}" == "1" ]]; then
-  set_conf "AiPlayerbot.AddClassCommand"              "1"                          "$PB_CONF"
-  set_conf "AiPlayerbot.AddClassAccountPoolSize"      "${ADDCLASS_POOL_SIZE:-50}"  "$PB_CONF"
-  set_conf "AiPlayerbot.AutoInitEquipLevelLimitRatio" "${GEAR_MATCH_RATIO:-1.0}"   "$PB_CONF"
-  set_conf "AiPlayerbot.MaxAddedBots"                 "${MAX_ADDED_BOTS:-60}"      "$PB_CONF"
+  set_conf "Playerbots.AddClassCommand"              "1"                          "$PB_CONF"
+  set_conf "Playerbots.AddClassAccountPoolSize"      "${ADDCLASS_POOL_SIZE:-50}"  "$PB_CONF"
+  set_conf "Playerbots.AutoInitEquipLevelLimitRatio" "${GEAR_MATCH_RATIO:-1.0}"   "$PB_CONF"
+  set_conf "Playerbots.MaxAddedBots"                 "${MAX_ADDED_BOTS:-60}"      "$PB_CONF"
 fi
 
 RAID_CONF="$MODETC/mod_raid_roster.conf"

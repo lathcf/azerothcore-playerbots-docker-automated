@@ -3,9 +3,9 @@
 # working tree at azerothcore-wotlk/modules/mod-playerbots.
 #
 # BASELINE-AWARE for src/Bot/PlayerbotAI.cpp: that file is also modified by patches
-# 0003 (wg invite), 0004 (wg siege), and 0011 (perfmon hotpath), which are applied
+# 0003 (wg invite) and 0004 (wg siege), which are applied
 # UNSTAGED — a naive `git diff` would embed their hunks into 0014. For that one file we
-# diff against a baseline of pristine+0003+0004+0011 built in the git index (same
+# diff against a baseline of pristine+0003+0004 built in the git index (same
 # mechanism as regen-arena-patch.sh). The SWP/ dir is new (rides along via `add -N`) and
 # the three other wiring files are touched by no other patch.
 #
@@ -22,11 +22,10 @@ PB="$AC/modules/mod-playerbots"
 OUT="$ROOT/patches/0014-playerbot-sunwell.patch"
 P0003="$ROOT/patches/0003-playerbot-wintergrasp.patch"
 P0004="$ROOT/patches/0004-playerbot-wintergrasp-siege.patch"
-P0011="$ROOT/patches/0011-playerbot-perfmon-hotpath.patch"
 
 [[ -d "$PB/.git" ]] || { echo "ERROR: $PB is not a git clone (run setup.sh first)" >&2; exit 1; }
-[[ -f "$P0003" && -f "$P0004" && -f "$P0011" ]] \
-  || { echo "ERROR: baseline patches 0003/0004/0011 missing from patches/" >&2; exit 1; }
+[[ -f "$P0003" && -f "$P0004" ]] \
+  || { echo "ERROR: baseline patches 0003/0004 missing from patches/" >&2; exit 1; }
 
 # The SWP work must be present in the worktree.
 [[ -d "$PB/src/Ai/Raid/SWP" ]] \
@@ -50,14 +49,13 @@ trap restore EXIT
 # 1. Save the current (0014-bearing) copy of the shared file.
 cp "$PB/src/Bot/PlayerbotAI.cpp" "$TMP/PlayerbotAI.cpp"
 
-# 2. Pristine, then rebuild the baseline for the shared file: 0003 -> 0004 -> 0011,
+# 2. Pristine, then rebuild the baseline for the shared file: 0003 -> 0004,
 #    each restricted to its PlayerbotAI.cpp hunks.
 git -C "$PB" checkout -- src/Bot/PlayerbotAI.cpp
 git -C "$AC" apply --include=modules/mod-playerbots/src/Bot/PlayerbotAI.cpp "$P0003"
 git -C "$AC" apply --include=modules/mod-playerbots/src/Bot/PlayerbotAI.cpp "$P0004"
-git -C "$AC" apply --include=modules/mod-playerbots/src/Bot/PlayerbotAI.cpp "$P0011"
 
-# 3. Stage the baseline (index = pristine+0003+0004+0011 for the shared file).
+# 3. Stage the baseline (index = pristine+0003+0004 for the shared file).
 git -C "$PB" add -- src/Bot/PlayerbotAI.cpp
 
 # 4. Restore the 0014 worktree state; mark the new SWP dir intent-to-add.

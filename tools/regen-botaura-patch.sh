@@ -28,7 +28,7 @@
 # per-tick aura sweeps (Aura::UpdateOwner + AuraEffect::Update + Unit::_UpdateSpells + the
 # rb-tree iteration of the aura multimaps) — thousands of fully-buffed bots walking every owned
 # aura every map tick to find timers that aren't due. All aura timing is diff-driven, so 0012
-# accumulates the diff for BOT sessions (WorldSession::IsBot()) and runs the sweeps at ~100ms
+# accumulates the diff for BOT sessions (WorldSession::IsHeadless(), core 92fed92e; was IsBot()) and runs the sweeps at ~100ms
 # cadence with the summed diff: identical timing semantics, up to ~90ms added latency on
 # periodic ticks/expiry, real players untouched. The current-spell pointer bookkeeping at the
 # top of _UpdateSpells stays per-tick — it is order-sensitive with the event system (see the
@@ -97,7 +97,7 @@ git -C "$AC" diff -- src/server/game/Entities/Unit/Unit.h src/server/game/Entiti
 [[ "$(grep -c '^diff --git' "$TMP/0012.patch")" -eq 2 ]] || { echo "GATE FAIL: expected exactly 2 files in the patch" >&2; exit 1; }
 grep -q "b/src/server/game/Entities/Unit/Unit.cpp" "$TMP/0012.patch" \
   || { echo "GATE FAIL: patch path is not fork-root relative — did you add --dst-prefix?" >&2; exit 1; }
-for needle in "m_botAuraUpdateTimer" "BOT_AURA_UPDATE_INTERVAL" "IsBot()"; do
+for needle in "m_botAuraUpdateTimer" "BOT_AURA_UPDATE_INTERVAL" "IsHeadless()"; do
   grep -q -- "$needle" "$TMP/0012.patch" || { echo "GATE FAIL: patch missing expected content: $needle" >&2; exit 1; }
 done
 # Scope: 0012 must not touch the order-sensitive current-spell bookkeeping or auto-repeat path.

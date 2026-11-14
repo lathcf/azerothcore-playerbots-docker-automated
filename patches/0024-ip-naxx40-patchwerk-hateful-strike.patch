@@ -1,0 +1,61 @@
+diff --git a/modules/mod-individual-progression/data/sql/world/base/naxx40_spells.sql b/modules/mod-individual-progression/data/sql/world/base/naxx40_spells.sql
+index 9e37da6..99ae7c2 100644
+--- a/modules/mod-individual-progression/data/sql/world/base/naxx40_spells.sql
++++ b/modules/mod-individual-progression/data/sql/world/base/naxx40_spells.sql
+@@ -158,6 +158,10 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES (28457, 'spel
+ DELETE FROM `spell_script_names` WHERE `spell_id` = 28479;
+ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES (28479, 'spell_kelthuzad_frostbolt_40');
+ 
++-- Hateful Strike: land at the boss script's own value, without the spell's 1..4501 die roll (overlay patch 0024)
++DELETE FROM `spell_script_names` WHERE `spell_id` = 41926 AND `ScriptName` = 'spell_patchwerk_hateful_strike_40';
++INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES (41926, 'spell_patchwerk_hateful_strike_40');
++
+ -- Thaddius
+ -- Feugen - Static Field: Change to mana drain
+ DELETE FROM `spell_script_names` WHERE `spell_id` = 28135;
+diff --git a/modules/mod-individual-progression/src/naxx40Scripts/boss_patchwerk_40.cpp b/modules/mod-individual-progression/src/naxx40Scripts/boss_patchwerk_40.cpp
+index 750d1bb..5e289bb 100644
+--- a/modules/mod-individual-progression/src/naxx40Scripts/boss_patchwerk_40.cpp
++++ b/modules/mod-individual-progression/src/naxx40Scripts/boss_patchwerk_40.cpp
+@@ -17,6 +17,8 @@
+ 
+ #include "CreatureScript.h"
+ #include "ScriptedCreature.h"
++#include "SpellScript.h"
++#include "SpellScriptLoader.h"
+ #include "naxxramas.h"
+ #include "IndividualProgression.h"
+ 
+@@ -183,7 +185,32 @@ public:
+     };
+ };
+ 
++// 41926 - Hateful Strike (Naxx40 Patchwerk only)
++// The boss passes its damage as a custom base point, but the core still adds the spell's
++// 1..4501 die roll on top, so a 17680-18280 strike landed for 17680-22780. Drop the roll.
++class spell_patchwerk_hateful_strike_40 : public SpellScript
++{
++    PrepareSpellScript(spell_patchwerk_hateful_strike_40);
++
++    void CalculateDamage(SpellEffIndex /*effIndex*/)
++    {
++        Unit* caster = GetCaster();
++        if (!caster || caster->GetEntry() != NPC_PATCHWERK_40)
++        {
++            return;
++        }
++        // SetSpellValue stored the boss's value minus 1 (CalcBaseValue) for a spell with die sides.
++        SetEffectValue(GetSpellValue()->EffectBasePoints[EFFECT_0] + 1);
++    }
++
++    void Register() override
++    {
++        OnEffectLaunchTarget += SpellEffectFn(spell_patchwerk_hateful_strike_40::CalculateDamage, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
++    }
++};
++
+ void AddSC_boss_patchwerk_40()
+ {
+     new boss_patchwerk_40();
++    RegisterSpellScript(spell_patchwerk_hateful_strike_40);
+ }

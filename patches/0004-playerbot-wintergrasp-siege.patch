@@ -1,16 +1,16 @@
 diff --git a/modules/mod-playerbots/src/Ai/Base/ActionContext.h b/modules/mod-playerbots/src/Ai/Base/ActionContext.h
-index 6e41eb0..df65d18 100644
+index 7e1bb34..8be8b8d 100644
 --- a/modules/mod-playerbots/src/Ai/Base/ActionContext.h
 +++ b/modules/mod-playerbots/src/Ai/Base/ActionContext.h
-@@ -30,6 +30,7 @@
- #include "FishingAction.h"
+@@ -31,6 +31,7 @@
  #include "FollowActions.h"
+ #include "FoodActions.h"
  #include "GenericSpellActions.h"
 +#include "WintergraspSiegeStrategy.h"
  #include "GiveItemAction.h"
  #include "GreetAction.h"
  #include "GuildAcceptAction.h"
-@@ -237,6 +238,7 @@ public:
+@@ -243,6 +244,7 @@ public:
          creators["steam blast"] = &ActionContext::steam_blast;
          creators["napalm"] = &ActionContext::napalm;
          creators["fire cannon"] = &ActionContext::fire_cannon;
@@ -18,7 +18,7 @@ index 6e41eb0..df65d18 100644
          creators["incendiary rocket"] = &ActionContext::incendiary_rocket;
          creators["rocket blast"] = &ActionContext::rocket_blast;
          creators["blade salvo"] = &ActionContext::blade_salvo;
-@@ -443,6 +445,7 @@ private:
+@@ -455,6 +457,7 @@ private:
      static Action* steam_rush(PlayerbotAI* botAI) { return new CastSteamRushAction(botAI); }
      static Action* napalm(PlayerbotAI* botAI) { return new CastNapalmAction(botAI); }
      static Action* fire_cannon(PlayerbotAI* botAI) { return new CastFireCannonAction(botAI); }
@@ -27,7 +27,7 @@ index 6e41eb0..df65d18 100644
      static Action* rocket_blast(PlayerbotAI* botAI) { return new CastRocketBlastAction(botAI); }
      static Action* glaive_throw(PlayerbotAI* botAI) { return new CastGlaiveThrowAction(botAI); }
 diff --git a/modules/mod-playerbots/src/Ai/Base/Actions/MovementActions.cpp b/modules/mod-playerbots/src/Ai/Base/Actions/MovementActions.cpp
-index 45b6e4e..62485c1 100644
+index fb58255..5b37cd6 100644
 --- a/modules/mod-playerbots/src/Ai/Base/Actions/MovementActions.cpp
 +++ b/modules/mod-playerbots/src/Ai/Base/Actions/MovementActions.cpp
 @@ -198,6 +198,66 @@ bool MovementAction::MoveTo(uint32 mapId, float x, float y, float z, bool /*idle
@@ -96,9 +96,9 @@ index 45b6e4e..62485c1 100644
 +
              DoMovePoint(vehicleBase, x, y, z, generatePath, backwards);
              float speed = backwards ? vehicleBase->GetSpeed(MOVE_RUN_BACK) : vehicleBase->GetSpeed(MOVE_RUN);
-             float delay = 1000.0f * (distance / speed);
+             float delay = IN_MILLISECONDS * (distance / speed);
 diff --git a/modules/mod-playerbots/src/Ai/Base/Actions/ReleaseSpiritAction.cpp b/modules/mod-playerbots/src/Ai/Base/Actions/ReleaseSpiritAction.cpp
-index b9a99ad..6546ae9 100644
+index 79a806d..839083b 100644
 --- a/modules/mod-playerbots/src/Ai/Base/Actions/ReleaseSpiritAction.cpp
 +++ b/modules/mod-playerbots/src/Ai/Base/Actions/ReleaseSpiritAction.cpp
 @@ -5,6 +5,8 @@
@@ -129,7 +129,7 @@ index b9a99ad..6546ae9 100644
  // ReleaseSpiritAction implementation
  bool ReleaseSpiritAction::Execute(Event event)
  {
-@@ -83,6 +97,11 @@ void ReleaseSpiritAction::LogRelease(std::string const& releaseMsg) const
+@@ -87,6 +101,11 @@ void ReleaseSpiritAction::LogRelease(std::string const& releaseMsg) const
  // AutoReleaseSpiritAction implementation
  bool AutoReleaseSpiritAction::Execute(Event /*event*/)
  {
@@ -141,7 +141,7 @@ index b9a99ad..6546ae9 100644
      IncrementDeathCount();
      bot->DurabilityRepairAll(false, 1.0f, false);
      LogRelease("auto released");
-@@ -107,6 +126,11 @@ bool AutoReleaseSpiritAction::isUseful()
+@@ -111,6 +130,11 @@ bool AutoReleaseSpiritAction::isUseful()
      if (!bot->isDead() || bot->InArena())
          return false;
  
@@ -153,7 +153,7 @@ index b9a99ad..6546ae9 100644
      if (bot->InBattleground())
          return ShouldDelayBattlegroundRelease();
  
-@@ -166,6 +190,45 @@ bool AutoReleaseSpiritAction::HandleBattlegroundSpiritHealer()
+@@ -168,6 +192,45 @@ bool AutoReleaseSpiritAction::HandleBattlegroundSpiritHealer()
      return true;
  }
  
@@ -200,7 +200,7 @@ index b9a99ad..6546ae9 100644
  {
      if (!bot->GetGroup())
 diff --git a/modules/mod-playerbots/src/Ai/Base/Actions/ReleaseSpiritAction.h b/modules/mod-playerbots/src/Ai/Base/Actions/ReleaseSpiritAction.h
-index 17fd563..4636d4e 100644
+index 9662f26..875e30b 100644
 --- a/modules/mod-playerbots/src/Ai/Base/Actions/ReleaseSpiritAction.h
 +++ b/modules/mod-playerbots/src/Ai/Base/Actions/ReleaseSpiritAction.h
 @@ -36,6 +36,7 @@ public:
@@ -212,7 +212,7 @@ index 17fd563..4636d4e 100644
      bool ShouldDelayBattlegroundRelease() const;
  
 diff --git a/modules/mod-playerbots/src/Ai/Base/Actions/ReviveFromCorpseAction.cpp b/modules/mod-playerbots/src/Ai/Base/Actions/ReviveFromCorpseAction.cpp
-index 3a0c4ac..5856e38 100644
+index 9b3c5fb..1dc1c08 100644
 --- a/modules/mod-playerbots/src/Ai/Base/Actions/ReviveFromCorpseAction.cpp
 +++ b/modules/mod-playerbots/src/Ai/Base/Actions/ReviveFromCorpseAction.cpp
 @@ -5,6 +5,8 @@
@@ -224,7 +224,7 @@ index 3a0c4ac..5856e38 100644
  #include "Corpse.h"
  #include "Event.h"
  #include "FleeManager.h"
-@@ -15,8 +17,24 @@
+@@ -15,13 +17,26 @@
  #include "RandomPlayerbotMgr.h"
  #include "ServerFacade.h"
  
@@ -239,17 +239,20 @@ index 3a0c4ac..5856e38 100644
 +    }
 +}
 +
+ // Top of the default start-zone brackets (Playerbots.ZoneBracket.*).
+ constexpr uint32 START_ZONE_GRAVEYARD_MAX_LEVEL = 12;
+ 
  bool ReviveFromCorpseAction::Execute(Event event)
  {
+     // BG ghosts are revived by spirit healer waves; teleporting to a world graveyard removes them from the BG.
+-    if (bot->InBattleground())
 +    // Wintergrasp/battlefield: revival is handled by the spirit-healer mass-res — don't reclaim
 +    // the corpse (which would resurrect the bot out in enemy territory where it died).
-+    if (!bot->InBattleground() && InActiveBattlefield(bot))
-+        return false;
-+
-     Player* groupLeader = botAI->GetGroupLeader();
-     Corpse* corpse = bot->GetCorpse();
++    if (bot->InBattleground() || InActiveBattlefield(bot))
+         return false;
  
-@@ -74,7 +92,7 @@ bool ReviveFromCorpseAction::Execute(Event event)
+     Player* groupLeader = botAI->GetGroupLeader();
+@@ -81,7 +96,7 @@ bool ReviveFromCorpseAction::Execute(Event event)
  
  bool FindCorpseAction::Execute(Event /*event*/)
  {
@@ -258,7 +261,7 @@ index 3a0c4ac..5856e38 100644
          return false;
  
      Player* groupLeader = botAI->GetGroupLeader();
-@@ -197,7 +215,7 @@ bool FindCorpseAction::Execute(Event /*event*/)
+@@ -204,7 +219,7 @@ bool FindCorpseAction::Execute(Event /*event*/)
  
  bool FindCorpseAction::isUseful()
  {
@@ -1000,7 +1003,7 @@ index 0000000..8c91c9b
 +
 +#endif
 diff --git a/modules/mod-playerbots/src/Ai/Base/StrategyContext.h b/modules/mod-playerbots/src/Ai/Base/StrategyContext.h
-index d06b157..6b951e0 100644
+index 1bf5077..9c7e48e 100644
 --- a/modules/mod-playerbots/src/Ai/Base/StrategyContext.h
 +++ b/modules/mod-playerbots/src/Ai/Base/StrategyContext.h
 @@ -10,6 +10,7 @@
@@ -1028,10 +1031,10 @@ index d06b157..6b951e0 100644
      static Strategy* rtsc(PlayerbotAI* botAI) { return new RTSCStrategy(botAI); }
      static Strategy* attack_tagged(PlayerbotAI* botAI) { return new AttackTaggedStrategy(botAI); }
 diff --git a/modules/mod-playerbots/src/Ai/Base/TriggerContext.h b/modules/mod-playerbots/src/Ai/Base/TriggerContext.h
-index 5219992..af157d9 100644
+index cc725af..7af8a05 100644
 --- a/modules/mod-playerbots/src/Ai/Base/TriggerContext.h
 +++ b/modules/mod-playerbots/src/Ai/Base/TriggerContext.h
-@@ -25,6 +25,7 @@
+@@ -26,6 +26,7 @@
  #include "StuckTriggers.h"
  #include "TravelTriggers.h"
  #include "WaitForAttackTriggers.h"
@@ -1039,7 +1042,7 @@ index 5219992..af157d9 100644
  
  class PlayerbotAI;
  
-@@ -206,6 +207,7 @@ public:
+@@ -208,6 +209,7 @@ public:
  
          creators["vehicle near"] = &TriggerContext::vehicle_near;
          creators["in vehicle"] = &TriggerContext::in_vehicle;
@@ -1047,7 +1050,7 @@ index 5219992..af157d9 100644
  
          creators["need world buff"] = &TriggerContext::need_world_buff;
          creators["falling"] = &TriggerContext::falling;
-@@ -421,6 +423,7 @@ private:
+@@ -424,6 +426,7 @@ private:
      static Trigger* at_dark_portal_outland(PlayerbotAI* botAI) { return new AtDarkPortalOutlandTrigger(botAI); }
      static Trigger* at_dark_portal_azeroth(PlayerbotAI* botAI) { return new AtDarkPortalAzerothTrigger(botAI); }
      static Trigger* in_vehicle(PlayerbotAI* botAI) { return new InVehicleTrigger(botAI); }
@@ -1056,10 +1059,10 @@ index 5219992..af157d9 100644
      static Trigger* near_dark_portal(PlayerbotAI* botAI) { return new NearDarkPortalTrigger(botAI); }
      static Trigger* need_world_buff(PlayerbotAI* botAI) { return new NeedWorldBuffTrigger(botAI); }
 diff --git a/modules/mod-playerbots/src/Bot/Factory/AiFactory.cpp b/modules/mod-playerbots/src/Bot/Factory/AiFactory.cpp
-index ea9325e..cb2583e 100644
+index 2571dea..1b8fb66 100644
 --- a/modules/mod-playerbots/src/Bot/Factory/AiFactory.cpp
 +++ b/modules/mod-playerbots/src/Bot/Factory/AiFactory.cpp
-@@ -497,6 +497,18 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
+@@ -498,6 +498,18 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
          engine->removeStrategy("threat", false);
          engine->addStrategy("boost", false);
      }
@@ -1078,7 +1081,7 @@ index ea9325e..cb2583e 100644
  }
  
  Engine* AiFactory::createCombatEngine(Player* player, PlayerbotAI* const facade, AiObjectContext* aiObjectContext)
-@@ -728,6 +740,12 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
+@@ -723,6 +735,12 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
              nonCombatEngine->removeStrategy("travel", false);
              nonCombatEngine->removeStrategy("rpg", false);
              nonCombatEngine->removeStrategy("grind", false);
@@ -1092,10 +1095,10 @@ index ea9325e..cb2583e 100644
      }
  }
 diff --git a/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp b/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp
-index fd56e96..74c2497 100644
+index 6e22fdd..f102590 100644
 --- a/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp
 +++ b/modules/mod-playerbots/src/Bot/PlayerbotAI.cpp
-@@ -453,6 +453,13 @@ void PlayerbotAI::UpdateAIGroupMaster()
+@@ -525,6 +525,13 @@ void PlayerbotAI::UpdateAIGroupMaster()
  
      if (!master || (masterBotAI && !IsSelfBot(master)))
      {
@@ -1109,7 +1112,7 @@ index fd56e96..74c2497 100644
          Player* newMaster = FindNewMaster();
          if (newMaster)
          {
-@@ -1544,7 +1551,13 @@ void PlayerbotAI::DoNextAction(bool min)
+@@ -1643,7 +1650,13 @@ void PlayerbotAI::DoNextAction(bool min)
  
      if (minimal)
      {
@@ -1123,12 +1126,12 @@ index fd56e96..74c2497 100644
 +        if (!bot->isAFK() && !bot->InBattleground() && !inBattlefieldWar && !HasGameClientMaster())
              bot->ToggleAFK();
  
-         SetNextCheckDelay(sPlayerbotAIConfig.passiveDelay);
+         SetNextCheckDelay(sPlayerbotAIConfig.PassiveDelay);
 diff --git a/modules/mod-playerbots/src/Bot/RandomPlayerbotMgr.cpp b/modules/mod-playerbots/src/Bot/RandomPlayerbotMgr.cpp
-index b4d1a98..56b9882 100644
+index bf65932..ee1e7d7 100644
 --- a/modules/mod-playerbots/src/Bot/RandomPlayerbotMgr.cpp
 +++ b/modules/mod-playerbots/src/Bot/RandomPlayerbotMgr.cpp
-@@ -2714,7 +2714,9 @@ void RandomPlayerbotMgr::OnPlayerLogin(Player* player)
+@@ -2993,7 +2993,9 @@ void RandomPlayerbotMgr::OnPlayerLogin(Player* player)
              PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot);
              if (botAI && member == player && (!botAI->GetMaster() || GET_PLAYERBOT_AI(botAI->GetMaster())))
              {

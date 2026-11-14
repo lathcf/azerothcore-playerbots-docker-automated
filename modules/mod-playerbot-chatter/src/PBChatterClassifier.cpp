@@ -110,7 +110,7 @@ namespace
         "attack my target", "pull my target", "pull back", "max dps", "save mana", "ready check",
         "give leader", "pet attack", "focus heal", "open items", "force rebuff", "tell attackers",
         "tell target", "equip upgrade", "autogear bis", "spirit healer", "accept quest",
-        "item count", "do attack", "tank attack",
+        "item count", "do attack", "tank attack", "twins pull",
     };
 
     bool IsBuiltInBareCommand(std::string const& m)

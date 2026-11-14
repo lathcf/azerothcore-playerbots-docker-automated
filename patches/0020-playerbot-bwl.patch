@@ -1,11 +1,11 @@
 diff --git a/modules/mod-playerbots/src/Ai/Raid/BWL/BWLActionContext.h b/modules/mod-playerbots/src/Ai/Raid/BWL/BWLActionContext.h
-index b9973bb..c366629 100644
+index 7d88c20..6733e2b 100644
 --- a/modules/mod-playerbots/src/Ai/Raid/BWL/BWLActionContext.h
 +++ b/modules/mod-playerbots/src/Ai/Raid/BWL/BWLActionContext.h
-@@ -34,8 +34,26 @@ public:
- 
+@@ -40,9 +40,27 @@ public:
          creators["bwl use hourglass sand"] = &RaidBwlActionContext::bwl_use_hourglass_sand;
-         creators["bwl nefarian fear ward"] = &RaidBwlActionContext::bwl_nefarian_fear_ward;
+         creators["bwl nefarian rear flank"] = &RaidBwlActionContext::bwl_nefarian_rear_flank;
+         creators["bwl nefarian kill corrupted totem"] = &RaidBwlActionContext::bwl_nefarian_kill_corrupted_totem;
 +        creators["bwl nefarian mt station"] = &RaidBwlActionContext::bwl_nefarian_mt_station;
 +        creators["bwl nefarian position"] = &RaidBwlActionContext::bwl_nefarian_position;
 +        creators["bwl nefarian dps target"] = &RaidBwlActionContext::bwl_nefarian_dps_target;
@@ -17,6 +17,7 @@ index b9973bb..c366629 100644
 +        creators["bwl nefarian hunter rearm"] = &RaidBwlActionContext::bwl_nefarian_hunter_rearm;
 +        creators["bwl nefarian rogue survive"] = &RaidBwlActionContext::bwl_nefarian_rogue_survive;
 +        creators["bwl nefarian mt sunder"] = &RaidBwlActionContext::bwl_nefarian_mt_sunder;
+ 
          creators["bwl death talon wyrmguard tank move away"] = &RaidBwlActionContext::bwl_death_talon_wyrmguard_tank_move_away;
          creators["bwl death talon wyrmguard ranged move away"] = &RaidBwlActionContext::bwl_death_talon_wyrmguard_ranged_move_away;
 +        creators["bwl wyrmguard tank"] = &RaidBwlActionContext::bwl_wyrmguard_tank;
@@ -29,35 +30,35 @@ index b9973bb..c366629 100644
      }
  
  private:
-@@ -51,8 +69,26 @@ private:
-     static Action* bwl_flamegor_fire_resistance_action(PlayerbotAI* ai) { return new BossFireResistanceAction(ai, "flamegor"); }
-     static Action* bwl_use_hourglass_sand(PlayerbotAI* ai) { return new BwlUseHourglassSandAction(ai); }
-     static Action* bwl_nefarian_fear_ward(PlayerbotAI* ai) { return new BwlNefarianFearWardAction(ai); }
-+    static Action* bwl_nefarian_mt_station(PlayerbotAI* ai) { return new BwlNefarianMtStationAction(ai); }
-+    static Action* bwl_nefarian_position(PlayerbotAI* ai) { return new BwlNefarianPositionAction(ai); }
-+    static Action* bwl_nefarian_dps_target(PlayerbotAI* ai) { return new BwlNefarianDpsTargetAction(ai); }
-+    static Action* bwl_nefarian_ot_target(PlayerbotAI* ai) { return new BwlNefarianOtTargetAction(ai); }
-+    static Action* bwl_nefarian_tremor(PlayerbotAI* ai) { return new BwlNefarianTremorAction(ai); }
-+    static Action* bwl_nefarian_decurse_tank(PlayerbotAI* ai) { return new BwlNefarianDecurseTankAction(ai); }
-+    static Action* bwl_nefarian_dispel_polymorph(PlayerbotAI* ai) { return new BwlNefarianDispelPolymorphAction(ai); }
-+    static Action* bwl_nefarian_priest_tank_only(PlayerbotAI* ai) { return new BwlNefarianPriestTankOnlyAction(ai); }
-+    static Action* bwl_nefarian_hunter_rearm(PlayerbotAI* ai) { return new BwlNefarianHunterRearmAction(ai); }
-+    static Action* bwl_nefarian_rogue_survive(PlayerbotAI* ai) { return new BwlNefarianRogueSurviveAction(ai); }
-+    static Action* bwl_nefarian_mt_sunder(PlayerbotAI* ai) { return new BwlNefarianMtSunderAction(ai); }
-     static Action* bwl_death_talon_wyrmguard_tank_move_away(PlayerbotAI* ai) { return new BwlDeathTalonWyrmguardTankMoveAwayAction(ai); }
-     static Action* bwl_death_talon_wyrmguard_ranged_move_away(PlayerbotAI* ai) { return new BwlDeathTalonWyrmguardRangedMoveAwayAction(ai); }
-+    static Action* bwl_wyrmguard_tank(PlayerbotAI* ai) { return new BwlWyrmguardTankAction(ai); }
-+    static Action* bwl_wyrmguard_mark_skull(PlayerbotAI* ai) { return new BwlWyrmguardMarkSkullAction(ai); }
-+    static Action* bwl_wyrmguard_dps_target(PlayerbotAI* ai) { return new BwlWyrmguardDpsTargetAction(ai); }
-+    static Action* bwl_wyrmguard_melee_position(PlayerbotAI* ai) { return new BwlWyrmguardMeleePositionAction(ai); }
-+    static Action* bwl_wyrmguard_ebonroc_keep_out(PlayerbotAI* ai) { return new BwlWyrmguardEbonrocKeepOutAction(ai); }
-+    static Action* bwl_wyrmguard_healer_position(PlayerbotAI* ai) { return new BwlWyrmguardHealerPositionAction(ai); }
-+    static Action* bwl_threat_hold(PlayerbotAI* ai) { return new BwlThreatHoldAction(ai); }
+@@ -64,8 +82,26 @@ private:
+     static Action* bwl_use_hourglass_sand(PlayerbotAI* botAI) { return new BwlUseHourglassSandAction(botAI); }
+     static Action* bwl_nefarian_rear_flank(PlayerbotAI* botAI) { return new BossRearFlankAction(botAI, "nefarian"); }
+     static Action* bwl_nefarian_kill_corrupted_totem(PlayerbotAI* botAI) { return new BwlNefarianKillCorruptedTotemAction(botAI); }
++    static Action* bwl_nefarian_mt_station(PlayerbotAI* botAI) { return new BwlNefarianMtStationAction(botAI); }
++    static Action* bwl_nefarian_position(PlayerbotAI* botAI) { return new BwlNefarianPositionAction(botAI); }
++    static Action* bwl_nefarian_dps_target(PlayerbotAI* botAI) { return new BwlNefarianDpsTargetAction(botAI); }
++    static Action* bwl_nefarian_ot_target(PlayerbotAI* botAI) { return new BwlNefarianOtTargetAction(botAI); }
++    static Action* bwl_nefarian_tremor(PlayerbotAI* botAI) { return new BwlNefarianTremorAction(botAI); }
++    static Action* bwl_nefarian_decurse_tank(PlayerbotAI* botAI) { return new BwlNefarianDecurseTankAction(botAI); }
++    static Action* bwl_nefarian_dispel_polymorph(PlayerbotAI* botAI) { return new BwlNefarianDispelPolymorphAction(botAI); }
++    static Action* bwl_nefarian_priest_tank_only(PlayerbotAI* botAI) { return new BwlNefarianPriestTankOnlyAction(botAI); }
++    static Action* bwl_nefarian_hunter_rearm(PlayerbotAI* botAI) { return new BwlNefarianHunterRearmAction(botAI); }
++    static Action* bwl_nefarian_rogue_survive(PlayerbotAI* botAI) { return new BwlNefarianRogueSurviveAction(botAI); }
++    static Action* bwl_nefarian_mt_sunder(PlayerbotAI* botAI) { return new BwlNefarianMtSunderAction(botAI); }
+     static Action* bwl_death_talon_wyrmguard_tank_move_away(PlayerbotAI* botAI) { return new BwlDeathTalonWyrmguardTankMoveAwayAction(botAI); }
+     static Action* bwl_death_talon_wyrmguard_ranged_move_away(PlayerbotAI* botAI) { return new BwlDeathTalonWyrmguardRangedMoveAwayAction(botAI); }
++    static Action* bwl_wyrmguard_tank(PlayerbotAI* botAI) { return new BwlWyrmguardTankAction(botAI); }
++    static Action* bwl_wyrmguard_mark_skull(PlayerbotAI* botAI) { return new BwlWyrmguardMarkSkullAction(botAI); }
++    static Action* bwl_wyrmguard_dps_target(PlayerbotAI* botAI) { return new BwlWyrmguardDpsTargetAction(botAI); }
++    static Action* bwl_wyrmguard_melee_position(PlayerbotAI* botAI) { return new BwlWyrmguardMeleePositionAction(botAI); }
++    static Action* bwl_wyrmguard_ebonroc_keep_out(PlayerbotAI* botAI) { return new BwlWyrmguardEbonrocKeepOutAction(botAI); }
++    static Action* bwl_wyrmguard_healer_position(PlayerbotAI* botAI) { return new BwlWyrmguardHealerPositionAction(botAI); }
++    static Action* bwl_threat_hold(PlayerbotAI* botAI) { return new BwlThreatHoldAction(botAI); }
  };
  
  #endif
 diff --git a/modules/mod-playerbots/src/Ai/Raid/BWL/BWLActions.cpp b/modules/mod-playerbots/src/Ai/Raid/BWL/BWLActions.cpp
-index 8702397..8464154 100644
+index 1e2f251..5f3b103 100644
 --- a/modules/mod-playerbots/src/Ai/Raid/BWL/BWLActions.cpp
 +++ b/modules/mod-playerbots/src/Ai/Raid/BWL/BWLActions.cpp
 @@ -7,8 +7,13 @@
@@ -74,8 +75,8 @@ index 8702397..8464154 100644
  
  using namespace BlackwingLairHelpers;
  using namespace EncounterHelpers;
-@@ -284,6 +289,289 @@ bool BwlNefarianFearWardAction::Execute(Event /*event*/)
-     return botAI->CastSpell("fear ward", victim);
+@@ -305,6 +310,289 @@ bool BwlNefarianKillCorruptedTotemAction::Execute(Event /*event*/)
+     return totem && Attack(totem);
  }
  
 +// Nefarian phases 2 and 3 (overlay patch 0020, spec 2026-10-07)
@@ -364,7 +365,7 @@ index 8702397..8464154 100644
  // Trash
  
  static constexpr float WYRMGUARD_SAFE_DISTANCE = 16.0f;
-@@ -336,6 +624,27 @@ bool BwlDeathTalonWyrmguardTankMoveAwayAction::Execute(Event /*event*/)
+@@ -357,6 +645,27 @@ bool BwlDeathTalonWyrmguardTankMoveAwayAction::Execute(Event /*event*/)
  
  Unit* BwlDeathTalonWyrmguardRangedMoveAwayAction::GetTarget()
  {
@@ -392,7 +393,7 @@ index 8702397..8464154 100644
      // Find the closest wyrmguard within 16 yards
      Unit* closest = nullptr;
      float closestDist = WYRMGUARD_SAFE_DISTANCE;
-@@ -366,3 +675,253 @@ bool BwlDeathTalonWyrmguardRangedMoveAwayAction::Execute(Event /*event*/)
+@@ -387,3 +696,253 @@ bool BwlDeathTalonWyrmguardRangedMoveAwayAction::Execute(Event /*event*/)
  
      return MoveAway(target, distToTravel);
  }
@@ -647,10 +648,10 @@ index 8702397..8464154 100644
 +    return true;
 +}
 diff --git a/modules/mod-playerbots/src/Ai/Raid/BWL/BWLActions.h b/modules/mod-playerbots/src/Ai/Raid/BWL/BWLActions.h
-index 30f169d..e232dfa 100644
+index f26d7d8..733eba1 100644
 --- a/modules/mod-playerbots/src/Ai/Raid/BWL/BWLActions.h
 +++ b/modules/mod-playerbots/src/Ai/Raid/BWL/BWLActions.h
-@@ -74,6 +74,95 @@ public:
+@@ -96,6 +96,95 @@ public:
      bool Execute(Event event) override;
  };
  
@@ -746,7 +747,7 @@ index 30f169d..e232dfa 100644
  // Trash
  
  class BwlDeathTalonWyrmguardTankMoveAwayAction : public MovementAction
-@@ -93,4 +182,60 @@ public:
+@@ -115,4 +204,60 @@ public:
      bool Execute(Event event) override;
  };
  
@@ -808,7 +809,7 @@ index 30f169d..e232dfa 100644
 +
  #endif
 diff --git a/modules/mod-playerbots/src/Ai/Raid/BWL/BWLHelpers.cpp b/modules/mod-playerbots/src/Ai/Raid/BWL/BWLHelpers.cpp
-index 808a5ec..b793d3a 100644
+index e0bf8a6..4d14ae3 100644
 --- a/modules/mod-playerbots/src/Ai/Raid/BWL/BWLHelpers.cpp
 +++ b/modules/mod-playerbots/src/Ai/Raid/BWL/BWLHelpers.cpp
 @@ -5,8 +5,29 @@
@@ -841,8 +842,8 @@ index 808a5ec..b793d3a 100644
  
  namespace BlackwingLairHelpers
  {
-@@ -57,4 +78,1051 @@ namespace BlackwingLairHelpers
- 
+@@ -126,4 +147,1051 @@ namespace BlackwingLairHelpers
+         }
          return false;
      }
 +
@@ -1894,7 +1895,7 @@ index 808a5ec..b793d3a 100644
 +    }
  }
 diff --git a/modules/mod-playerbots/src/Ai/Raid/BWL/BWLHelpers.h b/modules/mod-playerbots/src/Ai/Raid/BWL/BWLHelpers.h
-index f993c4d..5f4ba30 100644
+index 13e4570..0dad23c 100644
 --- a/modules/mod-playerbots/src/Ai/Raid/BWL/BWLHelpers.h
 +++ b/modules/mod-playerbots/src/Ai/Raid/BWL/BWLHelpers.h
 @@ -9,6 +9,11 @@
@@ -1909,10 +1910,10 @@ index f993c4d..5f4ba30 100644
  
  namespace BlackwingLairHelpers
  {
-@@ -50,6 +55,178 @@ namespace BlackwingLairHelpers
-     bool AreRazorgoreEggsAlive(PlayerbotAI* botAI);
-     bool IsRazorgoreOffTank(Player* bot);
-     bool IsNonBABotNearPosition(Player const* bot, Position const& position, float distance);
+@@ -80,6 +85,178 @@ namespace BlackwingLairHelpers
+     Unit* FindCorruptedTotem(PlayerbotAI* botAI);
+     bool IsBoneConstruct(Unit const* unit);
+     bool HasBoneConstructAttacker(PlayerbotAI* botAI);
 +
 +    // ---- Death Talon Wyrmguard packs (overlay patch 0020) ----
 +    constexpr uint32 BWL_MAP_ID = 469;
@@ -2089,10 +2090,10 @@ index f993c4d..5f4ba30 100644
  
  #endif
 diff --git a/modules/mod-playerbots/src/Ai/Raid/BWL/BWLMultipliers.cpp b/modules/mod-playerbots/src/Ai/Raid/BWL/BWLMultipliers.cpp
-index 148dafd..b9300de 100644
+index 30630fa..42dc319 100644
 --- a/modules/mod-playerbots/src/Ai/Raid/BWL/BWLMultipliers.cpp
 +++ b/modules/mod-playerbots/src/Ai/Raid/BWL/BWLMultipliers.cpp
-@@ -5,12 +5,21 @@
+@@ -5,13 +5,21 @@
   */
  
  #include "BWLMultipliers.h"
@@ -2104,7 +2105,7 @@ index 148dafd..b9300de 100644
 +#include "DruidBearActions.h"
 +#include "EncounterHelpers.h"
 +#include "FollowActions.h"
-+#include "GenericSpellActions.h"
+ #include "GenericSpellActions.h"
  #include "HunterActions.h"
 +#include "MovementActions.h"
 +#include "PaladinActions.h"
@@ -2114,9 +2115,9 @@ index 148dafd..b9300de 100644
  
  using namespace BlackwingLairHelpers;
  
-@@ -87,3 +96,237 @@ float VaelastraszBurningAdrenalineMultiplier::GetValue(Action* action)
- 
-     return 1.0f;
+@@ -132,3 +140,244 @@ float NefarianCorruptedTotemMultiplier::GetValue(Action* action)
+     Unit* target = AI_VALUE(Unit*, "current target");
+     return target && target->IsAlive() && IsCorruptedTotem(target) ? 0.0f : 1.0f;
  }
 +
 +// Death Talon Wyrmguard packs (overlay patch 0020)
@@ -2233,7 +2234,11 @@ index 148dafd..b9300de 100644
 +{
 +    if (!action || bot->GetMapId() != BWL_MAP_ID)
 +        return 1.0f;
-+    if (action->getName().rfind("bwl nefarian", 0) == 0)
++    // Upstream's own Nefarian action (#2979) shares our "bwl nefarian" prefix. Inside our gate it would
++    // compete with this strategy's totem/target rules, so it is muted below. Upstream's "nefarian rear
++    // flank" (BossRearFlankAction, #2736) is a RearFlankAction and falls under the mover veto.
++    bool const upstreamNefAction = action->getName() == "bwl nefarian kill corrupted totem";
++    if (!upstreamNefAction && action->getName().rfind("bwl nefarian", 0) == 0)
 +        return 1.0f;
 +
 +    bool const isTargetChooser = dynamic_cast<DpsAssistAction*>(action) ||
@@ -2258,12 +2263,15 @@ index 148dafd..b9300de 100644
 +    bool const isTaunt = EncounterHelpers::IsTauntAction(bot, action);
 +    CastSpellAction* const spellAction = dynamic_cast<CastSpellAction*>(action);
 +    if (!isTargetChooser && !isMover && !isAoeTaunt && !isThreatLimited && !isTankThreat && !isTaunt &&
-+        !spellAction)
++        !spellAction && !upstreamNefAction)
 +        return 1.0f;
 +
 +    NefarianView view;
 +    if (!GetNefarianView(bot, view))
 +        return 1.0f;
++
++    if (upstreamNefAction)
++        return 0.0f;   // our "bwl nefarian dps target" owns the totems
 +
 +    if (isMover)
 +        return 0.0f;   // positions are "bwl nefarian mt station" / "bwl nefarian position"
@@ -2353,10 +2361,10 @@ index 148dafd..b9300de 100644
 +    return 0.0f;
 +}
 diff --git a/modules/mod-playerbots/src/Ai/Raid/BWL/BWLMultipliers.h b/modules/mod-playerbots/src/Ai/Raid/BWL/BWLMultipliers.h
-index 7a063a9..3e19732 100644
+index 1b563b2..81a1460 100644
 --- a/modules/mod-playerbots/src/Ai/Raid/BWL/BWLMultipliers.h
 +++ b/modules/mod-playerbots/src/Ai/Raid/BWL/BWLMultipliers.h
-@@ -33,4 +33,31 @@ public:
+@@ -49,4 +49,31 @@ public:
      float GetValue(Action* action) override;
  };
  
@@ -2389,17 +2397,18 @@ index 7a063a9..3e19732 100644
 +
  #endif
 diff --git a/modules/mod-playerbots/src/Ai/Raid/BWL/BWLStrategy.cpp b/modules/mod-playerbots/src/Ai/Raid/BWL/BWLStrategy.cpp
-index 9caff8a..89b33c2 100644
+index bb11a4a..8731619 100644
 --- a/modules/mod-playerbots/src/Ai/Raid/BWL/BWLStrategy.cpp
 +++ b/modules/mod-playerbots/src/Ai/Raid/BWL/BWLStrategy.cpp
-@@ -6,9 +6,23 @@
- 
+@@ -7,10 +7,24 @@
  #include "BWLStrategy.h"
+ #include "BWLHelpers.h"
  #include "BWLMultipliers.h"
 +#include "Log.h"
-+
-+#include <mutex>
+ #include "Playerbots.h"
  
++#include <mutex>
++
  void RaidBwlStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
  {
 +    static std::once_flag s_wyrmguardCanary;
@@ -2416,9 +2425,9 @@ index 9caff8a..89b33c2 100644
      triggers.push_back(new TriggerNode("often", {
          NextAction("bwl check onyxia scale cloak", ACTION_RAID) }));
      triggers.push_back(new TriggerNode("bwl suppression device", {
-@@ -44,10 +58,59 @@ void RaidBwlStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
-     triggers.push_back(new TriggerNode("bwl nefarian fear ward", {
-         NextAction("bwl nefarian fear ward", ACTION_RAID) }));
+@@ -58,10 +72,59 @@ void RaidBwlStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+     triggers.push_back(new TriggerNode("bwl nefarian corrupted totem", {
+         NextAction("bwl nefarian kill corrupted totem", ACTION_RAID + 1) }));
  
 +    // Nefarian phases 2 and 3 (overlay patch 0020, spec 2026-10-07 §4.7)
 +    triggers.push_back(new TriggerNode("bwl nefarian mt station", {
@@ -2476,22 +2485,24 @@ index 9caff8a..89b33c2 100644
  }
  
  void RaidBwlStrategy::InitMultipliers(std::vector<Multiplier*>& multipliers)
-@@ -55,4 +118,7 @@ void RaidBwlStrategy::InitMultipliers(std::vector<Multiplier*>& multipliers)
-     multipliers.push_back(new RazorgoreTankMultiplier(botAI));
-     multipliers.push_back(new VaelastraszTankMultiplier(botAI));
+@@ -71,6 +134,9 @@ void RaidBwlStrategy::InitMultipliers(std::vector<Multiplier*>& multipliers)
      multipliers.push_back(new VaelastraszBurningAdrenalineMultiplier(botAI));
+     multipliers.push_back(new NefarianCorruptedHealingMultiplier(botAI));
+     multipliers.push_back(new NefarianCorruptedTotemMultiplier(botAI));
 +    multipliers.push_back(new BwlWyrmguardMultiplier(botAI));
 +    multipliers.push_back(new BwlNefarianMultiplier(botAI));
 +    multipliers.push_back(new BwlThreatDisciplineMultiplier(botAI));
  }
+ 
+ void RaidBwlStrategy::AppendTargetExclusions(GuidSet& exclusions, TargetValueExclusionType type)
 diff --git a/modules/mod-playerbots/src/Ai/Raid/BWL/BWLTriggerContext.h b/modules/mod-playerbots/src/Ai/Raid/BWL/BWLTriggerContext.h
-index 688334b..90a8503 100644
+index b3de2f6..e714fb7 100644
 --- a/modules/mod-playerbots/src/Ai/Raid/BWL/BWLTriggerContext.h
 +++ b/modules/mod-playerbots/src/Ai/Raid/BWL/BWLTriggerContext.h
-@@ -33,8 +33,27 @@ public:
-         creators["bwl affliction bronze"] = &RaidBwlTriggerContext::bwl_affliction_bronze;
-         creators["bwl wild magic"] = &RaidBwlTriggerContext::bwl_wild_magic;
-         creators["bwl nefarian fear ward"] = &RaidBwlTriggerContext::bwl_nefarian_fear_ward;
+@@ -40,9 +40,28 @@ public:
+         creators["bwl nefarian positioning"] = &RaidBwlTriggerContext::bwl_nefarian_positioning;
+         creators["bwl nefarian wild magic"] = &RaidBwlTriggerContext::bwl_nefarian_wild_magic;
+         creators["bwl nefarian corrupted totem"] = &RaidBwlTriggerContext::bwl_nefarian_corrupted_totem;
 +        creators["bwl nefarian mt station"] = &RaidBwlTriggerContext::bwl_nefarian_mt_station;
 +        creators["bwl nefarian position"] = &RaidBwlTriggerContext::bwl_nefarian_position;
 +        creators["bwl nefarian dps target"] = &RaidBwlTriggerContext::bwl_nefarian_dps_target;
@@ -2503,6 +2514,7 @@ index 688334b..90a8503 100644
 +        creators["bwl nefarian hunter rearm"] = &RaidBwlTriggerContext::bwl_nefarian_hunter_rearm;
 +        creators["bwl nefarian rogue survive"] = &RaidBwlTriggerContext::bwl_nefarian_rogue_survive;
 +        creators["bwl nefarian mt sunder"] = &RaidBwlTriggerContext::bwl_nefarian_mt_sunder;
+ 
          creators["bwl death talon wyrmguard tank"] = &RaidBwlTriggerContext::bwl_death_talon_wyrmguard_tank;
          creators["bwl death talon wyrmguard ranged"] = &RaidBwlTriggerContext::bwl_death_talon_wyrmguard_ranged;
 +        creators["bwl wyrmguard tank"] = &RaidBwlTriggerContext::bwl_wyrmguard_tank;
@@ -2516,36 +2528,36 @@ index 688334b..90a8503 100644
      }
  
  private:
-@@ -50,8 +69,27 @@ private:
-     static Trigger* bwl_affliction_bronze(PlayerbotAI* ai) { return new BwlAfflictionBronzeTrigger(ai); }
-     static Trigger* bwl_wild_magic(PlayerbotAI* ai) { return new BwlWildMagicTrigger(ai); }
-     static Trigger* bwl_nefarian_fear_ward(PlayerbotAI* ai) { return new BwlNefarianFearWardTrigger(ai); }
-+    static Trigger* bwl_nefarian_mt_station(PlayerbotAI* ai) { return new BwlNefarianMtStationTrigger(ai); }
-+    static Trigger* bwl_nefarian_position(PlayerbotAI* ai) { return new BwlNefarianPositionTrigger(ai); }
-+    static Trigger* bwl_nefarian_dps_target(PlayerbotAI* ai) { return new BwlNefarianDpsTargetTrigger(ai); }
-+    static Trigger* bwl_nefarian_ot_target(PlayerbotAI* ai) { return new BwlNefarianOtTargetTrigger(ai); }
-+    static Trigger* bwl_nefarian_tremor(PlayerbotAI* ai) { return new BwlNefarianTremorTrigger(ai); }
-+    static Trigger* bwl_nefarian_decurse_tank(PlayerbotAI* ai) { return new BwlNefarianDecurseTankTrigger(ai); }
-+    static Trigger* bwl_nefarian_dispel_polymorph(PlayerbotAI* ai) { return new BwlNefarianDispelPolymorphTrigger(ai); }
-+    static Trigger* bwl_nefarian_priest_tank_only(PlayerbotAI* ai) { return new BwlNefarianPriestTankOnlyTrigger(ai); }
-+    static Trigger* bwl_nefarian_hunter_rearm(PlayerbotAI* ai) { return new BwlNefarianHunterRearmTrigger(ai); }
-+    static Trigger* bwl_nefarian_rogue_survive(PlayerbotAI* ai) { return new BwlNefarianRogueSurviveTrigger(ai); }
-+    static Trigger* bwl_nefarian_mt_sunder(PlayerbotAI* ai) { return new BwlNefarianMtSunderTrigger(ai); }
-     static Trigger* bwl_death_talon_wyrmguard_tank(PlayerbotAI* ai) { return new BwlDeathTalonWyrmguardTankTrigger(ai); }
-     static Trigger* bwl_death_talon_wyrmguard_ranged(PlayerbotAI* ai) { return new BwlDeathTalonWyrmguardRangedTrigger(ai); }
-+    static Trigger* bwl_wyrmguard_tank(PlayerbotAI* ai) { return new BwlWyrmguardTankTrigger(ai); }
-+    static Trigger* bwl_wyrmguard_mark_skull(PlayerbotAI* ai) { return new BwlWyrmguardMarkSkullTrigger(ai); }
-+    static Trigger* bwl_wyrmguard_dps_target(PlayerbotAI* ai) { return new BwlWyrmguardDpsTargetTrigger(ai); }
-+    static Trigger* bwl_wyrmguard_melee_position(PlayerbotAI* ai) { return new BwlWyrmguardMeleePositionTrigger(ai); }
-+    static Trigger* bwl_wyrmguard_melee_behind(PlayerbotAI* ai) { return new BwlWyrmguardMeleeBehindTrigger(ai); }
-+    static Trigger* bwl_wyrmguard_ebonroc_keep_out(PlayerbotAI* ai) { return new BwlWyrmguardEbonrocKeepOutTrigger(ai); }
-+    static Trigger* bwl_wyrmguard_healer_position(PlayerbotAI* ai) { return new BwlWyrmguardHealerPositionTrigger(ai); }
-+    static Trigger* bwl_threat_hold(PlayerbotAI* ai) { return new BwlThreatHoldTrigger(ai); }
+@@ -64,8 +83,27 @@ private:
+     static Trigger* bwl_nefarian_wild_magic(PlayerbotAI* botAI) { return new BwlNefarianWildMagicTrigger(botAI); }
+     static Trigger* bwl_nefarian_positioning(PlayerbotAI* botAI) { return new BwlNefarianPositioningTrigger(botAI); }
+     static Trigger* bwl_nefarian_corrupted_totem(PlayerbotAI* botAI) { return new BwlNefarianCorruptedTotemTrigger(botAI); }
++    static Trigger* bwl_nefarian_mt_station(PlayerbotAI* botAI) { return new BwlNefarianMtStationTrigger(botAI); }
++    static Trigger* bwl_nefarian_position(PlayerbotAI* botAI) { return new BwlNefarianPositionTrigger(botAI); }
++    static Trigger* bwl_nefarian_dps_target(PlayerbotAI* botAI) { return new BwlNefarianDpsTargetTrigger(botAI); }
++    static Trigger* bwl_nefarian_ot_target(PlayerbotAI* botAI) { return new BwlNefarianOtTargetTrigger(botAI); }
++    static Trigger* bwl_nefarian_tremor(PlayerbotAI* botAI) { return new BwlNefarianTremorTrigger(botAI); }
++    static Trigger* bwl_nefarian_decurse_tank(PlayerbotAI* botAI) { return new BwlNefarianDecurseTankTrigger(botAI); }
++    static Trigger* bwl_nefarian_dispel_polymorph(PlayerbotAI* botAI) { return new BwlNefarianDispelPolymorphTrigger(botAI); }
++    static Trigger* bwl_nefarian_priest_tank_only(PlayerbotAI* botAI) { return new BwlNefarianPriestTankOnlyTrigger(botAI); }
++    static Trigger* bwl_nefarian_hunter_rearm(PlayerbotAI* botAI) { return new BwlNefarianHunterRearmTrigger(botAI); }
++    static Trigger* bwl_nefarian_rogue_survive(PlayerbotAI* botAI) { return new BwlNefarianRogueSurviveTrigger(botAI); }
++    static Trigger* bwl_nefarian_mt_sunder(PlayerbotAI* botAI) { return new BwlNefarianMtSunderTrigger(botAI); }
+     static Trigger* bwl_death_talon_wyrmguard_tank(PlayerbotAI* botAI) { return new BwlDeathTalonWyrmguardTankTrigger(botAI); }
+     static Trigger* bwl_death_talon_wyrmguard_ranged(PlayerbotAI* botAI) { return new BwlDeathTalonWyrmguardRangedTrigger(botAI); }
++    static Trigger* bwl_wyrmguard_tank(PlayerbotAI* botAI) { return new BwlWyrmguardTankTrigger(botAI); }
++    static Trigger* bwl_wyrmguard_mark_skull(PlayerbotAI* botAI) { return new BwlWyrmguardMarkSkullTrigger(botAI); }
++    static Trigger* bwl_wyrmguard_dps_target(PlayerbotAI* botAI) { return new BwlWyrmguardDpsTargetTrigger(botAI); }
++    static Trigger* bwl_wyrmguard_melee_position(PlayerbotAI* botAI) { return new BwlWyrmguardMeleePositionTrigger(botAI); }
++    static Trigger* bwl_wyrmguard_melee_behind(PlayerbotAI* botAI) { return new BwlWyrmguardMeleeBehindTrigger(botAI); }
++    static Trigger* bwl_wyrmguard_ebonroc_keep_out(PlayerbotAI* botAI) { return new BwlWyrmguardEbonrocKeepOutTrigger(botAI); }
++    static Trigger* bwl_wyrmguard_healer_position(PlayerbotAI* botAI) { return new BwlWyrmguardHealerPositionTrigger(botAI); }
++    static Trigger* bwl_threat_hold(PlayerbotAI* botAI) { return new BwlThreatHoldTrigger(botAI); }
  };
  
  #endif
 diff --git a/modules/mod-playerbots/src/Ai/Raid/BWL/BWLTriggers.cpp b/modules/mod-playerbots/src/Ai/Raid/BWL/BWLTriggers.cpp
-index 616acf3..4f3a9d3 100644
+index 6946ba7..c9a1dee 100644
 --- a/modules/mod-playerbots/src/Ai/Raid/BWL/BWLTriggers.cpp
 +++ b/modules/mod-playerbots/src/Ai/Raid/BWL/BWLTriggers.cpp
 @@ -6,7 +6,11 @@
@@ -2560,8 +2572,8 @@ index 616acf3..4f3a9d3 100644
  
  using namespace BlackwingLairHelpers;
  
-@@ -85,14 +89,353 @@ bool BwlNefarianFearWardTrigger::IsActive()
-     return !botAI->HasAura("fear ward", victim);
+@@ -122,14 +126,353 @@ bool BwlNefarianCorruptedTotemTrigger::IsActive()
+     return FindCorruptedTotem(botAI) != nullptr;
  }
  
 +// Nefarian phases 2 and 3 (overlay patch 0020, spec 2026-10-07)
@@ -2917,10 +2929,10 @@ index 616acf3..4f3a9d3 100644
 +    return !BwlFightHasOwnThreatRules(bot);
  }
 diff --git a/modules/mod-playerbots/src/Ai/Raid/BWL/BWLTriggers.h b/modules/mod-playerbots/src/Ai/Raid/BWL/BWLTriggers.h
-index ea7d65f..16e684a 100644
+index 26bfbd5..42a4a32 100644
 --- a/modules/mod-playerbots/src/Ai/Raid/BWL/BWLTriggers.h
 +++ b/modules/mod-playerbots/src/Ai/Raid/BWL/BWLTriggers.h
-@@ -68,6 +68,85 @@ public:
+@@ -101,6 +101,85 @@ public:
      bool IsActive() override;
  };
  
@@ -3006,7 +3018,7 @@ index ea7d65f..16e684a 100644
  // Trash
  
  class BwlDeathTalonWyrmguardTankTrigger : public Trigger
-@@ -84,4 +163,66 @@ public:
+@@ -117,4 +196,66 @@ public:
      bool IsActive() override;
  };
  

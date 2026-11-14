@@ -124,7 +124,7 @@ bool ArenaRosterCommand::HandleCreate(ChatHandler* handler)
         if (!chosen)
         {
             handler->PSendSysMessage("Not enough addclass characters of class {} ({}). "
-                "Raise AiPlayerbot.AddClassAccountPoolSize and restart.", uint32(def.cls),
+                "Raise Playerbots.AddClassAccountPoolSize and restart.", uint32(def.cls),
                 isAlliance ? "Alliance" : "Horde");
             return true;  // nothing persisted yet
         }

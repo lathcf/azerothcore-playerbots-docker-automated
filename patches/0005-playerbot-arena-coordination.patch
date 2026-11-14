@@ -1,5 +1,5 @@
 diff --git a/modules/mod-playerbots/src/Ai/Base/ActionContext.h b/modules/mod-playerbots/src/Ai/Base/ActionContext.h
-index df65d18..fa3c93b 100644
+index 8be8b8d..5914dd3 100644
 --- a/modules/mod-playerbots/src/Ai/Base/ActionContext.h
 +++ b/modules/mod-playerbots/src/Ai/Base/ActionContext.h
 @@ -8,6 +8,7 @@
@@ -10,7 +10,7 @@ index df65d18..fa3c93b 100644
  #include "AttackAction.h"
  #include "AutoMaintenanceOnLevelupAction.h"
  #include "BattleGroundJoinAction.h"
-@@ -180,6 +181,7 @@ public:
+@@ -179,6 +180,7 @@ public:
          creators["stoneform"] = &ActionContext::stoneform;
          creators["escape artist"] = &ActionContext::escape_artist;
          creators["use trinket"] = &ActionContext::use_trinket;
@@ -18,13 +18,13 @@ index df65d18..fa3c93b 100644
          creators["auto talents"] = &ActionContext::auto_talents;
          creators["auto share quest"] = &ActionContext::auto_share_quest;
          creators["auto maintenance on levelup"] = &ActionContext::auto_maintenance_on_levelup;
-@@ -387,6 +389,7 @@ private:
+@@ -392,6 +394,7 @@ private:
      static Action* stoneform(PlayerbotAI* botAI) { return new CastStoneformAction(botAI); }
      static Action* escape_artist(PlayerbotAI* botAI) { return new CastEscapeArtistAction(botAI); }
      static Action* use_trinket(PlayerbotAI* botAI) { return new UseTrinketAction(botAI); }
 +    static Action* arena_pvp_trinket(PlayerbotAI* botAI) { return new ArenaPvpTrinketAction(botAI); }
      static Action* auto_talents(PlayerbotAI* botAI) { return new AutoSetTalentsAction(botAI); }
-     static Action* auto_share_quest(PlayerbotAI* ai) { return new AutoShareQuestAction(ai); }
+     static Action* auto_share_quest(PlayerbotAI* botAI) { return new AutoShareQuestAction(botAI); }
      static Action* auto_maintenance_on_levelup(PlayerbotAI* botAI) { return new AutoMaintenanceOnLevelupAction(botAI); }
 diff --git a/modules/mod-playerbots/src/Ai/Base/Actions/ArenaCoordActions.cpp b/modules/mod-playerbots/src/Ai/Base/Actions/ArenaCoordActions.cpp
 new file mode 100644
@@ -198,7 +198,7 @@ index 0000000..b28c84d
 +
 +#endif
 diff --git a/modules/mod-playerbots/src/Ai/Base/Actions/BattleGroundTactics.cpp b/modules/mod-playerbots/src/Ai/Base/Actions/BattleGroundTactics.cpp
-index d83ab66..fe0982a 100644
+index 93dc1a9..f06daf0 100644
 --- a/modules/mod-playerbots/src/Ai/Base/Actions/BattleGroundTactics.cpp
 +++ b/modules/mod-playerbots/src/Ai/Base/Actions/BattleGroundTactics.cpp
 @@ -5,6 +5,7 @@
@@ -209,7 +209,7 @@ index d83ab66..fe0982a 100644
  #include "ArenaTeam.h"
  #include "ArenaTeamMgr.h"
  #include "BattleGroundJoinAction.h"
-@@ -4272,28 +4273,77 @@ bool ArenaTactics::Execute(Event /*event*/)
+@@ -5246,28 +5247,77 @@ bool ArenaTactics::Execute(Event /*event*/)
      if (botAI->HasStrategy("buff", BOT_STATE_NON_COMBAT))
          botAI->ChangeStrategy("-buff", BOT_STATE_NON_COMBAT);
  
@@ -303,10 +303,10 @@ index d83ab66..fe0982a 100644
          return moveToCenter(bg);
  
 diff --git a/modules/mod-playerbots/src/Ai/Base/Strategy/BattlegroundStrategy.cpp b/modules/mod-playerbots/src/Ai/Base/Strategy/BattlegroundStrategy.cpp
-index 40ad1c6..cf2a4be 100644
+index 0cf2d31..a9809cb 100644
 --- a/modules/mod-playerbots/src/Ai/Base/Strategy/BattlegroundStrategy.cpp
 +++ b/modules/mod-playerbots/src/Ai/Base/Strategy/BattlegroundStrategy.cpp
-@@ -84,4 +84,17 @@ void ArenaStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+@@ -145,4 +145,17 @@ void ArenaStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
  {
      triggers.push_back(
          new TriggerNode("no possible targets", { NextAction("arena tactics", ACTION_BG)}));
@@ -586,7 +586,7 @@ index 0000000..ad10a02
 +
 +#endif
 diff --git a/modules/mod-playerbots/src/Ai/Base/ValueContext.h b/modules/mod-playerbots/src/Ai/Base/ValueContext.h
-index 269c87a..264478c 100644
+index 352e017..4468aa0 100644
 --- a/modules/mod-playerbots/src/Ai/Base/ValueContext.h
 +++ b/modules/mod-playerbots/src/Ai/Base/ValueContext.h
 @@ -12,6 +12,7 @@
@@ -597,17 +597,17 @@ index 269c87a..264478c 100644
  #include "AttackerCountValues.h"
  #include "AttackerWithoutAuraTargetValue.h"
  #include "AttackersValue.h"
-@@ -259,6 +260,7 @@ public:
+@@ -262,6 +263,7 @@ public:
          creators["bg type"] = &ValueContext::bg_type;
          creators["rpg bg type"] = &ValueContext::rpg_bg_type;
          creators["arena type"] = &ValueContext::arena_type;
 +        creators["arena kill target"] = &ValueContext::arena_kill_target;
          creators["bg role"] = &ValueContext::bg_role;
-         creators["bg master"] = &ValueContext::bg_master;
-         creators["enemy flag carrier"] = &ValueContext::enemy_fc;
-@@ -512,6 +514,7 @@ private:
-     static UntypedValue* bg_master(PlayerbotAI* botAI) { return new BgMasterValue(botAI); }
-     static UntypedValue* bg_role(PlayerbotAI* botAI) { return new BgRoleValue(botAI); }
+         creators["wsg team assignment"] = &ValueContext::wsg_team_assignment;
+         creators["wsg support target"] = &ValueContext::wsg_support_target;
+@@ -525,6 +527,7 @@ private:
+         return new ManualSetValue<ObjectGuid>(botAI, ObjectGuid::Empty, "wsg follow carrier");
+     }
      static UntypedValue* arena_type(PlayerbotAI* botAI) { return new ArenaTypeValue(botAI); }
 +    static UntypedValue* arena_kill_target(PlayerbotAI* botAI) { return new ArenaKillTargetValue(botAI); }
      static UntypedValue* bg_type(PlayerbotAI* botAI) { return new BgTypeValue(botAI); }

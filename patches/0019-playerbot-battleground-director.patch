@@ -1,5 +1,5 @@
 diff --git a/modules/mod-playerbots/src/Ai/Base/ActionContext.h b/modules/mod-playerbots/src/Ai/Base/ActionContext.h
-index fa3c93b..149801b 100644
+index 5914dd3..4fb5736 100644
 --- a/modules/mod-playerbots/src/Ai/Base/ActionContext.h
 +++ b/modules/mod-playerbots/src/Ai/Base/ActionContext.h
 @@ -13,6 +13,7 @@
@@ -7,10 +7,10 @@ index fa3c93b..149801b 100644
  #include "BattleGroundJoinAction.h"
  #include "BattleGroundTactics.h"
 +#include "BgPriorityActions.h"
+ #include "BotStateActions.h"
  #include "BuyAction.h"
  #include "CancelChannelAction.h"
- #include "CastCustomSpellAction.h"
-@@ -229,6 +230,9 @@ public:
+@@ -235,6 +236,9 @@ public:
          creators["bg protect fc"] = &ActionContext::bg_protect_fc;
          creators["bg use buff"] = &ActionContext::bg_use_buff;
          creators["attack enemy flag carrier"] = &ActionContext::attack_enemy_fc;
@@ -20,9 +20,9 @@ index fa3c93b..149801b 100644
          creators["bg check flag"] = &ActionContext::bg_check_flag;
  
          // Vehicles
-@@ -436,6 +440,9 @@ private:
-     static Action* bg_attack_fc(PlayerbotAI* botAI) { return new BGTactics(botAI, "attack fc"); }
-     static Action* bg_protect_fc(PlayerbotAI* botAI) { return new BGTactics(botAI, "protect fc"); }
+@@ -448,6 +452,9 @@ private:
+     static Action* attack_wsg_support(PlayerbotAI* botAI) { return new WsgSupportAttackAction(botAI); }
+     static Action* wsg_regroup(PlayerbotAI* botAI) { return new WsgRegroupAction(botAI); }
      static Action* attack_enemy_fc(PlayerbotAI* botAI) { return new AttackEnemyFlagCarrierAction(botAI); }
 +    static Action* attack_bg_priority_target(PlayerbotAI* botAI) { return new AttackBgPriorityTargetAction(botAI); }
 +    static Action* bg_peel_for_ally(PlayerbotAI* botAI) { return new BgPeelForAllyAction(botAI); }
@@ -31,7 +31,7 @@ index fa3c93b..149801b 100644
      static Action* bg_check_flag(PlayerbotAI* botAI) { return new BGTactics(botAI, "check flag"); }
  
 diff --git a/modules/mod-playerbots/src/Ai/Base/Actions/BattleGroundTactics.cpp b/modules/mod-playerbots/src/Ai/Base/Actions/BattleGroundTactics.cpp
-index fe0982a..ddc0c9b 100644
+index f06daf0..f517897 100644
 --- a/modules/mod-playerbots/src/Ai/Base/Actions/BattleGroundTactics.cpp
 +++ b/modules/mod-playerbots/src/Ai/Base/Actions/BattleGroundTactics.cpp
 @@ -5,6 +5,7 @@
@@ -42,15 +42,7 @@ index fe0982a..ddc0c9b 100644
  #include "ArenaCoordValues.h"
  #include "ArenaTeam.h"
  #include "ArenaTeamMgr.h"
-@@ -30,6 +31,7 @@
- #include "PositionValue.h"
- #include "PvpTriggers.h"
- #include "ServerFacade.h"
-+#include "Timer.h"           // getMSTime() — overlay patch 0019 dismount memory
- #include "Vehicle.h"
- #include <algorithm>
- 
-@@ -1853,6 +1855,19 @@ bool BGTactics::selectObjective(bool reset)
+@@ -2147,6 +2148,19 @@ bool BGTactics::selectObjective(bool reset)
      if (pos.isSet() && !reset)
          return false;
  
@@ -70,7 +62,7 @@ index fe0982a..ddc0c9b 100644
      WorldObject* BgObjective = nullptr;
  
      BattlegroundTypeId bgType = bg->GetBgTypeID();
-@@ -3214,6 +3229,38 @@ bool BGTactics::moveToObjective(bool ignoreDist)
+@@ -3584,6 +3598,38 @@ bool BGTactics::moveToObjective(bool ignoreDist)
          // std::ostringstream out; out << "Moving to objective " << pos.x << ", " << pos.y << ", Distance: " <<
          // ServerFacade::instance().GetDistance2d(bot, pos.x, pos.y); bot->Say(out.str(), LANG_UNIVERSAL);
  
@@ -109,21 +101,22 @@ index fe0982a..ddc0c9b 100644
          // dont increase from 1.5 will cause bugs with horde capping AV towers
          return MoveNear(bot->GetMapId(), pos.x, pos.y, pos.z, 1.5f);
      }
-@@ -3381,8 +3428,15 @@ bool BGTactics::resetObjective()
-         bot->HasAura(BG_WS_SPELL_SILVERWING_FLAG) ||
-         bot->HasAura(BG_EY_NETHERSTORM_FLAG_SPELL);
+@@ -3875,9 +3921,16 @@ bool BGTactics::resetObjective()
+     bool isCarryingFlag = bot->HasAura(BG_WS_SPELL_WARSONG_FLAG) || bot->HasAura(BG_WS_SPELL_SILVERWING_FLAG) ||
+                           bot->HasAura(BG_EY_NETHERSTORM_FLAG_SPELL);
  
 -    // Change role if allowed by odds and not carrying flag
--    if (urand(0, 99) < oddsToChangeRole && !isCarryingFlag)
 +    // Change role if allowed by odds and not carrying flag. A director-owned bot (patch 0019) keeps
 +    // its role: the director, not the dice, decides what it does.
+     bool isWarsong = bg->GetBgTypeID(true) == BATTLEGROUND_WS;
+-    if (!isWarsong && urand(0, 99) < oddsToChangeRole && !isCarryingFlag)
 +    bool directed = false;
 +    if (BattlegroundBotsApi::Enabled())
 +    {
 +        BattlegroundBotsApi::BgAssignment a;
 +        directed = BattlegroundBotsApi::GetAssignment(bot, a);
 +    }
-+    if (!directed && urand(0, 99) < oddsToChangeRole && !isCarryingFlag)
++    if (!isWarsong && !directed && urand(0, 99) < oddsToChangeRole && !isCarryingFlag)
          context->GetValue<uint32>("bg role")->Set(urand(0, 9));
  
      // Reset objective position
@@ -260,7 +253,7 @@ index 0000000..1b63964
 +};
 +#endif
 diff --git a/modules/mod-playerbots/src/Ai/Base/Actions/CheckMountStateAction.cpp b/modules/mod-playerbots/src/Ai/Base/Actions/CheckMountStateAction.cpp
-index e6df0ee..12789f6 100644
+index cacc751..f375d02 100644
 --- a/modules/mod-playerbots/src/Ai/Base/Actions/CheckMountStateAction.cpp
 +++ b/modules/mod-playerbots/src/Ai/Base/Actions/CheckMountStateAction.cpp
 @@ -8,6 +8,7 @@
@@ -271,7 +264,7 @@ index e6df0ee..12789f6 100644
  #include "BattlegroundEY.h"
  #include "BattlegroundWS.h"
  #include "DBCStores.h"
-@@ -17,6 +18,7 @@
+@@ -18,6 +19,7 @@
  #include "Playerbots.h"
  #include "ServerFacade.h"
  #include "SpellAuraEffects.h"
@@ -279,7 +272,7 @@ index e6df0ee..12789f6 100644
  
  static constexpr uint32 SPELL_COLD_WEATHER_FLYING = 54197;
  static constexpr float PARACHUTE_LAND_THRESHOLD = 15.0f;
-@@ -199,6 +201,19 @@ bool CheckMountStateAction::isUseful()
+@@ -210,6 +212,19 @@ bool CheckMountStateAction::isUseful()
          if (Battleground* bg = bot->GetBattleground())
              if (bg->GetStatus() == STATUS_WAIT_JOIN && bg->GetStartDelayTime() > BG_START_DELAY_30S)
                  return false;
@@ -300,18 +293,18 @@ index e6df0ee..12789f6 100644
  
      return true;
 diff --git a/modules/mod-playerbots/src/Ai/Base/Actions/ChooseTargetActions.cpp b/modules/mod-playerbots/src/Ai/Base/Actions/ChooseTargetActions.cpp
-index f3347d1..412d873 100644
+index 80754ec..043a04c 100644
 --- a/modules/mod-playerbots/src/Ai/Base/Actions/ChooseTargetActions.cpp
 +++ b/modules/mod-playerbots/src/Ai/Base/Actions/ChooseTargetActions.cpp
-@@ -5,6 +5,7 @@
-  */
- 
+@@ -7,6 +7,7 @@
  #include "ChooseTargetActions.h"
+ 
+ #include "Battleground.h"
 +#include "BgPriorityActions.h"
  #include "ChooseRpgTargetAction.h"
  #include "Event.h"
  #include "LootObjectStack.h"
-@@ -136,12 +137,23 @@ bool AttackAnythingAction::isPossible() { return GetTarget() && AttackAction::is
+@@ -169,12 +170,23 @@ bool AttackAnythingAction::isPossible() { return GetTarget() && AttackAction::is
  
  bool DpsAssistAction::isUseful()
  {
@@ -336,7 +329,7 @@ index f3347d1..412d873 100644
  {
      Unit* rtiTarget = AI_VALUE(Unit*, "rti target");
 diff --git a/modules/mod-playerbots/src/Ai/Base/Actions/ChooseTargetActions.h b/modules/mod-playerbots/src/Ai/Base/Actions/ChooseTargetActions.h
-index 80c9d6a..e73be79 100644
+index 177cd61..1bb19eb 100644
 --- a/modules/mod-playerbots/src/Ai/Base/Actions/ChooseTargetActions.h
 +++ b/modules/mod-playerbots/src/Ai/Base/Actions/ChooseTargetActions.h
 @@ -34,6 +34,7 @@ public:
@@ -348,12 +341,12 @@ index 80c9d6a..e73be79 100644
  
  class AggressiveTargetAction : public AttackAction
 diff --git a/modules/mod-playerbots/src/Ai/Base/Strategy/BattlegroundStrategy.cpp b/modules/mod-playerbots/src/Ai/Base/Strategy/BattlegroundStrategy.cpp
-index cf2a4be..3327d81 100644
+index a9809cb..64f1332 100644
 --- a/modules/mod-playerbots/src/Ai/Base/Strategy/BattlegroundStrategy.cpp
 +++ b/modules/mod-playerbots/src/Ai/Base/Strategy/BattlegroundStrategy.cpp
-@@ -7,6 +7,20 @@
- #include "BattlegroundStrategy.h"
- #include "Playerbots.h"
+@@ -59,6 +59,20 @@ void WarsongStrategy::InitMultipliers(std::vector<Multiplier*>& multipliers)
+     multipliers.push_back(new WarsongTacticsMultiplier(botAI));
+ }
  
 +// mod-battleground-bots (overlay patch 0019): BG-aware targeting for every open-world BG strategy.
 +// The per-BG strategies live in the COMBAT engine (AiFactory.cpp), so these fire mid-fight.
@@ -372,22 +365,21 @@ index cf2a4be..3327d81 100644
  void BGStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
  {
      triggers.push_back(new TriggerNode("often", { NextAction("bg join", relevance)}));
-@@ -34,12 +48,14 @@ void WarsongStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
-     triggers.push_back(new TriggerNode("low mana", { NextAction("bg use buff", ACTION_MOVE)}));
-     triggers.push_back(new TriggerNode("player has flag", { NextAction("bg move to objective", ACTION_EMERGENCY)}));
-     triggers.push_back(new TriggerNode("timer bg", { NextAction("bg reset objective force", ACTION_EMERGENCY)}));
+@@ -96,11 +110,13 @@ void WarsongStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+                                                            NextAction("bg wsg approach", ACTION_EMERGENCY + 0.3f),
+                                                            NextAction("bg wsg corridor", ACTION_EMERGENCY + 0.2f),
+                                                            NextAction("bg wsg direct", ACTION_EMERGENCY + 0.1f)}));
 +    AddBgDirectorNodes(triggers);
  }
  
  void AlteracStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
  {
-     triggers.push_back(new TriggerNode("alliance no snowfall gy", { NextAction("bg move to objective", ACTION_EMERGENCY)}));
      triggers.push_back(new TriggerNode("timer bg", { NextAction("bg reset objective force", ACTION_EMERGENCY)}));
 +    AddBgDirectorNodes(triggers);
  }
  
  void ArathiStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
-@@ -48,6 +64,7 @@ void ArathiStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+@@ -109,6 +125,7 @@ void ArathiStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
      triggers.push_back(new TriggerNode("often", { NextAction("bg use buff", ACTION_BG)}));
      triggers.push_back(new TriggerNode("low health", { NextAction("bg use buff", ACTION_MOVE)}));
      triggers.push_back(new TriggerNode("low mana", { NextAction("bg use buff", ACTION_MOVE)}));
@@ -395,7 +387,7 @@ index cf2a4be..3327d81 100644
  }
  
  void EyeStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
-@@ -58,6 +75,7 @@ void EyeStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+@@ -119,6 +136,7 @@ void EyeStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
      triggers.push_back(new TriggerNode("low mana", { NextAction("bg use buff", ACTION_MOVE)}));
      triggers.push_back(new TriggerNode("enemy flagcarrier near", { NextAction("attack enemy flag carrier", ACTION_RAID)}));
      triggers.push_back(new TriggerNode("player has flag",{ NextAction("bg move to objective", ACTION_EMERGENCY)}));
@@ -403,7 +395,7 @@ index cf2a4be..3327d81 100644
  }
  
  //TODO: Do Priorities
-@@ -78,6 +96,7 @@ void IsleStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
+@@ -139,6 +157,7 @@ void IsleStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
      // this is bugged: it doesn't work, and stops glaive throw working (which is needed to take down gate)
      // triggers.push_back(new TriggerNode("in vehicle", { NextAction("blade salvo", ACTION_MOVE + 9.0f)}));
      triggers.push_back(new TriggerNode("in vehicle", { NextAction("glaive throw", ACTION_MOVE + 9.0f)}));
@@ -480,7 +472,7 @@ index 0000000..13b3ce5
 +};
 +#endif
 diff --git a/modules/mod-playerbots/src/Ai/Base/TriggerContext.h b/modules/mod-playerbots/src/Ai/Base/TriggerContext.h
-index af157d9..d138d58 100644
+index 7af8a05..1709668 100644
 --- a/modules/mod-playerbots/src/Ai/Base/TriggerContext.h
 +++ b/modules/mod-playerbots/src/Ai/Base/TriggerContext.h
 @@ -7,6 +7,7 @@
@@ -488,29 +480,29 @@ index af157d9..d138d58 100644
  #define PLAYERBOTS_TRIGGERCONTEXT_H
  
 +#include "BgDirectorTriggers.h"
+ #include "BotStateTriggers.h"
  #include "CureTriggers.h"
  #include "FishingTriggers.h"
- #include "GenericTriggers.h"
-@@ -193,6 +194,9 @@ public:
-         creators["team has flag"] = &TriggerContext::team_has_flag;
-         creators["enemy team has flag"] = &TriggerContext::enemy_team_has_flag;
-         creators["enemy flagcarrier near"] = &TriggerContext::enemy_flagcarrier_near;
+@@ -196,6 +197,9 @@ public:
+         creators["wsg flag state changed"] = &TriggerContext::wsg_flag_state_changed;
+         creators["wsg support threat"] = &TriggerContext::wsg_support_threat;
+         creators["wsg escort separated"] = &TriggerContext::wsg_escort_separated;
 +        creators["bg priority target near"] = &TriggerContext::bg_priority_target_near;   // overlay patch 0019
 +        creators["bg ally needs peel"] = &TriggerContext::bg_ally_needs_peel;
 +        creators["bg healer squad far"] = &TriggerContext::bg_healer_squad_far;
          creators["in Battleground"] = &TriggerContext::player_is_in_BATTLEGROUND;
          creators["in Battleground without flag"] = &TriggerContext::player_is_in_BATTLEGROUND_no_flag;
          creators["wants in bg"] = &TriggerContext::player_wants_in_bg;
-@@ -416,6 +420,9 @@ private:
-     static Trigger* team_has_flag(PlayerbotAI* botAI) { return new TeamHasFlag(botAI); }
+@@ -420,6 +424,9 @@ private:
      static Trigger* enemy_team_has_flag(PlayerbotAI* botAI) { return new EnemyTeamHasFlag(botAI); }
      static Trigger* enemy_flagcarrier_near(PlayerbotAI* botAI) { return new EnemyFlagCarrierNear(botAI); }
+     static Trigger* wsg_flag_state_changed(PlayerbotAI* botAI) { return new WsgFlagStateChanged(botAI); }
 +    static Trigger* bg_priority_target_near(PlayerbotAI* botAI) { return new BgPriorityTargetNearTrigger(botAI); }
 +    static Trigger* bg_ally_needs_peel(PlayerbotAI* botAI) { return new BgAllyNeedsPeelTrigger(botAI); }
 +    static Trigger* bg_healer_squad_far(PlayerbotAI* botAI) { return new BgHealerSquadFarTrigger(botAI); }
      static Trigger* player_is_in_BATTLEGROUND(PlayerbotAI* botAI) { return new PlayerIsInBattleground(botAI); }
      static Trigger* player_is_in_BATTLEGROUND_no_flag(PlayerbotAI* botAI) { return new PlayerIsInBattlegroundWithoutFlag(botAI); }
-     static Trigger* alliance_no_snowfall_gy(PlayerbotAI* botAI) { return new AllianceNoSnowfallGY(botAI); }
+     static Trigger* mounted(PlayerbotAI* botAI) { return new IsMountedTrigger(botAI); }
 diff --git a/modules/mod-playerbots/src/Ai/Base/Value/BgKillTargetValue.cpp b/modules/mod-playerbots/src/Ai/Base/Value/BgKillTargetValue.cpp
 new file mode 100644
 index 0000000..c2e0721
@@ -735,10 +727,10 @@ index 0000000..3b075fc
 +};
 +#endif
 diff --git a/modules/mod-playerbots/src/Ai/Base/Value/PvpValues.h b/modules/mod-playerbots/src/Ai/Base/Value/PvpValues.h
-index 4354b9d..0c4e8de 100644
+index edec916..7fc7ddf 100644
 --- a/modules/mod-playerbots/src/Ai/Base/Value/PvpValues.h
 +++ b/modules/mod-playerbots/src/Ai/Base/Value/PvpValues.h
-@@ -32,6 +32,16 @@ public:
+@@ -78,6 +78,16 @@ public:
      BgRoleValue(PlayerbotAI* botAI) : ManualSetValue<uint32>(botAI, 0, "bg role") {}
  };
  
@@ -756,7 +748,7 @@ index 4354b9d..0c4e8de 100644
  {
  public:
 diff --git a/modules/mod-playerbots/src/Ai/Base/ValueContext.h b/modules/mod-playerbots/src/Ai/Base/ValueContext.h
-index 264478c..8dc378e 100644
+index 4468aa0..c6c3e69 100644
 --- a/modules/mod-playerbots/src/Ai/Base/ValueContext.h
 +++ b/modules/mod-playerbots/src/Ai/Base/ValueContext.h
 @@ -17,6 +17,7 @@
@@ -767,7 +759,7 @@ index 264478c..8dc378e 100644
  #include "BudgetValues.h"
  #include "CcTargetValue.h"
  #include "ChatValue.h"
-@@ -265,6 +266,9 @@ public:
+@@ -272,6 +273,9 @@ public:
          creators["bg master"] = &ValueContext::bg_master;
          creators["enemy flag carrier"] = &ValueContext::enemy_fc;
          creators["team flag carrier"] = &ValueContext::team_fc;
@@ -777,7 +769,7 @@ index 264478c..8dc378e 100644
  
          creators["home bind"] = &ValueContext::home_bind;
          creators["last long move"] = &ValueContext::last_long_move;
-@@ -519,6 +523,9 @@ private:
+@@ -532,6 +536,9 @@ private:
      static UntypedValue* rpg_bg_type(PlayerbotAI* botAI) { return new RpgBgTypeValue(botAI); }
      static UntypedValue* team_fc(PlayerbotAI* botAI) { return new FlagCarrierValue(botAI, true, true); }
      static UntypedValue* enemy_fc(PlayerbotAI* botAI) { return new FlagCarrierValue(botAI, false, true); }

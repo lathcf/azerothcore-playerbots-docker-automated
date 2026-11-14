@@ -2,10 +2,10 @@
 # regen-aq40-patch.sh — re-cut patches/0016-playerbot-aq40.patch from the fork
 # working tree at azerothcore-wotlk/modules/mod-playerbots.
 #
-# BASELINE-AWARE for FOUR shared wiring files (plus the LATER era-talents 02-era-ai.patch on
-# PlayerbotAI.cpp, stripped from the working copy by reverse-apply). Patches are applied UNSTAGED, so a naive
+# BASELINE-AWARE for FOUR shared wiring files (plus the LATER overlay 0022 and era-talents 02-era-ai.patch
+# on PlayerbotAI.cpp, stripped from the working copy by reverse-apply). Patches are applied UNSTAGED, so a naive
 # `git diff` would embed their hunks into 0016:
-#   * src/Bot/PlayerbotAI.cpp                        also 0003, 0004, 0011, 0014
+#   * src/Bot/PlayerbotAI.cpp                        also 0003, 0004, 0014
 #   * src/Ai/Raid/RaidStrategyContext.h              also 0014
 #   * src/Bot/Engine/BuildSharedTriggerContexts.cpp  also 0014
 #   * src/Bot/Engine/BuildSharedActionContexts.cpp   also 0014
@@ -25,11 +25,10 @@ PB="$AC/modules/mod-playerbots"
 OUT="$ROOT/patches/0016-playerbot-aq40.patch"
 P0003="$ROOT/patches/0003-playerbot-wintergrasp.patch"
 P0004="$ROOT/patches/0004-playerbot-wintergrasp-siege.patch"
-P0011="$ROOT/patches/0011-playerbot-perfmon-hotpath.patch"
 P0014="$ROOT/patches/0014-playerbot-sunwell.patch"
 
 [[ -d "$PB/.git" ]] || { echo "ERROR: $PB is not a git clone (run setup.sh first)" >&2; exit 1; }
-for p in "$P0003" "$P0004" "$P0011" "$P0014"; do
+for p in "$P0003" "$P0004" "$P0014"; do
   [[ -f "$p" ]] || { echo "ERROR: baseline patch $(basename "$p") missing" >&2; exit 1; }
 done
 
@@ -66,7 +65,6 @@ cp "$PB/src/Bot/Engine/BuildSharedActionContexts.cpp" "$TMP/BuildSharedActionCon
 git -C "$PB" checkout -- src/Bot/PlayerbotAI.cpp
 git -C "$AC" apply --include=modules/mod-playerbots/src/Bot/PlayerbotAI.cpp "$P0003"
 git -C "$AC" apply --include=modules/mod-playerbots/src/Bot/PlayerbotAI.cpp "$P0004"
-git -C "$AC" apply --include=modules/mod-playerbots/src/Bot/PlayerbotAI.cpp "$P0011"
 git -C "$AC" apply --include=modules/mod-playerbots/src/Bot/PlayerbotAI.cpp "$P0014"
 
 git -C "$PB" checkout -- src/Ai/Raid/RaidStrategyContext.h
@@ -97,6 +95,16 @@ if [[ -f "$ERA_AI" ]]; then
     echo "WARN: era 02-era-ai.patch does not reverse-apply on PlayerbotAI.cpp — contamination canary decides" >&2
   fi
 fi
+# Overlay 0022 (Naxx40 Patchwerk's KeepPrecastHeal hook, 2026-11-01) is ALSO later on PlayerbotAI.cpp: strip
+# its hunk the same way (after the era strip — reverse order of application).
+P0022="$ROOT/patches/0022-playerbot-naxx40.patch"
+if [[ -f "$P0022" ]]; then
+  if git -C "$AC" apply -R --check --include=modules/mod-playerbots/src/Bot/PlayerbotAI.cpp "$P0022" 2>/dev/null; then
+    git -C "$AC" apply -R --include=modules/mod-playerbots/src/Bot/PlayerbotAI.cpp "$P0022"
+  else
+    echo "WARN: 0022 does not reverse-apply on PlayerbotAI.cpp — contamination canary decides" >&2
+  fi
+fi
 cp "$TMP/RaidStrategyContext.h" "$PB/src/Ai/Raid/RaidStrategyContext.h"
 cp "$TMP/BuildSharedTriggerContexts.cpp" "$PB/src/Bot/Engine/BuildSharedTriggerContexts.cpp"
 cp "$TMP/BuildSharedActionContexts.cpp" "$PB/src/Bot/Engine/BuildSharedActionContexts.cpp"
@@ -118,7 +126,8 @@ git -C "$PB" diff --src-prefix=a/modules/mod-playerbots/ --dst-prefix=b/modules/
 # fail, which has happened three times in this project.
 SHARED_HUNKS="$(awk '/^diff --git/ { skip = ($0 ~ /src\/Ai\/Raid\/Aq40\//) } !skip' "$OUT")"
 for banned in "SWP" "sunwell" "case 580" "SMSG_BATTLEFIELD_MGR_ENTRY_INVITE" "isBFGroup" \
-              "PerfMonitorOperation" "EraTalentBots"; do
+              "PerfMonitorOperation" "EraTalentBots" "KeepPrecastHeal" "CancelPrecastHeal" \
+              "Naxx40Patchwerk"; do
   if printf '%s\n' "$SHARED_HUNKS" | grep -E '^[+-]' | grep -v '^[+-][+-][+-]' | grep -q -- "$banned"; then
     echo "ERROR: 0016 shared-file hunks contain '$banned' — another patch's hunks leaked in." >&2
     rm -f "$OUT"
